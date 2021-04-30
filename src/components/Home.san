@@ -1,0 +1,91 @@
+<template>
+    <div id="app">
+        <div class="header">
+            <h1 class="title">San DevTools Remote Inspector</h1>
+            <s-tag s-if="status ==='error'" color="red" slot="tags">Error</s-tag>
+            <s-tag s-if="status ==='connected'" color="green" slot="tags">Connected</s-tag>
+            <s-tag s-if="status ==='disconnected'" color="purple" slot="tags">Disconnected</s-tag>
+            <s-tag s-if="status ==='connecting'" color="orange" slot="tags">Connecting</s-tag>
+        </div>
+        <div class="wrap">
+            <s-row>
+                <s-col span="{{12}}">
+                    <div class="description">
+                        <div class="term">WebSocket Host：</div>
+                        <div class="detail">{{wsHost}}</div>
+                    </div>
+                </s-col>
+                <s-col span="{{12}}">
+                    <div class="description">
+                        <div class="term">Port：</div>
+                        <div class="detail">{{wsPort}}</div>
+                    </div>
+                </s-col>
+                <s-col span="{{24}}">
+                    <div class="description">
+                        <div class="term"><s-badge count="{{1}}" style="{{{'background-color': 'rgba(25, 104, 250, .6)'}}}"/>  添加 Backend.js 到调试页面顶部（San.js之前）：</div>
+                        <div class="detail"><a target="_blank" href="{{backendjs}}">{{backendjs}}</a></div>
+                    </div>
+                    <div class="description">
+                        <div class="term"><s-badge count="{{2}}" style="{{{'background-color': 'rgba(25, 104, 250, .6)'}}}"/>  访问该页面，选择调试页面，点击链接开始调试</div>
+                    </div>
+                </s-col>
+            </s-row>
+            <div s-if="backends.length===0" class="emptyInfo">没有检测到待调试的页面</div>
+            <s-list
+                slot="footer"
+                itemLayout="vertical"
+                size="large"
+                dataSource="{{backends}}"
+            >
+                <s-list-item slot="renderItem" actions="{{['edit', 'more']}}">
+                    <a slot="more" on-click="openDevtools(item)"><s-icon type="chrome" style="margin-right: 8px;" />Chrome DevTools</a>
+                    <s-list-item-meta description="{{item.url}}">
+                        <s-avatar size="large" slot="avatar" src="{{item.favicon || logo}}"></s-avatar>
+                        <a href="javascript:void(0);" slot="title">{{item.title}}</a>
+                    </s-list-item-meta>
+                </s-list-item>
+                <div slot="footer" class="footer">Powered by <s-button type="link" href="{{siteUrl}}"><b>{{pkgName}}</b></s-button> v{{version}}</div>
+            </s-list>
+        </div>
+    </div>
+</template>
+<script>
+import './home.less';
+import {Component} from 'san';
+import {Grid, Button, Tag, List, Avatar, Icon, Badge} from 'santd';
+import logo from '../icons/logo.svg?inline';
+/* global __config__ */
+import pkg from '../../package.json';
+
+export default class Home extends Component{
+    static components = {
+        's-badge': Badge,
+        's-icon': Icon,
+        's-list': List,
+        's-list-item': List.Item,
+        's-list-item-meta': List.Item.Meta,
+        's-avatar': Avatar,
+        's-tag': Tag,
+        's-button': Button,
+        's-row': Grid.Row,
+        's-col': Grid.Col
+    };
+    openDevtools(item){
+        // window.open(url, 'Chrome Devtools');
+    }
+    attached() {
+        // ws.send(JSON.stringify({event: 'homeReady'}));
+    }
+    initData() {
+        return {
+            logo,
+            pkgName: pkg.name,
+            version: pkg.version,
+            siteUrl: pkg.repository.url,
+            // 黄色
+            status: 'connecting'
+        };
+    }
+}
+</script>

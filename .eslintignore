@@ -1,0 +1,9 @@
+node_modules
+coverage
+__mocks__
+test
+__test__
+example
+examples
+output
+dist

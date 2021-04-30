@@ -1,0 +1,232 @@
+{
+    "name": "remote-devtools",
+    "version": "1.0.0",
+    "license": "MIT",
+    "bin": {
+        "remote-devtools": "./index.js",
+        "d": "./index.js"
+    },
+    "module": "src/lancher.js",
+    "main": "dist/lancher.js",
+    "scripts": {
+        "build": "npm-run-all build:**",
+        "dev": "run-p dev:backend dev:server",
+        "build:backend": "cross-env NODE_ENV=production webpack --config webpack.config.js",
+        "dev:backend": "cross-env NODE_ENV=development DEBUG=true webpack serve --progress --config webpack.config.js",
+        "dev:server": "cross-env DEBUG=true nodemon index.js --no-open"
+    },
+    "lint-staged": {
+        "!(example|dist|output|__mocks__)/**/*.js": [
+            "eslint"
+        ]
+    },
+    "engines": {
+        "node": ">=8.16"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ksky521/remote-devtools.git"
+    },
+    "dependencies": {
+        "@koa/router": "^10.0.0",
+        "chalk": "^4.1.1",
+        "chrome-devtools-frontend": "1.0.734346",
+        "circular-json": "^0.5.9",
+        "del": "^6.0.0",
+        "devtools-protocol": "0.0.719330",
+        "find-cache-dir": "^3.3.1",
+        "killable": "^1.0.1",
+        "koa": "^2.13.1",
+        "koa-send": "^5.0.1",
+        "nanoid": "^3.1.22",
+        "opener": "^1.5.2",
+        "portfinder": "^1.0.28",
+        "require-dir": "^1.2.0",
+        "selfsigned": "^1.10.8",
+        "update-notifier": "^5.1.0",
+        "webpack-log": "^3.0.2",
+        "ws": "~7.4.5",
+        "yargs": "^16.2.0"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.14.0",
+        "@babel/plugin-proposal-class-properties": "^7.13.0",
+        "@babel/plugin-syntax-import-meta": "^7.10.4",
+        "@babel/plugin-transform-new-target": "^7.12.13",
+        "@babel/plugin-transform-object-assign": "^7.12.13",
+        "@babel/preset-env": "^7.14.0",
+        "@commitlint/cli": "^8.3.4",
+        "@commitlint/core": "^8.3.4",
+        "@ecomfe/eslint-config": "^3.2.0",
+        "@ksky521/cz-emoji": "^1.2.1",
+        "autoprefixer": "^10.2.5",
+        "babel-loader": "^8.2.2",
+        "babel-plugin-import": "^1.13.3",
+        "clean-webpack-plugin": "^4.0.0-alpha.0",
+        "commitizen": "^4.0.3",
+        "commitlint-config-gitmoji": "1.0.1",
+        "core-js": "^3",
+        "cross-env": "^7.0.3",
+        "css-loader": "^5.2.4",
+        "dayjs": "^1.10.4",
+        "eslint": "^6.8.0",
+        "file-loader": "^6.2.0",
+        "html-loader": "^2.1.2",
+        "html-webpack-plugin": "^5.3.1",
+        "husky": "^4.0.0",
+        "less": "^4.1.1",
+        "less-loader": "^6.2.0",
+        "lint-staged": "^9.2.5",
+        "mini-css-extract-plugin": "^1.5.1",
+        "node-polyfill-webpack-plugin": "^1.1.0",
+        "nodemon": "^2.0.7",
+        "npm-run-all": "^4.1.5",
+        "optimize-css-assets-webpack-plugin": "^5.0.4",
+        "postcss": "^8.2.13",
+        "postcss-loader": "^5.2.0",
+        "san": "~3.9.2",
+        "san-hot-loader": "^0.1.2",
+        "san-loader": "^0.2.1",
+        "santd": "~1.0.5",
+        "style-loader": "^2.0.0",
+        "svg-loader": "^0.0.2",
+        "terser-webpack-plugin": "^5.1.1",
+        "url-loader": "^4.1.1",
+        "webpack": "^5.36.1",
+        "webpack-cli": "^4.6.0",
+        "webpack-dev-server": "^3.11.2"
+    },
+    "husky": {
+        "hooks": {
+            "pre-commit": "lint-staged && node scripts/test.js"
+        }
+    },
+    "author": "ksky521",
+    "commitlint": {
+        "extends": [
+            "gitmoji"
+        ],
+        "rules": {
+            "header-max-length": [
+                2,
+                "always",
+                120
+            ],
+            "subject-case": [
+                0,
+                "always",
+                "sentence-case"
+            ]
+        }
+    },
+    "config": {
+        "commitizen": {
+            "path": "./node_modules/@ksky521/cz-emoji"
+        },
+        "@ksky521/cz-emoji": {
+            "types": [
+                {
+                    "emoji": "🌟",
+                    "code": ":sparkles:",
+                    "description": "Introducing new features.",
+                    "name": "feat"
+                },
+                {
+                    "emoji": "🐛",
+                    "code": ":bug:",
+                    "description": "Fixing a bug.",
+                    "name": "fix"
+                },
+                {
+                    "emoji": "🚑",
+                    "code": ":ambulance:",
+                    "description": "Critical hotfix.",
+                    "name": "quickfix"
+                },
+                {
+                    "emoji": "✅",
+                    "code": ":white_check_mark:",
+                    "description": "Adding tests.",
+                    "name": "test"
+                },
+                {
+                    "emoji": "💬",
+                    "code": ":speech_balloon:",
+                    "description": "Updating text and literals.",
+                    "name": "chore"
+                },
+                {
+                    "emoji": "📦",
+                    "code": ":package:",
+                    "description": "Releasing / Version tags.",
+                    "name": "release"
+                },
+                {
+                    "emoji": "📝",
+                    "code": ":pencil:",
+                    "description": "Writing docs.",
+                    "name": "docs"
+                },
+                {
+                    "emoji": "🚨",
+                    "code": ":rotating_light:",
+                    "description": "Removing linter warnings.",
+                    "name": "lint"
+                },
+                {
+                    "emoji": "⏪",
+                    "code": ":rewind:",
+                    "description": "Reverting changes.",
+                    "name": "revert"
+                },
+                {
+                    "emoji": "🔀",
+                    "code": ":twisted_rightwards_arrows:",
+                    "description": "Merging branches.",
+                    "name": "merge"
+                },
+                {
+                    "emoji": "👌",
+                    "code": ":ok_hand:",
+                    "description": "Updating code due to code review changes.",
+                    "name": "review"
+                },
+                {
+                    "emoji": "🎨",
+                    "code": ":art:",
+                    "description": "Improving structure / format of the code.",
+                    "name": "style"
+                },
+                {
+                    "emoji": "💄",
+                    "code": ":lipstick:",
+                    "description": "Updating the UI and style files.",
+                    "name": "ui"
+                },
+                {
+                    "emoji": "👽",
+                    "code": ":alien:",
+                    "description": "Updating code due to external API changes.",
+                    "name": "compat"
+                },
+                {
+                    "emoji": "💥",
+                    "code": ":boom:",
+                    "description": " Refactoring code.",
+                    "name": "refactor"
+                },
+                {
+                    "emoji": "🎉",
+                    "code": ":tada:",
+                    "description": "Initial commit.",
+                    "name": "init"
+                }
+            ],
+            "skipQuestions": [
+                "scope",
+                "body",
+                "issues"
+            ]
+        }
+    }
+}

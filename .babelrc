@@ -1,0 +1,27 @@
+{
+    "presets": [
+        [
+            "@babel/preset-env",
+            {
+                "loose": false,
+                "corejs": 3,
+                "useBuiltIns": "usage"
+            }
+        ]
+    ],
+    "plugins": [
+        "san-hot-loader/lib/babel-plugin",
+        [
+            "import",
+            {
+                "libraryName": "santd",
+                "libraryDirectory": "es",
+                "style": true
+            }
+        ],
+        "@babel/plugin-transform-object-assign",
+        "@babel/plugin-syntax-import-meta",
+        "@babel/plugin-proposal-class-properties",
+        "@babel/plugin-transform-new-target"
+    ]
+}
