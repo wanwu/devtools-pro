@@ -65,13 +65,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         if (!backendChannel || !backendChannel.channel) {
             // 这种情况是没有backend channel， frontend先于backend打开；或者backend关闭，frontend刷新
             // eslint-disable-next-line max-len
-            ws.send(
-                '@devtools\n' +
-                    JSON.stringify({
-                        event: 'backendConnectionNotFound',
-                        payload: {backendId: backendChannel ? backendChannel.id : 'null'}
-                    })
-            );
+
             return ws.close();
         }
 
@@ -99,14 +93,6 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         backendChannel.channel.on('close', () => channel.destroy());
 
         this.emit('frontendAppend', frontendData);
-
-        ws.send(
-            '@devtools\n' +
-                JSON.stringify({
-                    event: 'backendConnectionFound',
-                    payload: {backendId: backendChannel ? backendChannel.id : 'null'}
-                })
-        );
     }
     removeBackendChannel(id, title = '') {
         logger.info(`${getColorfulName('backend')} ${chalk.red('disconnected')} ${id}:${truncate(title, 10)}`);

@@ -1,6 +1,7 @@
 # Referenced from https://github.com/github/gitignore/blob/master/Node.gitignore
 temp
 output
+dist
 # Logs
 logs
 *.log
