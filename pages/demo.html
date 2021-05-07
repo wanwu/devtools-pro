@@ -69,7 +69,7 @@
                     var item = config[panelName];
                     html += Object.keys(item)
                         .map(function(k) {
-                            var id = [panelName, k].join('-').replace(/\s/g, '_');
+                            var id = [panelName, k].join('-').replace(/(\s|\.)/g, '_');
                             handlers[id] = item[k];
                             $main.delegate('#' + id, 'click', handlers[id]);
                             return (

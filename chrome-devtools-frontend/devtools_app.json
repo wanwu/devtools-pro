@@ -1,0 +1,24 @@
+{
+    "modules": [
+        {"name": "emulation", "type": "autostart"},
+        {"name": "inspector_main", "type": "autostart"},
+        {"name": "mobile_throttling", "type": "autostart"},
+
+        {"name": "accessibility"},
+        {"name": "animation"},
+        {"name": "css_overview"},
+        {"name": "cookie_table"},
+        {"name": "dagre_layout", "type": "remote"},
+        {"name": "devices"},
+        {"name": "elements"},
+        {"name": "emulated_devices", "type": "remote"},
+        {"name": "har_importer"},
+        {"name": "layers"},
+        {"name": "layer_viewer"},
+        {"name": "network"},
+        {"name": "performance_monitor"},
+        {"name": "resources"}
+    ],
+    "extends": "shell",
+    "has_html": true
+}
