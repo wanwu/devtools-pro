@@ -29,8 +29,8 @@
     },
     "dependencies": {
         "@koa/router": "^10.0.0",
+        "@ksky521/chobitsu": "link:../chobitsu",
         "chalk": "^4.1.1",
-        "chobitsu": "^0.2.2",
         "chrome-devtools-frontend": "1.0.734346",
         "circular-json": "^0.5.9",
         "del": "^6.0.0",

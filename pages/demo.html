@@ -31,10 +31,20 @@
                 },
                 Network: {
                     'new Image': function() {
-                        console.log('a');
+                        var i = new Image();
+                        i.src = 'https://www.baidu.com/img/PCtm_d9c8750bed0b3c7d089fa7d55720d6cf.png';
                     },
-                    'new Image2': function() {
-                        console.log('a');
+                    Script: function() {
+                        $.ajax({
+                            url: 'https://res.wx.qq.com/open/libs/weuijs/1.2.1/weui.min.js',
+                            dataType: 'jsonp'
+                        });
+                    },
+                    XHR: function() {
+                        $.get('home.html');
+                    },
+                    Fetch: function() {
+                        fetch('home.html');
                     }
                 }
             };

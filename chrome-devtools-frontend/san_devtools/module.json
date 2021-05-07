@@ -1,0 +1,16 @@
+{
+    "extensions": [
+        {
+            "type": "view",
+            "location": "panel",
+            "id": "san_devtools",
+            "title": "San Devtools",
+            "order": 100,
+            "className": "SanDevtools.SanDevtoolsPanel"
+        }
+    ],
+    "dependencies": ["ui", "sdk"],
+    "scripts": [],
+    "modules": ["san_devtools.js", "san_devtools-legacy.js", "SanDevtoolsPanel.js"],
+    "resources": ["san_devtools.css"]
+}

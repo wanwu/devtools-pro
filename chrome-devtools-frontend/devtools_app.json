@@ -3,6 +3,7 @@
         {"name": "emulation", "type": "autostart"},
         {"name": "inspector_main", "type": "autostart"},
         {"name": "mobile_throttling", "type": "autostart"},
+        {"name": "san_devtools"},
 
         {"name": "accessibility"},
         {"name": "animation"},

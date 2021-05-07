@@ -3,7 +3,7 @@
  */
 import url from 'url';
 
-import chobitsu from 'chobitsu';
+import chobitsu from '@ksky521/chobitsu';
 
 import getFavicon from './utils/getFavicon';
 import WebSocket from './lib/WebSocket';
@@ -12,11 +12,11 @@ import getSessionId from './utils/getSessionId';
 
 // 1. 获取getCurrentScript，得到host
 const curScriptUrl = getCurrentScript();
-const {host, protocol, hostname, port} = new URL(curScriptUrl);
+const {protocol, hostname, port} = new URL(curScriptUrl);
+
 // 2. 得到sid
 const sid = getSessionId();
-const favicon = getFavicon();
-const title = document.title || 'Untitled';
+
 // 得到ws地址
 const backendWSURL = url.format({
     protocol: protocol === 'https:' ? 'wss:' : 'ws:',
@@ -37,18 +37,19 @@ chobitsu.setOnMessage(message => {
 });
 
 // 第一次发送
-devtoolsChannel.send('updateBackendInfo', {
-    id: sid,
-    favicon,
-    title,
-    url: location.href
-});
-window.addEventListener('onload', () => {
-    // 补充更新，存在document.title更新情况
+sendRegisterMessage();
+// 第二次更新
+window.addEventListener('onload', sendRegisterMessage);
+
+function sendRegisterMessage() {
+    const favicon = getFavicon();
+    const title = document.title || 'Untitled';
+    const {userAgent, platform} = navigator;
     devtoolsChannel.send('updateBackendInfo', {
         id: sid,
-        favicon: getFavicon(),
-        title: document.title || 'Untitled',
+        favicon,
+        title,
+        metaData: {userAgent, platform},
         url: location.href
     });
-});
+}
