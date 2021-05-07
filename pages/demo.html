@@ -21,6 +21,14 @@
         </style>
         <script>
             var config = {
+                Console: {
+                    'console.log': function() {
+                        console.log('log');
+                    },
+                    'console.error': function() {
+                        console.error({type: 'logError'});
+                    }
+                },
                 Network: {
                     'new Image': function() {
                         console.log('a');

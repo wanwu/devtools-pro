@@ -4,7 +4,7 @@
 import url from 'url';
 
 import getSessionId from './utils/getSessionId';
-import Home from './components/Home.san';
+import Home from '@components/Home.san';
 let app;
 const timerIdMap = new Map();
 const handlers = {

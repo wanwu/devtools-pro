@@ -8,6 +8,8 @@ const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const MiniCssExportPlugin = require('mini-css-extract-plugin');
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 
+const resolve = p => path.resolve(__dirname, './src', p);
+
 const pkg = require('./package.json');
 const isProduction = process.env.NODE_ENV === 'production';
 const plugins = [
@@ -25,6 +27,7 @@ const plugins = [
     new HtmlWebpackPlugin({
         filename: 'home.html',
         chunks: ['home'],
+        alwaysWriteToDisk: true,
         template: './pages/home.html'
     }),
     new HtmlWebpackPlugin({
@@ -52,6 +55,15 @@ module.exports = {
     devServer: {
         contentBase: './dist',
         hot: true
+    },
+    resolve: {
+        alias: {
+            '@': resolve('/'),
+            '@lib': resolve('lib'),
+            '@components': resolve('components'),
+            '@backend': resolve('backend'),
+            '@domains': resolve('backend/domains')
+        }
     },
     optimization: isProduction
         ? {

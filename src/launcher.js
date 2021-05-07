@@ -3,6 +3,8 @@
  */
 import url from 'url';
 
+import chobitsu from 'chobitsu';
+
 import getFavicon from './utils/getFavicon';
 import WebSocket from './lib/WebSocket';
 import getCurrentScript from './utils/getCurrentScript';
@@ -25,8 +27,13 @@ const backendWSURL = url.format({
 // 3. 建立连接
 const wss = new WebSocket(backendWSURL);
 const devtoolsChannel = wss.registerChannel('devtools');
+
 devtoolsChannel.on('message', event => {
-    console.log(event);
+    chobitsu.sendRawMessage(event.data);
+});
+
+chobitsu.setOnMessage(message => {
+    devtoolsChannel.send(message);
 });
 
 // 第一次发送

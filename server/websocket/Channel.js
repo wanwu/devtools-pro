@@ -21,10 +21,10 @@ module.exports = class Channel extends EventEmitter {
         ws.on('message', message => {
             logger.debug(`${getColorfulName(this._ws.role)} ${this._ws.id} Get Message`, truncate(message, 50));
             // 下面是frontend 发送给backend用的数据
-            const channelMessage = `@${this._id}\n${message}`;
+            // const channelMessage = `@${this._id}\n${message}`;
             // backend connections为空
             this._connections.forEach(connection => {
-                connection.send(channelMessage);
+                connection.send(message);
             });
             // 通过派发事件，将数据发送出去，结合 this.connect 实现来看
             this.emit('message', message);
@@ -69,19 +69,7 @@ module.exports = class Channel extends EventEmitter {
         this._connections.push(connection);
         // backend 通过 message event 获取数据，并且发送出去
         connection.on('message', message => {
-            if (message.startsWith('@')) {
-                const t = message.split('\n');
-                const channelName = t.shift().replace(/^@/, '');
-                if (channelName === this._id) {
-                    const msg = t.join('\n');
-                    logger.debug(`${getColorfulName(this._ws.role)} ${channelName} Get Message`, truncate(msg, 50));
-                    this.send(msg);
-                }
-                // 不是你的，不要动
-            } else {
-                // 不符合单channel数据，则全部发送
-                this.send(message);
-            }
+            this.send(message);
         });
         connection.on('close', () => this.disconnect(connection));
     }

@@ -1,10 +1,10 @@
 const chalk = require('chalk');
 const log = require('webpack-log');
-
 exports.logger = log({
     name: 'RD',
-    level: process.env.DEBUG ? 'debug' : 'info'
+    level: process.env.DEBUG === 'true' ? 'debug' : 'info'
 });
+
 exports.truncate = function truncate(txt, width = 10) {
     if (!txt) {
         return '';

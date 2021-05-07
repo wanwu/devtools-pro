@@ -53,22 +53,24 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         };
         channel.on('message', onMessage);
         channel.on('close', () => {
+            logger.debug(`${getColorfulName('backend')} ${id} close`);
             channel.off('message', onMessage);
             this.removeBackendChannel(id, title);
         });
         this.emit('backendAppend', backendData);
     }
-    createFrontendChannel(id, ws, targetId) {
-        const backendId = targetId;
+    createFrontendChannel(id, ws) {
+        const backendId = id;
         const backendChannel = this._backendMap.get(backendId);
         if (!backendChannel || !backendChannel.channel) {
             // 这种情况是没有backend channel， frontend先于backend打开；或者backend关闭，frontend刷新
             // eslint-disable-next-line max-len
             ws.send(
-                JSON.stringify({
-                    event: 'backendConnectionNotFound',
-                    payload: {backendId: backendChannel ? backendChannel.id : 'null'}
-                })
+                '@devtools\n' +
+                    JSON.stringify({
+                        event: 'backendConnectionNotFound',
+                        payload: {backendId: backendChannel ? backendChannel.id : 'null'}
+                    })
             );
             return ws.close();
         }
@@ -99,10 +101,11 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         this.emit('frontendAppend', frontendData);
 
         ws.send(
-            JSON.stringify({
-                event: 'backendConnectionFound',
-                payload: {backendId: backendChannel ? backendChannel.id : 'null'}
-            })
+            '@devtools\n' +
+                JSON.stringify({
+                    event: 'backendConnectionFound',
+                    payload: {backendId: backendChannel ? backendChannel.id : 'null'}
+                })
         );
     }
     removeBackendChannel(id, title = '') {

@@ -30,6 +30,7 @@
     "dependencies": {
         "@koa/router": "^10.0.0",
         "chalk": "^4.1.1",
+        "chobitsu": "^0.2.2",
         "chrome-devtools-frontend": "1.0.734346",
         "circular-json": "^0.5.9",
         "del": "^6.0.0",
@@ -38,6 +39,7 @@
         "killable": "^1.0.1",
         "koa": "^2.13.1",
         "koa-send": "^5.0.1",
+        "lodash-es": "^4.17.21",
         "nanoid": "^3.1.22",
         "opener": "^1.5.2",
         "portfinder": "^1.0.28",
