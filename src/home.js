@@ -9,23 +9,37 @@ let app;
 const timerIdMap = new Map();
 const handlers = {
     backendRemove(data) {
-        // remove 延迟
-        if (data.id) {
-            const timerId = setTimeout(() => {
-                const index = app.data.get('backends').findIndex(val => val.id === data.id);
-                app.data.splice('backends', [index, 1]);
-                timerIdMap.delete(data.id);
-            }, 1e3);
-            timerIdMap.set(data.id, timerId);
+        if (!data.id) {
+            return;
         }
+        // remove 延迟
+        let timerId = timerIdMap.get(data.id);
+        if (timerId) {
+            clearTimeout(timerId);
+        }
+        timerId = setTimeout(() => {
+            const index = app.data.get('backends').findIndex(val => val.id === data.id);
+            app.data.splice('backends', [index, 1]);
+            timerIdMap.delete(data.id);
+        }, 1e3);
+        timerIdMap.set(data.id, timerId);
     },
     backendAppend(data) {
         const timerId = timerIdMap.get(data.id);
         if (timerId) {
             clearTimeout(timerId);
+            timerIdMap.delete(data.id);
         } else {
-            app.data.unshift('backends', data);
+            const index = app.data.get('backends').findIndex(val => val.id === data.id);
+            if (index > -1) {
+                app.data.splice('backends', [index, 1, data]);
+            } else {
+                app.data.unshift('backends', data);
+            }
         }
+    },
+    backendUpdate(data) {
+        handlers.backendAppend(data);
     }
 };
 
@@ -43,7 +57,6 @@ ws.onopen = () => {
     app.data.set('status', 'connected');
 
     ws.onmessage = e => {
-        console.log(e);
         let data = e.data;
         data = JSON.parse(data);
         const handler = handlers[data.event];

@@ -60,6 +60,10 @@
         "@commitlint/cli": "^8.3.4",
         "@commitlint/core": "^8.3.4",
         "@ecomfe/eslint-config": "^3.2.0",
+        "eslint-plugin-babel": "^5.3.1",
+        "eslint-plugin-jest": "^24.3.6",
+        "jest": "26.6.3",
+        "babel-eslint": "^11.0.0-beta.2",
         "@ksky521/cz-emoji": "^1.2.1",
         "autoprefixer": "^10.2.5",
         "babel-loader": "^8.2.2",
@@ -100,7 +104,7 @@
     },
     "husky": {
         "hooks": {
-            "pre-commit": "lint-staged && node scripts/test.js"
+            "pre-commit": "lint-staged"
         }
     },
     "author": "ksky521",

@@ -39,7 +39,7 @@ module.exports = class WebSocketServer {
     init(server) {
         const wss = this._wss;
         const socketPaths = ['backend', 'frontend', 'home'];
-        server.on('upgrade', function(request, socket, head) {
+        server.on('upgrade', function (request, socket, head) {
             const urlObj = url.parse(request.url);
             const [_, role, id] = urlObj.pathname.split('/');
 

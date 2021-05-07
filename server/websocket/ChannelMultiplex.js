@@ -46,7 +46,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
                             data.url = payload.url;
                             this._backendMap.set(payload.id, data);
                         }
-                        this.emit('backendUpdate', backendData);
+                        this.emit('backendUpdate', data);
                         break;
                 }
             } catch (e) {}
@@ -65,7 +65,6 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         if (!backendChannel || !backendChannel.channel) {
             // 这种情况是没有backend channel， frontend先于backend打开；或者backend关闭，frontend刷新
             // eslint-disable-next-line max-len
-
             return ws.close();
         }
 

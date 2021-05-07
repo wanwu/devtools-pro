@@ -40,9 +40,10 @@
             >
                 <s-list-item slot="renderItem" actions="{{['edit', 'more']}}">
                     <a slot="more" on-click="openDevtools(item)"><s-icon type="chrome" style="margin-right: 8px;" />Chrome DevTools</a>
-                    <s-list-item-meta description="{{item.url}}">
+                    <s-list-item-meta>
                         <s-avatar size="large" slot="avatar" src="{{item.favicon || logo}}"></s-avatar>
                         <a href="javascript:void(0);" slot="title">{{item.title}}</a>
+                        <a href="javascript:void(0);" slot="description">{{item.url}}</a>
                     </s-list-item-meta>
                 </s-list-item>
                 <div slot="footer" class="footer">Powered by <s-button type="link" href="{{siteUrl}}"><b>{{pkgName}}</b></s-button> v{{version}}</div>
@@ -84,7 +85,8 @@ export default class Home extends Component{
             version: pkg.version,
             siteUrl: pkg.repository.url,
             // 黄色
-            status: 'connecting'
+            status: 'connecting',
+            backends: []
         };
     }
 }
