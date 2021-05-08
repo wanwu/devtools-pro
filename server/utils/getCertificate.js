@@ -8,7 +8,9 @@ const del = require('del');
 const findCacheDir = require('find-cache-dir');
 const selfsigned = require('selfsigned');
 const {name} = require('../../package.json');
-function getCertificate(logger) {
+const logger = require('lighthouse-logger');
+
+function getCertificate() {
     // Use a self-signed certificate if no certificate was configured.
     // Cycle certs every 24 hours
     const certificateDir = findCacheDir({name}) || os.tmpdir();

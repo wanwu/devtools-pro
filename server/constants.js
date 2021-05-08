@@ -1,4 +1,3 @@
-const path = require('path');
-exports.BACKEND_JS_FILE = '/backend.js';
+exports.BACKEND_JS_FILE = '/launcher.js';
 
-exports.BACKENDJS_PATH = '/ws-backend.js';
+exports.BACKENDJS_PATH = '/launcher.js';

@@ -20,7 +20,18 @@
             }
         </style>
         <script>
+            function errorFn() {
+                var inside = function() {
+                    throw new Error('inside error');
+                };
+                inside();
+            }
             var config = {
+                Error: {
+                    'Trigger Error': function() {
+                        errorFn();
+                    }
+                },
                 Console: {
                     'console.log': function() {
                         console.log('log');

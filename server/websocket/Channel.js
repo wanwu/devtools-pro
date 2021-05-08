@@ -1,5 +1,7 @@
 const EventEmitter = require('events').EventEmitter;
-const {logger, getColorfulName, truncate} = require('../utils');
+const {getColorfulName, truncate} = require('../utils');
+const logger = require('lighthouse-logger');
+
 const CircularJSON = require('circular-json');
 
 const STATUS_OPENING = 'opening';
@@ -19,7 +21,7 @@ module.exports = class Channel extends EventEmitter {
             this.destroy();
         });
         ws.on('message', message => {
-            logger.debug(`${getColorfulName(this._ws.role)} ${this._ws.id} Get Message`, truncate(message, 50));
+            logger.verbose(`${getColorfulName(this._ws.role)} ${this._ws.id} Get Message`, truncate(message, 50));
             // 下面是frontend 发送给backend用的数据
             // const channelMessage = `@${this._id}\n${message}`;
             // backend connections为空
@@ -35,7 +37,7 @@ module.exports = class Channel extends EventEmitter {
     }
     send(message) {
         message = typeof message === 'object' ? CircularJSON.stringify(message) : message;
-        logger.debug(`${getColorfulName(this._ws.role)} ${this._ws.id} Send Message`, truncate(message, 50));
+        logger.verbose(`${getColorfulName(this._ws.role)} ${this._ws.id} Send Message`, truncate(message, 50));
         this._ws.send(message);
     }
     destroy() {

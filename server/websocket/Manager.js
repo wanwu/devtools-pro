@@ -1,6 +1,8 @@
 const chalk = require('chalk');
+const logger = require('lighthouse-logger');
+
 const Channel = require('./Channel');
-const {logger, getColorfulName} = require('../utils');
+const {getColorfulName} = require('../utils');
 
 module.exports = class HomeChannel {
     constructor(wssInstance) {

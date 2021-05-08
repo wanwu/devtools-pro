@@ -1,7 +1,8 @@
 const EventEmitter = require('events').EventEmitter;
 const chalk = require('chalk');
+const logger = require('lighthouse-logger');
 
-const {truncate, logger, getColorfulName} = require('../utils');
+const {truncate, getColorfulName} = require('../utils');
 const Channel = require('./Channel');
 
 module.exports = class ChannelMultiplex extends EventEmitter {
@@ -53,7 +54,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         };
         channel.on('message', onMessage);
         channel.on('close', () => {
-            logger.debug(`${getColorfulName('backend')} ${id} close`);
+            logger.verbose(`${getColorfulName('backend')} ${id} close`);
             channel.off('message', onMessage);
             this.removeBackendChannel(id, title);
         });

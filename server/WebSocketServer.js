@@ -3,7 +3,7 @@ const url = require('url');
 
 const WebSocket = require('ws');
 const ChannelMultiplex = require('./websocket/ChannelMultiplex');
-const {logger} = require('./utils');
+const logger = require('lighthouse-logger');
 const Manager = require('./websocket/Manager');
 
 module.exports = class WebSocketServer {
@@ -43,13 +43,13 @@ module.exports = class WebSocketServer {
             const urlObj = url.parse(request.url);
             const [_, role, id] = urlObj.pathname.split('/');
 
-            logger.debug('upgrade', role, id);
+            logger.verbose('upgrade', role, id);
 
             if (socketPaths.indexOf(role) !== -1) {
                 wss.handleUpgrade(request, socket, head, ws => {
                     ws.role = role;
                     ws.id = id;
-                    logger.debug('upgrade', role, id);
+                    logger.verbose('upgrade', role, id);
 
                     wss.emit('connection', ws, request);
                 });

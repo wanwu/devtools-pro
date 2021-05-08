@@ -12,13 +12,12 @@ const EventEmitter = require('events').EventEmitter;
 const middlewaresMap = require('require-dir')('./middlewares');
 
 const getCertificate = require('./utils/getCertificate');
-const {logger} = require('./utils');
+const logger = require('lighthouse-logger');
 const WebSocketServer = require('./WebSocketServer');
 
 class Server extends EventEmitter {
     constructor(options) {
         super();
-        this.options = options;
         this.options = options;
         this.hostname = options.hostname;
         this.port = options.port;
@@ -47,7 +46,7 @@ class Server extends EventEmitter {
             if (pluginNames.includes(routerName)) {
                 return;
             }
-            middlewaresMap[routerName](router, this.app);
+            middlewaresMap[routerName](router, this.app, logger);
         });
         this.app.use(router.routes());
     }
@@ -74,7 +73,7 @@ class Server extends EventEmitter {
             let fakeCert;
 
             if (!this.options.https.key || !this.options.https.cert) {
-                fakeCert = getCertificate(logger);
+                fakeCert = getCertificate();
             }
 
             this.options.https.key = this.options.https.key || fakeCert;

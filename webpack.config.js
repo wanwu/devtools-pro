@@ -38,7 +38,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const plugins = [
     new SanLoaderPlugin(),
     new webpack.BannerPlugin({
-        banner: `${pkg.name} v${pkg.verion}\nby ${pkg.author}\nCreated at ${dateFormat(
+        banner: `${pkg.name} v${pkg.version}\nby ${pkg.author}\nCreated at ${dateFormat(
             new Date(),
             'yyyy-MM-dd hh:mm:ss'
         )}`
@@ -48,7 +48,7 @@ const plugins = [
         'process.env.DEBUG': JSON.stringify(process.env.DEBUG)
     }),
     new HtmlWebpackPlugin({
-        filename: 'home.html',
+        filename: 'index.html',
         chunks: ['home'],
         alwaysWriteToDisk: true,
         template: './pages/home.html'

@@ -3,8 +3,8 @@
     "version": "1.0.0",
     "license": "MIT",
     "bin": {
-        "remote-devtools": "./index.js",
-        "d": "./index.js"
+        "remote-devtools": "./bin.js",
+        "d": "./bin.js"
     },
     "module": "src/lancher.js",
     "main": "dist/lancher.js",
@@ -13,7 +13,7 @@
         "dev": "run-p dev:backend dev:server",
         "build:backend": "cross-env NODE_ENV=production webpack --config webpack.config.js",
         "dev:backend": "cross-env NODE_ENV=development DEBUG=true webpack serve --progress --config webpack.config.js",
-        "dev:server": "cross-env DEBUG=true nodemon index.js --no-open"
+        "dev:server": "cross-env nodemon bin.js --no-open --verbose"
     },
     "lint-staged": {
         "!(example|dist|output|__mocks__)/**/*.js": [
@@ -34,11 +34,12 @@
         "chrome-devtools-frontend": "1.0.734346",
         "circular-json": "^0.5.9",
         "del": "^6.0.0",
-        "devtools-protocol": "0.0.719330",
         "find-cache-dir": "^3.3.1",
         "killable": "^1.0.1",
         "koa": "^2.13.1",
         "koa-send": "^5.0.1",
+        "koa-static": "^5.0.0",
+        "lighthouse-logger": "^1.2.0",
         "lodash-es": "^4.17.21",
         "nanoid": "^3.1.22",
         "opener": "^1.5.2",
@@ -46,7 +47,6 @@
         "require-dir": "^1.2.0",
         "selfsigned": "^1.10.8",
         "update-notifier": "^5.1.0",
-        "webpack-log": "^3.0.2",
         "ws": "~7.4.5",
         "yargs": "^16.2.0"
     },

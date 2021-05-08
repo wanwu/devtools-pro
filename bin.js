@@ -9,12 +9,14 @@
  * @file bin 文件入口
  * @author ksky521
  */
+const fs = require('fs');
 const path = require('path');
 const os = require('os');
 /* eslint-disable no-console */
 const updateNotifier = require('update-notifier');
 const semver = require('semver');
 const chalk = require('chalk');
+const logger = require('lighthouse-logger');
 
 const {
     scriptName,
@@ -41,6 +43,11 @@ require('yargs')
         '$0',
         'San DevTools remote debug frontend',
         {
+            config: {
+                default: 'devtools.config',
+                type: 'string',
+                describe: 'Provide path to a devtools configuration file e.g. ./devtools.config.js'
+            },
             open: {
                 alias: 'o',
                 default: true,
@@ -48,7 +55,6 @@ require('yargs')
                 describe: 'Open browser when server start'
             },
             https: {
-                default: false,
                 type: 'boolean',
                 describe: 'Use HTTPS protocol.'
             },
@@ -57,19 +63,40 @@ require('yargs')
                 type: 'number',
                 describe: `Port to use [${DEFAULT_PORT}]`
             },
-            address: {
-                alias: 'a',
+            verbose: {
+                type: 'boolean',
+                default: false,
+                describe: 'Displays verbose logging'
+            },
+            quiet: {
+                hidden: true,
+                type: 'boolean',
+                default: false,
+                describe: 'Displays no debug logs, or errors'
+            },
+            hostname: {
                 type: 'string',
                 describe: 'Address to use [0.0.0.0]'
             }
         },
-        argv => {
+        async argv => {
             const portfinder = require('portfinder');
             const Server = require('./server/Server');
             const {BACKENDJS_PATH} = require('./server/constants');
-            let port = argv.port || parseInt(process.env.PORT, 10);
-            const hostname = argv.address || '0.0.0.0';
-            const https = argv.https;
+            // 加载config文件
+            const config = (await loadConfig(argv.config)) || {};
+
+            argv.logLevel = config.options.logLevel || 'info';
+            if (argv.verbose) {
+                argv.logLevel = 'verbose';
+            } else if (argv.quiet) {
+                argv.logLevel = 'silent';
+            }
+            logger.setLevel(argv.logLevel);
+
+            let port = argv.port || config.options.port || DEFAULT_PORT;
+            const hostname = argv.hostname || config.options.hostname || '0.0.0.0';
+            const https = argv.https || config.options.https || false;
 
             if (!port) {
                 portfinder.basePort = DEFAULT_PORT;
@@ -86,6 +113,7 @@ require('yargs')
             function startServer() {
                 const ifaces = os.networkInterfaces();
                 const options = {
+                    ...config.options,
                     https: https ? {} : null,
                     port,
                     hostname
@@ -100,16 +128,11 @@ require('yargs')
                     const protocol = https ? 'https://' : 'http://';
 
                     console.log(
-                        [
-                            // TODO 文案
-                            chalk.yellow('Starting up San-Devtools Server, serving '),
-                            chalk.cyan(server.root),
-                            chalk.yellow('\nAvailable on:')
-                        ].join('')
+                        [chalk.yellow('Starting up Devtools Server.'), chalk.yellow('\nAvailable on:')].join('')
                     );
                     const urls = [];
                     if (argv.address && hostname !== '0.0.0.0') {
-                        const url = '  ' + protocol + canonicalHost + ':' + chalk.green(port.toString());
+                        const url = '    ' + protocol + canonicalHost + ':' + chalk.green(port.toString());
                         urls.push(url);
                         console.log(url);
                     } else {
@@ -126,23 +149,14 @@ require('yargs')
                     }
                     console.log('');
                     // TODO 文案
-                    console.log(`👉 ${chalk.yellow('Usage:')} Add backend.js before San.js.`);
-                    console.log('');
-                    console.log(chalk.yellow('Backend url:'));
+                    console.log(`${chalk.yellow('Launcher url:')}`);
                     urls.forEach(u => {
                         console.log(u + chalk.green(BACKENDJS_PATH));
                     });
-                    console.log('Hit CTRL-C to stop the server');
                     console.log('');
+                    console.log('Hit CTRL-C to stop the server');
 
                     const home = server.getUrl();
-                    // 发送消息：告诉工具链的兄弟们端口等信息
-                    // eslint-disable-next-line operator-linebreak
-                    process.send &&
-                        process.send({
-                            home,
-                            backend: home.replace(/\/$/, '') + BACKENDJS_PATH
-                        });
                     argv.open && require('opener')(home);
                 });
             }
@@ -197,6 +211,22 @@ if (process.platform === 'win32') {
         .on('SIGINT', () => {
             process.emit('SIGINT');
         });
+}
+async function loadConfig(configPath) {
+    configPath = path.resolve(configPath);
+
+    let options;
+
+    try {
+        if (fs.existsSync(configPath)) {
+            options = require(configPath);
+        }
+    } catch (error) {
+        logger.error(`Failed to load '${configPath}' config`);
+        process.exit(2);
+    }
+
+    return {options, path: configPath};
 }
 
 process.on('SIGINT', () => {
