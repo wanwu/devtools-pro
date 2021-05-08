@@ -6,6 +6,7 @@ const CHROME_FRONTEND_PATH = path.join(
 );
 const LOCAL_CHROME_FRONTEND_PATH = path.join(__dirname, '../../frontend');
 const send = require('koa-send');
+const {logger} = require('../utils');
 module.exports = router => {
     // router()
     router.get('/devtools/(.+)', async ctx => {
@@ -14,7 +15,11 @@ module.exports = router => {
         let isFile;
         try {
             isFile = fs.existsSync(absoluteFilePath);
+            if (isFile) {
+                logger.debug(`use local file: ${relativePath}`);
+            }
         } catch (e) {}
+
         await send(ctx, relativePath, {root: isFile ? LOCAL_CHROME_FRONTEND_PATH : CHROME_FRONTEND_PATH});
     });
 };

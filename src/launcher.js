@@ -9,6 +9,7 @@ import getFavicon from './utils/getFavicon';
 import WebSocket from './lib/WebSocket';
 import getCurrentScript from './utils/getCurrentScript';
 import getSessionId from './utils/getSessionId';
+import createRuntime from './runtime';
 
 // 1. 获取getCurrentScript，得到host
 const curScriptUrl = getCurrentScript();
@@ -35,6 +36,8 @@ chobitsu.setOnMessage(message => {
     wss.send(message);
 });
 
+// 初始化runtime
+createRuntime(chobitsu);
 // 第一次发送
 sendRegisterMessage();
 // 第二次更新

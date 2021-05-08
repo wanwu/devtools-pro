@@ -1,0 +1,40 @@
+/* .jsna-monitor .data-grid {
+    border: none !important;
+}
+.jsna-monitor .data-grid {
+    flex: auto;
+    border: none;
+} */
+.jsna-monitor .tabbed-pane-header {
+    border-top: 1px solid #ccc;
+    flex: 0 0 22px;
+}
+.data-grid .data {
+    background-image: none;
+}
+
+.data-grid td {
+    /* border-bottom: 1px solid #ccc; */
+    border-left-color: #ccc;
+}
+
+.data-grid tr.selected {
+    background-color: #def;
+}
+
+.data-grid th {
+    border-left-color: #ccc;
+}
+
+.protocol-message-sent {
+    background-color: hsl(281, 64%, 95%);
+}
+
+.jsna-monitor-toolbar {
+    border-bottom: var(--divider-border);
+}
+
+.error {
+    background-color: hsl(0, 100%, 97%);
+    color: red;
+}
