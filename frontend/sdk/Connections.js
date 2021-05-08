@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// 用于websocket支持多channel通信
-const CHANNEL_NAME = 'devtools';
-const AT_CHANNEL_NAME = '@' + CHANNEL_NAME;
 /**
  * @implements {Protocol.Connection}
  */
@@ -107,16 +104,14 @@ export class WebSocketConnection {
      * @param {function()} onWebSocketDisconnect
      */
     constructor(url, onWebSocketDisconnect) {
+        // 保存一份，heartbeat 有用
+        this._url = url;
         this._socket = new WebSocket(url);
         this._socket.onerror = this._onError.bind(this);
         this._socket.onopen = this._onOpen.bind(this);
         this._socket.onmessage = messageEvent => {
             if (this._onMessage) {
                 let data = messageEvent.data;
-                // 修改，增加channel支持
-                if (data.startsWith(AT_CHANNEL_NAME)) {
-                    data = data.split(new RegExp('^' + AT_CHANNEL_NAME + '\\s+'))[1];
-                }
                 this._onMessage.call(null, /** @type {string} */ (data));
             }
         };
@@ -171,6 +166,39 @@ export class WebSocketConnection {
      * @param {function()=} callback
      */
     _close(callback) {
+        // 激活backend ws connection 探针
+        let timerId;
+        // 提取id
+        const match = this._url.match(/frontend\/([^/?]+)/);
+        console.log('backend connection 探针激活!', match);
+
+        function heartbeat() {
+            if (timerId) {
+                clearTimeout(timerId);
+            }
+            const target = match[1];
+
+            timerId =
+                target &&
+                setTimeout(function() {
+                    heartbeat();
+                    if (document.hidden) {
+                        return;
+                    }
+                    fetch('/_alive_/' + target)
+                        .then(res => res.text())
+                        .then(
+                            status => {
+                                if (status === '1') {
+                                    location.reload();
+                                }
+                            },
+                            () => {}
+                        );
+                }, 1e3);
+        }
+        match && heartbeat();
+
         this._socket.onerror = null;
         this._socket.onopen = null;
         this._socket.onclose = callback || null;
@@ -185,11 +213,6 @@ export class WebSocketConnection {
      * @param {string} message
      */
     sendRawMessage(message) {
-        // 修改 增加channel支持
-        if (!message.startsWith(AT_CHANNEL_NAME)) {
-            message = AT_CHANNEL_NAME + '\n' + message;
-        }
-
         if (this._connected) {
             this._socket.send(message);
         } else {

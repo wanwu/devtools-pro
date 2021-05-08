@@ -9,7 +9,9 @@ const Koa = require('koa');
 const Router = require('@koa/router');
 const killable = require('killable');
 const EventEmitter = require('events').EventEmitter;
-const middlewaresMap = require('require-dir')('./middlewares');
+const middlewares = ['alive', 'launcher', 'frontend', 'dist'].map(file => {
+    return require(path.join(__dirname, './middlewares', file));
+});
 
 const getCertificate = require('./utils/getCertificate');
 const logger = require('lighthouse-logger');
@@ -41,13 +43,10 @@ class Server extends EventEmitter {
         pluginNames.forEach(pluginName => {
             this.plugins[pluginName](router, this.app);
         });
-        Object.keys(middlewaresMap).forEach(routerName => {
-            // 排除plugin替换掉
-            if (pluginNames.includes(routerName)) {
-                return;
-            }
-            middlewaresMap[routerName](router, this.app, logger);
+        middlewares.forEach(middleware => {
+            middleware(router, logger);
         });
+
         this.app.use(router.routes());
     }
     _setupHttps() {
@@ -87,8 +86,15 @@ class Server extends EventEmitter {
         }
         this._createServer();
     }
+    async _wrapContext(ctx, next) {
+        ctx.getWebSocketServer = () => {
+            return this._wsServer;
+        };
+        await next();
+    }
     _createServer() {
         this.app = new Koa();
+        this.app.use(this._wrapContext.bind(this));
 
         if (this.options.https) {
             this._server = https.createServer(this.options.https, this.app.callback());

@@ -12,7 +12,7 @@ module.exports = class HomeChannel {
     }
     createChannel(id, ws) {
         const channel = new Channel(id, ws);
-        logger.info(`${getColorfulName('home')} ${id} ${chalk.green('connected')}`);
+        logger.verbose(`${getColorfulName('home')} ${id} ${chalk.green('connected')}`);
         const channelData = {
             id,
             channel
@@ -36,7 +36,7 @@ module.exports = class HomeChannel {
         });
     }
     removeChannel(id) {
-        logger.info(`${getColorfulName('home')} ${id} ${chalk.red('disconnected')}`);
+        logger.verbose(`${getColorfulName('home')} ${id} ${chalk.red('disconnected')}`);
         const idx = this._channels.findIndex(c => c.id === id);
         this._channels.splice(idx, 1);
     }

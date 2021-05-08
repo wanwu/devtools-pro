@@ -38,7 +38,6 @@
         "killable": "^1.0.1",
         "koa": "^2.13.1",
         "koa-send": "^5.0.1",
-        "koa-static": "^5.0.0",
         "lighthouse-logger": "^1.2.0",
         "lodash-es": "^4.17.21",
         "nanoid": "^3.1.22",

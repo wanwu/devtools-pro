@@ -21,7 +21,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
     createBackendChannel(id, ws) {
         const {backend_url: url, backend_title: title, backend_favicon: favicon} = ws;
         const channel = new Channel(id, ws);
-        logger.info(`${getColorfulName('backend')} ${chalk.green('connected')} ${id}:${truncate(title, 10)}`);
+        logger.verbose(`${getColorfulName('backend')} ${chalk.green('connected')} ${id}:${truncate(title, 10)}`);
         const backendData = {
             id,
             // title,
@@ -71,7 +71,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         }
 
         const channel = new Channel(id, ws);
-        logger.info(
+        logger.verbose(
             // eslint-disable-next-line max-len
             `${getColorfulName('frontend')} ${chalk.green('connected')} ${id} to backend ${
                 backendChannel.id
@@ -96,12 +96,12 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         this.emit('frontendAppend', frontendData);
     }
     removeBackendChannel(id, title = '') {
-        logger.info(`${getColorfulName('backend')} ${chalk.red('disconnected')} ${id}:${truncate(title, 10)}`);
+        logger.verbose(`${getColorfulName('backend')} ${chalk.red('disconnected')} ${id}:${truncate(title, 10)}`);
         this._backendMap.delete(id);
         this.emit('backendRemove', {id});
     }
     removeFrontendChannel(id) {
-        logger.info(`${getColorfulName('frontend')} ${chalk.red('disconnected')} ${id}`);
+        logger.verbose(`${getColorfulName('frontend')} ${chalk.red('disconnected')} ${id}`);
         this._frontendMap.delete(id);
         this.emit('frontendRemove', {id});
     }

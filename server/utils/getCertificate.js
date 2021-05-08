@@ -26,7 +26,7 @@ function getCertificate() {
 
         // cert is more than 30 days old, kill it with fire
         if ((now - certificateStat.ctime) / certificateTtl > 30) {
-            logger.info('SSL Certificate is more than 30 days old. Removing.');
+            logger.log('SSL Certificate is more than 30 days old. Removing.');
 
             del.sync([certificatePath], {force: true});
 
@@ -35,7 +35,7 @@ function getCertificate() {
     }
 
     if (!certificateExists) {
-        logger.info('Generating SSL Certificate');
+        logger.log('Generating SSL Certificate');
 
         const attributes = [{name: 'commonName', value: 'localhost'}];
         const pems = createCertificate(attributes);

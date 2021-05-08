@@ -223,10 +223,11 @@ async function loadConfig(configPath) {
         }
     } catch (error) {
         logger.error(`Failed to load '${configPath}' config`);
+        logger.error(error);
         process.exit(2);
     }
 
-    return {options, path: configPath};
+    return {options: options ? options : {}, path: configPath};
 }
 
 process.on('SIGINT', () => {

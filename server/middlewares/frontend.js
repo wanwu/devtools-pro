@@ -9,18 +9,30 @@ const send = require('koa-send');
 const logger = require('lighthouse-logger');
 
 module.exports = router => {
-    // router()
-    router.get('/devtools/(.+)', async ctx => {
-        const relativePath = ctx.params[0];
+    log = logger.loggerfn('middle:frontend');
+    router.get('/devtools/(.+)', async (ctx, next) => {
+        const relativePath = ctx.path.replace(/^\/devtools\//, '');
         const absoluteFilePath = path.join(LOCAL_CHROME_FRONTEND_PATH, relativePath);
         let isFile;
         try {
             isFile = fs.existsSync(absoluteFilePath);
-            if (isFile) {
-                logger.verbose(`use local file: ${relativePath}`);
+            isFile && log(`use local file: ${relativePath}`);
+        } catch (e) {
+            log(e);
+        }
+        log(relativePath, isFile ? LOCAL_CHROME_FRONTEND_PATH : CHROME_FRONTEND_PATH);
+        let done = false;
+        try {
+            done = await send(ctx, relativePath, {
+                root: isFile ? LOCAL_CHROME_FRONTEND_PATH : CHROME_FRONTEND_PATH
+            });
+        } catch (err) {
+            if (err.status !== 404) {
+                throw err;
             }
-        } catch (e) {}
-
-        await send(ctx, relativePath, {root: isFile ? LOCAL_CHROME_FRONTEND_PATH : CHROME_FRONTEND_PATH});
+        }
+        if (!done) {
+            await next();
+        }
     });
 };

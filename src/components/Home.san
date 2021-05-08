@@ -1,7 +1,7 @@
 <template>
     <div id="app">
         <div class="header">
-            <h1 class="title">San DevTools Remote Inspector</h1>
+            <h1 class="title">Remote Devtools</h1>
             <s-tag s-if="status ==='error'" color="red" slot="tags">Error</s-tag>
             <s-tag s-if="status ==='connected'" color="green" slot="tags">Connected</s-tag>
             <s-tag s-if="status ==='disconnected'" color="purple" slot="tags">Disconnected</s-tag>
