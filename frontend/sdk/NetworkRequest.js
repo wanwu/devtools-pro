@@ -37,11 +37,11 @@ function getBase64Image(img, mimeType) {
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import {Attributes, Cookie} from './Cookie.js'; // eslint-disable-line no-unused-vars
-import {CookieParser} from './CookieParser.js';
-import {NetworkManager} from './NetworkManager.js';
-import {Type} from './SDKModel.js';
-import {ServerTiming} from './ServerTiming.js';
+import {Attributes, Cookie} from './Cookie.js.js'; // eslint-disable-line no-unused-vars
+import {CookieParser} from './CookieParser.js.js';
+import {NetworkManager} from './NetworkManager.js.js';
+import {Type} from './SDKModel.js.js';
+import {ServerTiming} from './ServerTiming.js.js';
 
 /**
  * @implements {Common.ContentProvider}

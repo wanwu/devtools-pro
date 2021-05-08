@@ -4,7 +4,7 @@ const CHROME_FRONTEND_PATH = path.join(
     path.dirname(require.resolve('chrome-devtools-frontend/package.json')),
     'front_end'
 );
-const LOCAL_CHROME_FRONTEND_PATH = path.join(__dirname, '../../chrome-devtools-frontend');
+const LOCAL_CHROME_FRONTEND_PATH = path.join(__dirname, '../../frontend');
 const send = require('koa-send');
 module.exports = router => {
     // router()

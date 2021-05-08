@@ -26,14 +26,13 @@ const backendWSURL = url.format({
 });
 // 3. 建立连接
 const wss = new WebSocket(backendWSURL);
-const devtoolsChannel = wss.registerChannel('devtools');
 
-devtoolsChannel.on('message', event => {
+wss.on('message', event => {
     chobitsu.sendRawMessage(event.data);
 });
 
 chobitsu.setOnMessage(message => {
-    devtoolsChannel.send(message);
+    wss.send(message);
 });
 
 // 第一次发送
@@ -45,7 +44,7 @@ function sendRegisterMessage() {
     const favicon = getFavicon();
     const title = document.title || 'Untitled';
     const {userAgent, platform} = navigator;
-    devtoolsChannel.send('updateBackendInfo', {
+    wss.send('updateBackendInfo', {
         id: sid,
         favicon,
         title,
