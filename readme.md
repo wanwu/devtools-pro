@@ -139,7 +139,7 @@ dir 文件夹中的重要文件是模块描述文件`module.json`，通过文件
 -   `dependencies`：模块使用的其他模块的数组；
 -   `extensions`：具有 type 属性的对象数组。 扩展可以通过运行时系统查询，并可以通过任何模块中的代码进行访问。类型包括 "setting"、"view"，"context-menu-item"。例如可以按如下方式注册出现在设置屏幕中的设置：
 
-```json
+```json5
 {
   "extensions": [
     {
@@ -161,28 +161,28 @@ DevTools Frontend 通过 Module 和 Extension 机制为 Application 增加了“
 
 我们应用做多的可能是添加一个面板，例如我要添加一个`js-native`的面板，则`module.json`内容如下：
 
-```json
+```json5
 {
-    "extensions": [
+    extensions: [
         {
             // 类型
-            "type": "view",
+            type: 'view',
             // 位置
-            "location": "panel",
-            "id": "jsna_monitor",
+            location: 'panel',
+            id: 'jsna_monitor',
             // 面板显示文字
-            "title": "jsNative monitor",
-            "order": 110,
+            title: 'jsNative monitor',
+            order: 110,
             // 启动className
-            "className": "JSNAMonitor.JSNAMonitor"
+            className: 'JSNAMonitor.JSNAMonitor'
         }
     ],
     // 依赖
-    "dependencies": ["platform", "ui", "host", "components", "data_grid", "source_frame", "sdk"],
-    "scripts": [],
+    dependencies: ['platform', 'ui', 'host', 'components', 'data_grid', 'source_frame', 'sdk'],
+    scripts: [],
     // 资源
-    "modules": ["jsna_monitor.js", "jsna_monitor-legacy.js", "JSNAMonitor.js"],
-    "resources": ["jsna.css"]
+    modules: ['jsna_monitor.js', 'jsna_monitor-legacy.js', 'JSNAMonitor.js'],
+    resources: ['jsna.css']
 }
 ```
 
