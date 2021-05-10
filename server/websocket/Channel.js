@@ -8,11 +8,11 @@ const STATUS_OPENING = 'opening';
 const STATUS_CLOSED = 'closed';
 const STATUS_DESTROYED = 'destroyed';
 module.exports = class Channel extends EventEmitter {
-    constructor(id, ws) {
+    constructor(ws, name = 'anonymous') {
         super();
         this.status = STATUS_OPENING;
-        this._id = id;
         this._ws = ws;
+        this._name = name;
         this._connections = [];
         ws.on('close', (...args) => {
             this.status = STATUS_CLOSED;
@@ -23,7 +23,7 @@ module.exports = class Channel extends EventEmitter {
         ws.on('message', message => {
             logger.verbose(`${getColorfulName(this._ws.role)} ${this._ws.id} Get Message`, truncate(message, 50));
             // 下面是frontend 发送给backend用的数据
-            // const channelMessage = `@${this._id}\n${message}`;
+            // const channelMessage = `@${this._name}\n${message}`;
             // backend connections为空
             this._connections.forEach(connection => {
                 connection.send(message);

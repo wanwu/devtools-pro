@@ -13,7 +13,10 @@ module.exports = router => {
 
         log(ctx.path);
         try {
-            await send(ctx, ctx.path, {root: distPath});
+            await send(ctx, ctx.path, {
+                maxage: 60 * 60 * 2 * 1e3,
+                root: distPath
+            });
         } catch (err) {
             if (err.status !== 404) {
                 throw err;

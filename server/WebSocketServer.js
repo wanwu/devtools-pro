@@ -23,7 +23,7 @@ module.exports = class WebSocketServer {
                     this.channelManager.createFrontendChannel(id, ws);
                     break;
                 case 'home':
-                    this.manager.createChannel(id, ws);
+                    this.manager.createChannel(ws, id);
                     break;
             }
         });
@@ -38,10 +38,10 @@ module.exports = class WebSocketServer {
 
     init(server) {
         const wss = this._wss;
-        const socketPaths = ['backend', 'frontend', 'home'];
+        const socketPaths = ['backend', 'frontend', 'home', 'heartbeat'];
         server.on('upgrade', function(request, socket, head) {
             const urlObj = url.parse(request.url);
-            const [_, role, id] = urlObj.pathname.split('/');
+            const [_, role, id = ''] = urlObj.pathname.split('/');
 
             logger.verbose('upgrade', role, id);
 
@@ -49,8 +49,6 @@ module.exports = class WebSocketServer {
                 wss.handleUpgrade(request, socket, head, ws => {
                     ws.role = role;
                     ws.id = id;
-                    logger.verbose('upgrade', role, id);
-
                     wss.emit('connection', ws, request);
                 });
             } else {

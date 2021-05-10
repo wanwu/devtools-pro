@@ -20,13 +20,10 @@ module.exports = class ChannelMultiplex extends EventEmitter {
     }
     createBackendChannel(id, ws) {
         const {backend_url: url, backend_title: title, backend_favicon: favicon} = ws;
-        const channel = new Channel(id, ws);
+        const channel = new Channel(ws, 'backend');
         logger.verbose(`${getColorfulName('backend')} ${chalk.green('connected')} ${id}:${truncate(title, 10)}`);
         const backendData = {
             id,
-            // title,
-            // url,
-            // favicon,
             get alive() {
                 return channel && channel.isAlive();
             },
@@ -40,14 +37,16 @@ module.exports = class ChannelMultiplex extends EventEmitter {
                 switch (event) {
                     case 'updateBackendInfo':
                         // 更新title等信息
-                        const data = this._backendMap.get(payload.id);
-                        if (data) {
-                            data.favicon = payload.favicon;
-                            data.title = payload.title;
-                            data.url = payload.url;
-                            this._backendMap.set(payload.id, data);
+                        if (payload && payload.id) {
+                            const data = this._backendMap.get(payload.id);
+                            if (data && payload) {
+                                for (let [key, value] of Object.entries(payload)) {
+                                    data[key] = value;
+                                }
+                                this._backendMap.set(payload.id, data);
+                            }
+                            this.emit('backendUpdate', data);
                         }
-                        this.emit('backendUpdate', backendData);
                         break;
                 }
             } catch (e) {}
@@ -70,7 +69,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
             return ws.close();
         }
 
-        const channel = new Channel(id, ws);
+        const channel = new Channel(ws, 'frontend');
         logger.verbose(
             // eslint-disable-next-line max-len
             `${getColorfulName('frontend')} ${chalk.green('connected')} ${id} to backend ${

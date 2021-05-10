@@ -1,6 +1,8 @@
 const path = require('path');
 const logger = require('lighthouse-logger');
 const send = require('koa-send');
+const mergeStream = require('merge-stream');
+
 const distPath = path.join(__dirname, '../../dist');
 module.exports = router => {
     const log = logger.loggerfn('middle:backend');
