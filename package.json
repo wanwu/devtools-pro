@@ -2,6 +2,7 @@
     "name": "devtools-pro",
     "version": "1.0.0",
     "license": "MIT",
+    "scriptName": "devtools-pro",
     "bin": {
         "devtools-pro": "./bin/devtools.js",
         "dp": "./bin/devtools.js"
@@ -29,7 +30,7 @@
     },
     "dependencies": {
         "@koa/router": "^10.0.0",
-        "@ksky521/chobitsu": "link:../chobitsu",
+        "@ksky521/chobitsu": "^0.3.0",
         "chalk": "^4.1.1",
         "chrome-devtools-frontend": "1.0.734346",
         "circular-json": "^0.5.9",

@@ -41,7 +41,7 @@ require('yargs')
     .usage('Usage: $0 <command> [options]')
     .command(
         '$0',
-        'San DevTools remote debug frontend',
+        'An extensible web remote debugging tools, based on Chrome DevTools',
         {
             config: {
                 default: 'devtools.config',
