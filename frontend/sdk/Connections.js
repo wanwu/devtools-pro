@@ -171,9 +171,10 @@ export class WebSocketConnection {
         // 提取id
         const match = this._url.match(/frontend\/([^/?]+)/);
         console.log('backend connection 探针激活!', match);
+        const self = this;
         function heartbeat() {
             // 1. 先建立ws链接，如果成功，则监听backendConnected事件，判断id是否相等
-            const url = this._url.split('/frontend')[0] + '/heartbeat';
+            const url = self._url.split('/frontend')[0] + '/heartbeat';
             const socket = new WebSocket(url);
             // 2. 失败，则建立http 轮询
             socket.onerror = socket.onclose = function() {
