@@ -4,6 +4,7 @@ const CHROME_FRONTEND_PATH = path.join(
     path.dirname(require.resolve('chrome-devtools-frontend/package.json')),
     'front_end'
 );
+const PREFIXER = '/devtools';
 const MODULES_JSON_FILE = 'devtools_app.json';
 const LOCAL_CHROME_FRONTEND_PATH = path.join(__dirname, '../../frontend');
 const send = require('koa-send');
@@ -19,24 +20,26 @@ module.exports = (router, logger, serverInstance) => {
 
     if (plugins) {
         plugins.forEach(({module, dir}) => {
+            const name = module.name;
+            log(`添加frontend plugin router: ${PREFIXER}/${name}`);
             // 1. module 字段add到 devtools_app.json
             modulesJson.modules.push(module);
-            const name = module.name;
             // 2. 遇见name的folder，则转发
-            router.get(`/devtools/${name}/(.+)`, createRouterMiddleware(name, dir));
+            router.get(`${PREFIXER}/${name}/(.+)`, createRouterMiddleware(name, dir, log));
         });
     }
 
-    router.get(`/devtools/${MODULES_JSON_FILE}`, async (ctx, next) => {
+    router.get(`${PREFIXER}/${MODULES_JSON_FILE}`, async (ctx, next) => {
         ctx.body = modulesJson;
     });
-    router.get('/devtools/(.+)', async (ctx, next) => {
-        const relativePath = ctx.path.replace(/^\/devtools\//, '');
+    router.get(`${PREFIXER}/(.+)`, async (ctx, next) => {
+        const relativePath = ctx.path.replace(new RegExp(`^\\${PREFIXER}\\/`), '');
+
         let realPath = lru.get(relativePath);
 
         if (realPath) {
             log(relativePath, 'use lru cache', realPath);
-            await sendFile(ctx, next, relativePath, realPath);
+            await sendFile(ctx, next, relativePath, realPath, log);
             return;
         }
         const absoluteFilePath = path.join(LOCAL_CHROME_FRONTEND_PATH, relativePath);
@@ -52,19 +55,20 @@ module.exports = (router, logger, serverInstance) => {
         lru.set(relativePath, realPath);
 
         //
-        await sendFile(ctx, next, relativePath, realPath);
+        await sendFile(ctx, next, relativePath, realPath, log);
     });
 };
-function createRouterMiddleware(name, dir) {
+function createRouterMiddleware(name, dir, log) {
     return async (ctx, next) => {
-        const relativePath = ctx.path.replace(/^\/devtools\//, '');
+        const relativePath = ctx.path.replace(new RegExp(`^\\${PREFIXER}\\/${name}\\/`), '');
         log(`${relativePath} local to ${name} plugin`);
-        await sendFile(ctx, next, relativePath, dir);
+        await sendFile(ctx, next, relativePath, dir, log);
     };
 }
-async function sendFile(ctx, next, relativePath, root) {
+async function sendFile(ctx, next, relativePath, root, log) {
     let done = false;
     try {
+        log(`sendFile ${relativePath}@${root}`);
         done = await send(ctx, relativePath, {
             maxage: 60 * 60 * 2 * 1e3,
             root

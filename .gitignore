@@ -2,6 +2,7 @@
 temp
 output
 dist
+devtools.config.js
 # Logs
 logs
 *.log

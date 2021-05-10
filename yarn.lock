@@ -1098,9 +1098,10 @@
     methods "^1.1.2"
     path-to-regexp "^6.1.0"
 
-"@ksky521/chobitsu@link:../chobitsu":
-  version "0.0.0"
-  uid ""
+"@ksky521/chobitsu@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/@ksky521/chobitsu/-/chobitsu-0.3.0.tgz#bc991827cb6d9e2e8e493408fb447446091ec132"
+  integrity sha512-2fGgCFC/bAMqhNKZzSolTHL85orsyiCdDkEGFnq4mzzJTB3qtsztGXXw96xyZuEDeXTUIRtX6UkLtJiEjpvQ1A==
 
 "@ksky521/cz-emoji@^1.2.1":
   version "1.2.1"

@@ -4,10 +4,31 @@ module.exports = plugins => {
     if (Array.isArray(plugins)) {
         return plugins
             .map(pluginName => {
-                const {devtools, name, version} = require(path.join(pluginName, 'package.json'));
-                return {devtools, name, version, pluginName};
+                let rp = path.join(pluginName, 'package.json');
+                let pluginPath;
+                let devtools;
+                let name;
+                try {
+                    pluginPath = require.resolve(pluginName);
+                    const pkg = require(rp);
+                    devtools = pkg.devtools;
+                    name = pkg.name;
+                } catch (e) {
+                    // work路径查找
+                    pluginPath = path.join(process.cwd(), pluginName);
+                    rp = path.join(pluginPath, 'package.json');
+                    try {
+                        const pkg = require(rp);
+                        devtools = pkg.devtools;
+                        name = pkg.name;
+                    } catch (e) {
+                        throw Error(`Cannot find plugin '${pluginName}'`);
+                    }
+                }
+
+                return {devtools, name, pluginPath};
             })
-            .map(({devtools, name, version, pluginName}) => {
+            .map(({devtools, name, pluginPath}) => {
                 /**
              * // middleware
                 "frontend": {
@@ -22,28 +43,28 @@ module.exports = plugins => {
              */
                 let {frontend, backend, middleware} = devtools;
                 if (!frontend.dir) {
-                    throw Error(`DevTools Plugin [${pluginName}] frontend.dir is undefined!`);
+                    throw Error(`DevTools Plugin '${name}' frontend.dir is undefined!`);
                 }
                 if (!frontend.name) {
-                    throw Error(`DevTools Plugin [${pluginName}] frontend.name is undefined!`);
+                    throw Error(`DevTools Plugin '${name}' frontend.name is undefined!`);
                 }
                 if (frontend.type && !['remote', 'autostart'].includes(frontend.type)) {
-                    throw Error(`DevTools Plugin [${pluginName}] frontend.type is oneof autostart/remote!`);
+                    throw Error(`DevTools Plugin '${name}' frontend.type is oneof autostart/remote!`);
                 }
-                const frontendDir = require.resolve(path.join(pluginName, frontend.dir));
+                const frontendDir = path.join(pluginPath, frontend.dir);
                 if (!fs.existsSync(frontendDir)) {
-                    throw Error(`DevTools Plugin [${pluginName}] frontend.dir is not exists!`);
+                    throw Error(`DevTools Plugin '${name}' frontend.dir is not exists!`);
                 }
 
-                backend = backend ? require.resolve(path.join(pluginName, backend)) : undefined;
+                backend = backend ? path.join(pluginPath, backend) : undefined;
                 if (backend && !fs.existsSync(backend)) {
-                    throw Error(`DevTools Plugin [${pluginName}] backend file is not exists!`);
+                    throw Error(`DevTools Plugin '${name}' backend file is not exists!`);
                 }
                 if (middleware) {
                     try {
-                        middleware = require(path.join(pluginName, middleware));
+                        middleware = require(path.join(pluginPath, middleware));
                     } catch (e) {
-                        console.error(`DevTools Plugin [${pluginName}] middleware is error!`);
+                        console.error(`DevTools Plugin '${name}' middleware is error!`);
                         throw e;
                     }
                 }
