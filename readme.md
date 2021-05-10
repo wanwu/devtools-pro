@@ -75,10 +75,10 @@ DevTools-pro 是基于[chrome-devtools-frontend](https://github.com/ChromeDevToo
 
 DevTools 主要由四部分组成：
 
-Frontend：调试器前端，默认由 Chromium 内核层集成，DevTools Frontend 是一个 Web 应用程序；
-Backend：调试器后端，Chromium、V8 或 Node.js；在这里我们主要是引入的 backend.js
-Protocol：调试协议，调试器前端和后端使用此协议通信。 它分为代表被检查实体的语义方面的域。 每个域定义类型、命令（从前端发送到后端的消息）和事件（从后端发送到前端的消息）。该协议基于 json rpc 2.0 运行；
-Message Channels：消息通道，消息通道是在后端和前端之间发送协议消息的一种方式。包括：Embedder Channel、WebSocket Channel、Chrome Extensions Channel、USB/ADB Channel。
+-   Frontend：调试器前端，默认由 Chromium 内核层集成，DevTools Frontend 是一个 Web 应用程序；
+-   Backend：调试器后端，Chromium、V8 或 Node.js；在这里我们主要是引入的 backend.js
+-   Protocol：调试协议，调试器前端和后端使用此协议通信。 它分为代表被检查实体的语义方面的域。 每个域定义类型、命令（从前端发送到后端的消息）和事件（从后端发送到前端的消息）。该协议基于 json rpc 2.0 运行；
+-   Message Channels：消息通道，消息通道是在后端和前端之间发送协议消息的一种方式。包括：Embedder Channel、WebSocket Channel、Chrome Extensions Channel、USB/ADB Channel。
 
 这四部分的交互逻辑如下图所示：
 
