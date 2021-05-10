@@ -23,28 +23,32 @@ class Server extends EventEmitter {
         this.options = options;
         this.hostname = options.hostname;
         this.port = options.port;
+        // 插件处理
+        this._middlewares = [];
+        this._frontends = [];
+        this._backends = [];
+        (options.plugins || []).forEach(({backend, frontend, middleware}) => {
+            backend && this._backends.push(backend);
+            frontend && this._frontends.push(frontend);
+            middleware && this._middlewares.push(middleware);
+        });
 
-        this.plugins = {};
         this._setupHttps();
         this._start();
         this._addRouters();
-    }
-    register({name, koaMiddleware, wsChannel}) {
-        this.plugins[name] = {mw: koaMiddleware, channel: wsChannel};
     }
     _addRouters() {
         if (!this.app) {
             // TODO
         }
         const router = (this.router = new Router());
-
-        const pluginNames = Object.keys(this.plugins);
-        // 插件
-        pluginNames.forEach(pluginName => {
-            this.plugins[pluginName](router, this.app);
+        // 插件添加的middleware
+        this._middlewares.forEach(middleware => {
+            middleware(router, logger, this);
         });
+        // 默认的middleware
         middlewares.forEach(middleware => {
-            middleware(router, logger);
+            middleware(router, logger, this);
         });
 
         this.app.use(router.routes());

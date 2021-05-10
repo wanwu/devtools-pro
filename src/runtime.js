@@ -1,26 +1,24 @@
-import EventEmitter from './lib/EventEmitter';
-
 class Runtime {
     constructor(chobitsu) {
         this._chobitsu = chobitsu;
-        this._eventEmitter = new EventEmitter();
     }
-    isDomainEnabled(domainName) {
-        return !!this._chobitsu.domain(domainName);
+    off(method) {
+        const [name, cmd] = method.split('.');
+        delete this._chobitsu.domain(name)[cmd];
     }
-    // 批量注册domain
-    registerDomains(domainsMap) {
-        this._chobitsu.registerMethod(domainsMap);
-    }
-    // 注册domain
-    registerDomain(domainName, method) {
-        this._chobitsu.registerMethod({
-            [domainName]: method
-        });
+    // 注册domain command
+    on(method, handler) {
+        if (handler && typeof handler === 'function' && typeof name === 'string') {
+            this._chobitsu.registerMethod({
+                [method]: handler
+            });
+        } else {
+            this._chobitsu.registerMethod(method);
+        }
     }
     // 发送domain事件
-    sendCommand(domainName, params) {
-        this._chobitsu.trigger(domainName, params);
+    sendCommand(method, params) {
+        this._chobitsu.trigger(method, params);
     }
 }
 

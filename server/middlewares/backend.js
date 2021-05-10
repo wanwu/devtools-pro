@@ -1,13 +1,18 @@
+const fs = require('fs');
 const path = require('path');
-const logger = require('lighthouse-logger');
 const send = require('koa-send');
 const mergeStream = require('merge-stream');
 
 const distPath = path.join(__dirname, '../../dist');
-module.exports = router => {
+module.exports = (router, logger, serverInstance) => {
     const log = logger.loggerfn('middle:backend');
     router.get('/backend.js', async (ctx, next) => {
-        log('backend.js');
-        await send(ctx, ctx.path, {root: distPath});
+        const mergedStream = mergeStream(fs.createReadStream(path.join(distPath, ctx.path)));
+        const backendFiles = serverInstance._backends || [];
+        backendFiles.forEach(filepath => {
+            log(`add ${filepath}`);
+            mergedStream.add(fs.createReadStream(filepath));
+        });
+        ctx.body = mergedStream;
     });
 };

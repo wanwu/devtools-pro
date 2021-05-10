@@ -23,7 +23,7 @@ const {
     engines: {node: requiredNodeVersion},
     name: pkgName,
     version: pkgVersion
-} = require('./package.json');
+} = require('../package.json');
 
 const DEFAULT_PORT = 8899;
 
@@ -81,10 +81,19 @@ require('yargs')
         },
         async argv => {
             const portfinder = require('portfinder');
-            const Server = require('./server/Server');
-            const {BACKENDJS_PATH} = require('./server/constants');
+            const Server = require('../server/Server');
+            const {BACKENDJS_PATH} = require('../server/constants');
             // 加载config文件
             const config = (await loadConfig(argv.config)) || {};
+            // 加载plugins
+            let plugins;
+            if (config.plugins) {
+                if (Array.isArray(config.plugins)) {
+                    plugins = require('./normalizePlugins')(config.plugins);
+                } else {
+                    throw `config.plugins is must be an Array`;
+                }
+            }
 
             argv.logLevel = config.options.logLevel || 'info';
             if (argv.verbose) {
@@ -115,6 +124,7 @@ require('yargs')
                 const options = {
                     ...config.options,
                     https: https ? {} : null,
+                    plugins,
                     port,
                     hostname
                 };

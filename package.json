@@ -1,19 +1,19 @@
 {
-    "name": "remote-devtools",
+    "name": "devtools-pro",
     "version": "1.0.0",
     "license": "MIT",
     "bin": {
-        "remote-devtools": "./bin.js",
-        "d": "./bin.js"
+        "devtools-pro": "./bin/devtools.js",
+        "dp": "./bin/devtools.js"
     },
-    "module": "src/lancher.js",
-    "main": "dist/lancher.js",
+    "module": "src/backend.js",
+    "main": "dist/backend.js",
     "scripts": {
         "build": "npm-run-all build:**",
         "dev": "run-p dev:backend dev:server",
         "build:backend": "cross-env NODE_ENV=production webpack --config webpack.config.js",
         "dev:backend": "cross-env NODE_ENV=development DEBUG=true webpack serve --progress --config webpack.config.js",
-        "dev:server": "cross-env nodemon bin.js --no-open --verbose"
+        "dev:server": "cross-env nodemon bin/devtools.js --no-open --verbose"
     },
     "lint-staged": {
         "!(example|dist|output|__mocks__)/**/*.js": [
@@ -25,7 +25,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/ksky521/remote-devtools.git"
+        "url": "https://github.com/ksky521/devtools-pro.git"
     },
     "dependencies": {
         "@koa/router": "^10.0.0",
