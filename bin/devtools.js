@@ -43,6 +43,10 @@ require('yargs')
         '$0',
         'A web remote debugging tools, based on Chrome DevTools',
         {
+            plugins: {
+                type: 'array',
+                describe: 'Add plugins'
+            },
             config: {
                 default: 'devtools.config',
                 type: 'string',
@@ -86,13 +90,16 @@ require('yargs')
             // 加载config文件
             const config = (await loadConfig(argv.config)) || {};
             // 加载plugins
-            let plugins;
+            let plugins = argv.plugins || [];
             if (config.plugins) {
                 if (Array.isArray(config.plugins)) {
-                    plugins = require('./normalizePlugins')(config.plugins);
+                    config.plugins.forEach(p => plugins.push(p));
                 } else {
                     throw `config.plugins is must be an Array`;
                 }
+            }
+            if (plugins && plugins.length) {
+                plugins = require('./normalizePlugins')(plugins);
             }
 
             argv.logLevel = config.options.logLevel || 'info';

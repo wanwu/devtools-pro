@@ -13,6 +13,7 @@ dp -h
 ```
 Options:
   -h, --help      Show help                                            [boolean]
+      --plugins   Add plugins                                            [array]
       --config    Provide path to a devtools configuration file e.g.
                   ./devtools.config.js     [string] [default: "devtools.config"]
   -o, --open      Open browser when server start       [boolean] [default: true]
