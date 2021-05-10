@@ -1,10 +1,14 @@
 import {nanoid} from 'nanoid';
-const key = '$remote_devtools_sid$';
+const key = '$devtools_sid_';
 const sessionStorage = window.sessionStorage;
-export default (useCache = true) => {
+export default (url, useCache = true) => {
+    if (!url) {
+        url = location.pathname + location.search;
+    }
+    let sKey = `${key}${url}`;
     let sessionId;
     if (useCache) {
-        sessionId = sessionStorage.getItem(key);
+        sessionId = sessionStorage.getItem(sKey);
         if (sessionId) {
             return sessionId;
         }
@@ -12,7 +16,7 @@ export default (useCache = true) => {
 
     sessionId = nanoid();
     if (useCache) {
-        sessionStorage.setItem(key, sessionId);
+        sessionStorage.setItem(sKey, sessionId);
     }
     return sessionId;
 };
