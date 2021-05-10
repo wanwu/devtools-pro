@@ -171,8 +171,24 @@ export class WebSocketConnection {
         // 提取id
         const match = this._url.match(/frontend\/([^/?]+)/);
         console.log('backend connection 探针激活!', match);
-
         function heartbeat() {
+            // 1. 先建立ws链接，如果成功，则监听backendConnected事件，判断id是否相等
+            const url = this._url.split('/frontend')[0] + '/heartbeat';
+            const socket = new WebSocket(url);
+            // 2. 失败，则建立http 轮询
+            socket.onerror = socket.onclose = function() {
+                poll();
+            };
+            socket.onmessage = function(messageEvent) {
+                try {
+                    const {event, payload} = JSON.parse(messageEvent.data);
+                    if (event === 'backendConnected' && payload.id === match[1]) {
+                        location.reload();
+                    }
+                } catch (e) {}
+            };
+        }
+        function poll() {
             if (timerId) {
                 clearTimeout(timerId);
             }
@@ -181,7 +197,7 @@ export class WebSocketConnection {
             timerId =
                 target &&
                 setTimeout(function() {
-                    heartbeat();
+                    poll();
                     if (document.hidden) {
                         return;
                     }
