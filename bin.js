@@ -149,7 +149,7 @@ require('yargs')
                     }
                     console.log('');
                     // TODO 文案
-                    console.log(`${chalk.yellow('Launcher url:')}`);
+                    console.log(`${chalk.yellow('Backend url:')}`);
                     urls.forEach(u => {
                         console.log(u + chalk.green(BACKENDJS_PATH));
                     });

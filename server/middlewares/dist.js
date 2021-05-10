@@ -21,7 +21,7 @@ module.exports = router => {
         }
     });
     // app.use(require('koa-static')(distPath, {defer: true}));
-    // router.get('/launcher.js', async ctx => {
+    // router.get('/backend.js', async ctx => {
     //     await send(ctx, ctx.path, {root: distPath});
     // });
 };

@@ -55,7 +55,7 @@ const plugins = [
     }),
     new HtmlWebpackPlugin({
         filename: 'demo.html',
-        chunks: ['launcher'],
+        chunks: ['backend'],
         template: './pages/demo.html'
     }),
     new NodePolyfillPlugin({
@@ -116,7 +116,7 @@ module.exports = {
           }
         : undefined,
     entry: {
-        launcher: './src/launcher.js',
+        backend: './src/backend.js',
         home: './src/home.js'
     },
     module: {

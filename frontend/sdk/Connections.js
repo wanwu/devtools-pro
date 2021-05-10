@@ -185,6 +185,7 @@ export class WebSocketConnection {
                     if (document.hidden) {
                         return;
                     }
+                    // TODO 这里如果检测到了服务器死掉，那么加大轮询时间
                     fetch('/_alive_/' + target)
                         .then(res => res.text())
                         .then(
