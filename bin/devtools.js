@@ -41,7 +41,7 @@ require('yargs')
     .usage('Usage: $0 <command> [options]')
     .command(
         '$0',
-        'An extensible web remote debugging tools, based on Chrome DevTools',
+        'A web remote debugging tools, based on Chrome DevTools',
         {
             config: {
                 default: 'devtools.config',

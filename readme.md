@@ -102,23 +102,23 @@ DevTools-pro 是可以通过插件增加功能的，比如：
 
 这三部分根据自己插件的实际功能进行开发，并非都包含。三部分的定义是在 NPM 包的`package.json`中`devtools`字段，类似：
 
-```json
+```json5
 {
-    "name": "js-native-monitor",
-    "version": "1.0.0",
-    "main": "index.js",
+    name: 'js-native-monitor',
+    version: '1.0.0',
+    main: 'index.js',
     // ....
-    "devtools": {
+    devtools: {
         // middleware
-        "frontend": {
-            "name": "jsna_monitor",
-            "type": "", // remote/autostart
-            "dir": "frontend"
+        frontend: {
+            name: 'jsna_monitor',
+            type: '', // remote/autostart
+            dir: 'frontend'
         },
         // backend字段，该文件内容会被merge到backend.js中
-        "backend": "index.js",
+        backend: 'index.js',
         // middleware
-        "middleware": "middleware.js"
+        middleware: 'middleware.js'
     }
 }
 ```
