@@ -25,6 +25,9 @@ module.exports = class WebSocketServer {
                 case 'home':
                     this.manager.createChannel(ws, id);
                     break;
+                case 'heartbeat':
+                    this.manager.createChannel(ws);
+                    break;
             }
         });
     }

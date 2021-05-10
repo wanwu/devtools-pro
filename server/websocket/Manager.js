@@ -30,11 +30,11 @@ module.exports = class HomeChannel {
         channelManager.on('backendUpdate', data => {
             this.send({payload: data, event: 'backendUpdate'});
         });
-        channelManager.on('backendAppend', data => {
-            this.send({payload: data, event: 'backendAppend'});
+        channelManager.on('backendConnected', data => {
+            this.send({payload: data, event: 'backendConnected'});
         });
-        channelManager.on('backendRemove', data => {
-            this.send({payload: data, event: 'backendRemove'});
+        channelManager.on('backendDisconnected', data => {
+            this.send({payload: data, event: 'backendDisconnected'});
         });
     }
     removeChannel(id) {
