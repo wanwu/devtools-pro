@@ -1,0 +1,12 @@
+{
+    "extensions": [
+        {
+            "type": "early-initialization",
+            "className": "Bridge.Main"
+        }
+    ],
+    "dependencies": ["sdk"],
+    "scripts": [],
+    "modules": ["Bridge.js", "$_bridge.js", "$_bridge-legacy.js"],
+    "resources": []
+}

@@ -1,20 +1,20 @@
-class Runtime {
+import EventEmitter from './lib/EventEmitter';
+
+class Runtime extends EventEmitter {
     constructor(chobitsu) {
+        super();
         this._chobitsu = chobitsu;
-    }
-    off(method) {
-        const [name, cmd] = method.split('.');
-        delete this._chobitsu.domain(name)[cmd];
-    }
-    // 注册domain command
-    on(method, handler) {
-        if (handler && typeof handler === 'function' && typeof name === 'string') {
-            this._chobitsu.registerMethod({
-                [method]: handler
+        chobitsu.registerMethod('$Bridge.messageReceived', (...args) => {
+            args.forEach(({event, payload}) => {
+                super.emit(event, payload);
             });
-        } else {
-            this._chobitsu.registerMethod(method);
-        }
+        });
+    }
+    emit(method, params) {
+        this._chobitsu.trigger('$Bridge.messageReceived', {event: method, payload: params});
+    }
+    registerMethod(method, fn) {
+        this._chobitsu.registerMethod(method, fn);
     }
     // 发送domain事件
     sendCommand(method, params) {

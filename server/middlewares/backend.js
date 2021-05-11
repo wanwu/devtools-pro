@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const send = require('koa-send');
 const mergeStream = require('merge-stream');
 
 const distPath = path.join(__dirname, '../../dist');

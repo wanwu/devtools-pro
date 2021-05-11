@@ -1,5 +1,4 @@
-const logger = require('lighthouse-logger');
-module.exports = router => {
+module.exports = (router, logger) => {
     const log = logger.loggerfn('middle:alive');
 
     router.get('/_alive_/(.+)', async (ctx, next) => {
