@@ -2,12 +2,33 @@
     max-width: 1000px;
     margin: 0 auto;
 
-    .emptyInfo {
+    .empty-info {
         text-align: center;
         margin: 30px 0;
         font-size: 16px;
         color: #ccc;
         font-weight: bold;
+    }
+
+    .device-info {
+        border: 0;
+        background-color: #fff;
+        .santd-collapse-item {
+            border: 0;
+            .santd-collapse-header {
+                padding-top: 0;
+                padding-bottom: 0;
+                margin-left: 36px;
+            }
+        }
+        .meta-data {
+            margin-left: 54px;
+            font-size: 10px;
+            .santd-tag {
+                font-size: 10px;
+                line-height: 14px;
+            }
+        }
     }
 
     .header {
@@ -30,10 +51,25 @@
         .santd-btn {
             color: rgba(25, 104, 250, 0.6);
         }
-        .santd-list-item-action {
-            a {
-                color: rgba(25, 104, 250, 1);
+        .santd-list-item {
+            display: block;
+            .santd-list-item-meta {
+                margin-bottom: 0;
+                .santd-list-item-meta-description {
+                    a {
+                        color: rgba(25, 104, 250, 0.6);
+                    }
+                }
             }
+            .santd-list-item-action {
+                margin-top: 0;
+                a {
+                    color: rgba(25, 104, 250, 0.6);
+                }
+            }
+        }
+        .santd-list-vertical .santd-list-item-meta-title {
+            margin-bottom: 0;
         }
     }
     .footer {
@@ -62,15 +98,5 @@
     .extraContent {
         min-width: 240px;
         text-align: right;
-    }
-    .santd-list-item {
-        display: block;
-    }
-    .santd-list-vertical .santd-list-item-meta-title {
-        margin-bottom: 0;
-    }
-    .santd-list-item-action {
-        margin-left: 54px;
-        margin-top: 0;
     }
 }

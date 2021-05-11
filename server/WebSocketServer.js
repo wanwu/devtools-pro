@@ -6,6 +6,8 @@ const ChannelMultiplex = require('./websocket/ChannelMultiplex');
 const logger = require('lighthouse-logger');
 const Manager = require('./websocket/Manager');
 
+const {createBackendjsUrl, createFrontendUrl} = require('./utils');
+
 module.exports = class WebSocketServer {
     constructor() {
         this.channelManager = new ChannelMultiplex();
@@ -52,6 +54,18 @@ module.exports = class WebSocketServer {
                 wss.handleUpgrade(request, socket, head, ws => {
                     ws.role = role;
                     ws.id = id;
+                    ws.port = socket.localPort;
+                    ws.host = socket.remoteAddress;
+
+                    switch (role) {
+                        case 'home': {
+                            ws.backendjs = createBackendjsUrl(ws.host, ws.port);
+                            break;
+                        } case 'backend': {
+                            ws.devtoolsurl = createFrontendUrl(ws.host, ws.port, id);
+                        }
+                    }
+
                     wss.emit('connection', ws, request);
                 });
             } else {

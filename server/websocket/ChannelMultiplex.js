@@ -27,7 +27,9 @@ module.exports = class ChannelMultiplex extends EventEmitter {
             get alive() {
                 return channel && channel.isAlive();
             },
-            channel
+            channel,
+            port: ws.port,
+            devtoolsurl: ws.devtoolsurl
         };
         this._backendMap.set(id, backendData);
         // 接收信息进行处理
