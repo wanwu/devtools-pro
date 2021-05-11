@@ -42,16 +42,21 @@ createRuntime(chobitsu);
 sendRegisterMessage();
 // 第二次更新
 window.addEventListener('onload', sendRegisterMessage);
+// ws链接建立成功之后主动发送页面信息
+wss.on('open', sendRegisterMessage);
 
 function sendRegisterMessage() {
     const favicon = getFavicon();
     const title = document.title || 'Untitled';
     const {userAgent, platform} = navigator;
-    wss.send('updateBackendInfo', {
-        id: sid,
-        favicon,
-        title,
-        metaData: {userAgent, platform},
-        url: location.href
+    wss.send({
+        event: 'updateBackendInfo',
+        payload: {
+            id: sid,
+            favicon,
+            title,
+            metaData: {userAgent, platform},
+            url: location.href
+        }
     });
 }

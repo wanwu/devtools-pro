@@ -5,27 +5,81 @@ import url from 'url';
 
 import getSessionId from './utils/getSessionId';
 import Home from '@components/Home.san';
+import {getPlatform} from './utils/getUaInfo';
+
+const ANDROID = 0;
+const IOS = 1;
+const DESKTOP = 2;
+const UNKNOW = 3;
+
 let app;
 const timerIdMap = new Map();
 const handlers = {
-    backendRemove(data) {
-        // remove 延迟
-        if (data.id) {
-            const timerId = setTimeout(() => {
-                const index = app.data.get('backends').findIndex(val => val.id === data.id);
-                app.data.splice('backends', [index, 1]);
-                timerIdMap.delete(data.id);
-            }, 1e3);
-            timerIdMap.set(data.id, timerId);
+    backendDisconnected(data) {
+        if (!data.id) {
+            return;
         }
+        // remove 延迟
+        let timerId = timerIdMap.get(data.id);
+        if (timerId) {
+            clearTimeout(timerId);
+        }
+        const index = app.data.get('backends').findIndex(val => val.id === data.id);
+        if (index < 0) {
+            return; 
+        }
+        timerId = setTimeout(() => {
+            app.data.splice('backends', [index, 1]);
+            timerIdMap.delete(data.id);
+        }, 1e3);
+        timerIdMap.set(data.id, timerId);
     },
-    backendAppend(data) {
+    backendConnected(data) {
+        if (!data || !data.id) {
+            return;
+        }
+
+        // 获取设备类型
+        if (!data.metaData) {
+            data.metaData = {userAgent: '', platform: ''};
+        }
+        const metaData = data.metaData;
+        const {system} = getPlatform(metaData.userAgent);
+        let type = UNKNOW;
+        if (system === 'windows' || system === 'macos' || system === 'linux') {
+            type = DESKTOP;
+        } else if (system === 'ios') {
+            type = IOS;
+        } else if (system === 'android') {
+            type = ANDROID;
+        }
+        data.metaData.type = type;
+
+        // 插入数据
         const timerId = timerIdMap.get(data.id);
         if (timerId) {
             clearTimeout(timerId);
+            timerIdMap.delete(data.id);
         } else {
-            app.data.unshift('backends', data);
+            const index = app.data.get('backends').findIndex(val => val.id === data.id);
+            if (index > -1) {
+                app.data.splice('backends', [index, 1, data]);
+            } else {
+                app.data.unshift('backends', data);
+            }
         }
+    },
+    backendUpdate(data) {
+        handlers.backendConnected(data);
+    },
+    homeConnected(data) {
+        if (!data) {
+            return;
+        }
+        const {wsPort = '', wsHost = '', backendjs = ''} = data;
+        app.data.set('wsPort', wsPort);
+        app.data.set('wsHost', wsHost);
+        app.data.set('backendjs', backendjs);
     }
 };
 
@@ -43,7 +97,6 @@ ws.onopen = () => {
     app.data.set('status', 'connected');
 
     ws.onmessage = e => {
-        console.log(e);
         let data = e.data;
         data = JSON.parse(data);
         const handler = handlers[data.event];

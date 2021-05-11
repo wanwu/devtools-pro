@@ -17,11 +17,15 @@ module.exports = class HomeChannel {
         logger.verbose(`${getColorfulName('manager')} ${id} ${chalk.green('connected')}`);
         const channelData = {
             id,
-            channel
+            channel,
+            wsPort: ws.port,
+            wsHost: ws.host,
+            backendjs: ws.backendjs
         };
         this._channels.push(channelData);
 
         channel.on('close', () => this.removeChannel(id));
+        this.send({payload: channelData, event: 'homeConnected'});
     }
 
     _addListeners() {
