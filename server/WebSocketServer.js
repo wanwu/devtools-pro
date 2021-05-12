@@ -48,7 +48,7 @@ module.exports = class WebSocketServer {
         server.on('upgrade', function(request, socket, head) {
             const urlObj = url.parse(request.url);
             const [_, role, id = ''] = urlObj.pathname.split('/');
-            const q = querystring.parse(urlObj.query);
+            const q = querystring.parse(urlObj.query) || {};
 
             logger.verbose('upgrade', role, id);
 
@@ -58,6 +58,7 @@ module.exports = class WebSocketServer {
                     ws.id = id;
                     ws.port = socket.localPort;
                     ws.host = socket.remoteAddress;
+                    ws.hidden = q.hidden;
 
                     // switch (role) {
                     //     case 'home': {

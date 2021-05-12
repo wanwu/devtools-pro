@@ -1,14 +1,14 @@
 import {Capability, SDKModel, Target} from '../sdk/SDKModel.js';
 
-Protocol.inspectorBackend.registerEvent('$Bridge.messageReceived', ['event', 'payload']);
+Protocol.inspectorBackend.registerEvent('$Bridge.messageChannel', ['event', 'payload']);
 
 Protocol.inspectorBackend.registerCommand(
-    '$Bridge.messageReceived',
+    '$Bridge.messageChannel',
     [
         {name: 'event', type: 'string', optional: false},
         {name: 'payload', type: 'object', optional: true}
     ],
-    [],
+    ['result'],
     false
 );
 
@@ -18,59 +18,28 @@ class Bridge {
     constructor(model, agent) {
         this._model = model;
         this._agent = agent;
-        this.listeners = new Map();
+        this._listeners = new Map();
     }
-    on(eventName, listener) {
-        let listeners = this.listeners.get(eventName);
-        if (typeof listener !== 'function') {
-            throw new Error(`[EventEmitter.on] ${listener} is not Function`);
-        }
-        const added = listeners && listeners.push(listener);
-        if (!added) {
-            this.listeners.set(eventName, [listener]);
-        }
+    registerEvent(event, listener) {
+        this._listeners.set(event, listener);
     }
-    once(eventName, listener) {
-        let onceListener = (...args) => {
-            this.off(eventName, onceListener);
-            listener.apply(this, args);
-        };
-        this.on(eventName, onceListener);
-    }
-    off(eventName, listener) {
-        const listeners = this.listeners.get(eventName);
-        if (listeners) {
-            listeners.splice(listeners.indexOf(listener) >>> 0, 1);
-        }
-    }
-    emit(event, payload) {
-        return this._agent.messageReceived(event, payload);
+    sendCommand(event, payload) {
+        return this._agent.messageChannel(event, payload);
     }
     // backend事件接收触发
-    messageReceived(eventName, data) {
-        const listeners = this.listeners.get(eventName);
-        if (listeners && listeners.length > 0) {
-            listeners.map(listener => {
-                listener(data);
-            });
-        }
-    }
-    removeAllListeners(eventName) {
-        if (eventName) {
-            const listeners = this.listeners.get(eventName);
-            if (listeners && listeners.length > 0) {
-                listeners.length = 0;
-                this.listeners.delete(eventName);
-            }
+    messageChannel(event, data) {
+        const handler = this._listeners.get(event);
+        if (handler && typeof handler === 'function') {
+            return handler(data) || {};
         } else {
-            this.listeners.clear();
+            throw Error(`${event} unimplemented`);
         }
     }
 }
 
 export class BridgeModel extends SDKModel {
     static Events = {
-        messageReceived: Symbol('bridge-messageReceived')
+        messageChannel: Symbol('bridge-messageChannel')
     };
     constructor(target) {
         super(target);
@@ -78,13 +47,13 @@ export class BridgeModel extends SDKModel {
         const dispatcher = (this._dispatcher = new Bridge(this, this._agent));
         // 给runtime加个方法
         runtime.bridge = dispatcher;
-        // this._agent.messageReceived('ffff', {}).then(a => console.log(a));
+        // this._agent.messageChannel('ffff', {}).then(a => console.log(a));
         this.target().register$BridgeDispatcher(this._dispatcher);
     }
 }
 export class Main extends Common.Object {
     run() {
         SDK.SDKModel.register(BridgeModel, Capability.None, true);
-        SDK.targetManager.addModelListener(BridgeModel, BridgeModel.Events.messageReceived, {});
+        SDK.targetManager.addModelListener(BridgeModel, BridgeModel.Events.messageChannel, {});
     }
 }
