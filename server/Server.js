@@ -9,7 +9,7 @@ const Koa = require('koa');
 const Router = require('@koa/router');
 const killable = require('killable');
 const EventEmitter = require('events').EventEmitter;
-const middlewares = ['alive', 'backend', 'frontend', 'dist', 'json_protocol'].map(file => {
+const middlewares = ['alive', 'backend', 'frontend', 'dist' /*, 'json_protocol'*/].map(file => {
     return require(path.join(__dirname, './middlewares', file));
 });
 
