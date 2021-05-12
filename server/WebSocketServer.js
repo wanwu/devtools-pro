@@ -9,7 +9,7 @@ const Manager = require('./websocket/Manager');
 module.exports = class WebSocketServer {
     constructor(serverInstance) {
         this.serverInstance = serverInstance;
-        this.isSSL = serverInstance.isSSL();
+        // this.isSSL = serverInstance.isSSL();
         this.channelManager = new ChannelMultiplex();
         this.manager = new Manager(this);
 
@@ -43,7 +43,7 @@ module.exports = class WebSocketServer {
 
     init(server) {
         const wss = this._wss;
-        const isSSL = this.isSSL;
+        // const isSSL = this.isSSL;
         const socketPaths = ['backend', 'frontend', 'home', 'heartbeat'];
         server.on('upgrade', function(request, socket, head) {
             const urlObj = url.parse(request.url);
@@ -59,16 +59,6 @@ module.exports = class WebSocketServer {
                     ws.port = socket.localPort;
                     ws.host = socket.remoteAddress;
                     ws.hidden = q.hidden;
-
-                    // switch (role) {
-                    //     case 'home': {
-                    //         ws.backendjs = createBackendjsUrl(isSSL ? 'https:' : 'http:', ws.host, ws.port);
-                    //         break;
-                    //     }
-                    //     case 'backend': {
-                    //         ws.devtoolsurl = createFrontendUrl(isSSL ? 'https:' : 'http:', ws.host, ws.port, id);
-                    //     }
-                    // }
 
                     wss.emit('connection', ws, request);
                 });
