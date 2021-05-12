@@ -1,7 +1,7 @@
 <template>
     <div id="app">
         <div class="header">
-            <h1 class="title">Remote Devtools</h1>
+            <h1 class="title">Devtools Pro</h1>
             <s-tag s-if="status ==='error'" color="red" slot="tags">Error</s-tag>
             <s-tag s-if="status ==='connected'" color="green" slot="tags">Connected</s-tag>
             <s-tag s-if="status ==='disconnected'" color="purple" slot="tags">Disconnected</s-tag>
@@ -23,7 +23,7 @@
                 </s-col>
                 <s-col span="{{24}}">
                     <div class="description">
-                        <div class="term"><s-badge count="{{1}}" style="{{{'background-color': 'rgba(25, 104, 250, .6)'}}}"/>  添加 Backend.js 到调试页面顶部（San.js之前）：</div>
+                        <div class="term"><s-badge count="{{1}}" style="{{{'background-color': 'rgba(25, 104, 250, .6)'}}}"/>  添加 Backend.js 到调试页面顶部：</div>
                         <div class="detail">
                             <a target="_blank" href="{{backendjs}}">{{backendjs}}</a>
                             <s-icon
@@ -45,10 +45,10 @@
                 size="large"
                 dataSource="{{backends}}"
             >
-                <s-list-item slot="renderItem" actions="{{['more', 'edit']}}">
+                <s-list-item slot="renderItem" actions="{{['more', 'edit', 'app']}}">
                     <s-list-item-meta>
                         <s-avatar size="large" slot="avatar" src="{{item.favicon || logo}}"></s-avatar>
-                        <a href="javascript:void(0);" slot="title">{{item.title}}</a>
+                        <a href="javascript:void(0);" slot="title">{{item.title}}<em style="font-size:10px;color:#afafaf"> (id: {{item.id}})</em></a>
                         <a href="javascript:void(0);" slot="description">
                             {{item.url}}
                             <s-icon
@@ -75,6 +75,10 @@
                     <a slot="edit" on-click="openDevtools(item)">
                         Open Chrome DevTools
                     </a>
+                    <div slot="app" s-if="!!item.metaData.appInfo">
+                        <img class="logo" src="{{item.metaData.appInfo.img}}" alt="{{item.metaData.appInfo.app}}">
+                        {{item.metaData.appInfo.version}}
+                    </div>
                 </s-list-item>
                 <div slot="footer" class="footer">Powered by <s-button type="link" href="{{siteUrl}}"><b>{{pkgName}}</b></s-button> v{{version}}</div>
             </s-list>
