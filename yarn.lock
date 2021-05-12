@@ -2262,6 +2262,14 @@ chrome-devtools-frontend@1.0.734346:
   resolved "https://registry.yarnpkg.com/chrome-devtools-frontend/-/chrome-devtools-frontend-1.0.734346.tgz#1e3f115194c2e157cc9e706251aecb20f87a8ec7"
   integrity sha512-2d8EM3mndiWSbxeHR+LN6lrQ6zi30tj9XzlfYfu0jEbb42FGaM6D5wWrNGIdjioqer1HwTUrbDeNYA9Q1yl4/A==
 
+chrome-remote-interface@^0.30.0:
+  version "0.30.0"
+  resolved "https://registry.yarnpkg.com/chrome-remote-interface/-/chrome-remote-interface-0.30.0.tgz#b9367142b362668ca7c84d642318053ac6f51495"
+  integrity sha512-krIHiWQCRvlLhHmjWuGgHJfqhj2Jcj3mtVebq3c/Pwv4RF7P0A2eSy6YRqrBPwcziYJrtsPGR0rm7uCe4987rQ==
+  dependencies:
+    commander "2.11.x"
+    ws "^7.2.0"
+
 chrome-trace-event@^1.0.2:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/chrome-trace-event/-/chrome-trace-event-1.0.3.tgz#1015eced4741e15d06664a957dbbf50d041e26ac"
@@ -2479,6 +2487,11 @@ colorette@^1.2.1, colorette@^1.2.2:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/colorette/-/colorette-1.2.2.tgz#cbcc79d5e99caea2dbf10eb3a26fd8b3e6acfa94"
   integrity sha512-MKGMzyfeuutC/ZJ1cba9NqcNpfeqMUcYmyF1ZFY6/Cn7CNSAKx6a+s48sqLqyAiZuaP2TcqMhoo+dlwFnVxT9w==
+
+commander@2.11.x:
+  version "2.11.0"
+  resolved "https://registry.yarnpkg.com/commander/-/commander-2.11.0.tgz#157152fd1e7a6c8d98a5b715cf376df928004563"
+  integrity sha512-b0553uYA5YAEGgyYIGYROzKQ7X5RAqedkfjiZxwi0kL1g3bOaBNNZfYkzt/CL0umgD5wc9Jec2FbB98CjkMRvQ==
 
 commander@^2.20.0:
   version "2.20.3"
@@ -9402,7 +9415,7 @@ ws@^6.2.1:
   dependencies:
     async-limiter "~1.0.0"
 
-ws@~7.4.5:
+ws@^7.2.0, ws@~7.4.5:
   version "7.4.5"
   resolved "https://registry.yarnpkg.com/ws/-/ws-7.4.5.tgz#a484dd851e9beb6fdb420027e3885e8ce48986c1"
   integrity sha512-xzyu3hFvomRfXKH8vOFMU3OguG6oOvhXMo3xsGy3xWExqaM2dxBbVxuD99O7m3ZUFMvvscsZDqxfgMaRr/Nr1g==

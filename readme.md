@@ -195,45 +195,66 @@ DevTools Frontend 通过 Module 和 Extension 机制为 Application 增加了“
 
 ### 通信
 
-在原来的 CDP 基础上，为了方便开发插件进行通信，直接绕过繁琐的 CDP 注册流程，我们利用 CDP 分别在 Frontend 和 Backend 提供了一条名字为`$Bridge` Domain（CDP domain）通信链路，自定义的插件推荐使用这种简单的方式进行通信。具体用法如下：
+在原来的 CDP 基础上，为了方便开发插件开发，DevTools-pro 提供了两种 Backend 和 Frontend 插件的通信方式：**CDP 事件**和**自建 WebSocket**。
 
-runtime
+#### CDP 事件
 
-\$devtools
-
-#### 默认 CDP 触发方式
-
-在 Backend 中，`$devtools`提供了`sendCommand`和`registerMethod`两个方法，分别用于发送和接收来自**默认 CDP**（即已经在 Chrome DevTools 定义好的，非我们自己插件定义的）的消息，例如我们要让
-
-同时在 Frontend 中，我们要处理或者接收一个
-
-，主要方法有：
-
--   `sendCommand(method, params)`：发送 CDP 消息给 frontend，在 frontend 需要对消息进行监听才能获取，`method`符合 CDP 的[domain 命名](https://chromedevtools.github.io/devtools-protocol/)
--   `on/off`：两个方法则监听由 frontend 发送过来的信息
-
-##### 应用举例
-
-发送一个`console.log`：
+在 Backend 中，提供了一个全局命名空间`$devtools`，可以通过下面方法进行事件注册。
 
 ```js
-$devtools.sendCommand('Runtime.consoleAPICalled', {
-    type: 'log',
-    args: [
-        {
-            type: 'string',
-            value: 'hi,frontend'
-        }
-    ],
-    stackTrace: {
-        callFrames: []
-    },
-    executionContextId: 1,
-    timestamp: 1620630197312
+// backend中代码
+$devtools.registerEvent('PluginName.method', data => {
+    const result = '处理完的返回数据';
+    console.log(data);
+    //...
+    return result;
 });
+// frontend插件中，发送命令给backend
+runtime.bridge.sendCommand('PluginName.method', {}).then(a => console.log(111, a));
+// 输出：111，处理完的返回数据
+// -> frontend发送数据之后，会得到一个Promise，得到的数据是backend的事件处理函数直接返回的数据。
 ```
 
-监听一个从 frontend 发送过来的`DIY.message`消息，使用`$devtools.on('DIY.message', handler)`。
+**注意**：推荐事件命名上采用跟 CDP 一致的方式，即以`.`间隔，以此来防止命名冲突，造成事件相互覆盖。
+
+#### 自建 WebSocket
+
+DevTools-pro 本身自带 WebSocket 服务，所以可以在 Backend 中使用`$devtools.createWebsocketConnection(wsUrl)`创建一个 WebSocket 链接：
+
+```js
+// backend代码
+const channelId = $devtools.nanoid();
+// -> 这里注意路径必须是/backend/开头
+const wsUrl = $devtools.createWebsocketUrl(`/backend/${channelId}`);
+const ws = $devtools.createWebsocketConnection(wsUrl);
+ws.on('message', event => {
+    // message
+});
+// 发送数据
+ws.send('hi~');
+// ws链接建立成功
+ws.on('open', onOpen);
+```
+
+在 Frontend 插件中，需要利用 ChannelId 建立一条相同的 MessageChannel，这时候应该通过 CDP 事件将 channelId 由 Backend，发送的 Frontend：
+
+```js
+// backend
+$devtools.sendCommand('PluginName.channelId', channelId);
+```
+
+然后在 Frontend 插件中：
+
+```js
+runtime.bridge.registerEvent('PluginName.channelId', channelId => {
+    const wsUrl = `/frontend/${channelId}`;
+    const ws = new WebSocket(wsUrl);
+    ws.onmessage = event => {
+        console.log(event.data);
+    };
+    ws.send('i am ready');
+});
+```
 
 ### Middleware
 
@@ -260,9 +281,25 @@ module.exports = router => {
 
 ### 自动化测试
 
-我们可以启动 devtools-pro 之后，通过自己实现的脚本链接 WebSocket，然后通过发送 CDP 命令，进行自动化测试。
+我们可以启动 DevTools-pro 之后，通过[chrome-remote-interface](https://github.com/cyrus-and/chrome-remote-interface)链接 WebSocket，然后通过发送 CDP 命令，进行自动化测试。
 
 ![](./docs/imgs/devtools-test.png)
+
+```js
+const CDP = require('chrome-remote-interface');
+
+CDP(
+    {
+        target: 'ws://localhost:8899/frontend/TDBmn-IDKkaIV98iW20Qh'
+    },
+    async client => {
+        const {Page, Runtime} = client;
+        await Page.enable();
+        const result = Runtime.evaluate({expression: 'window.location.toString()'});
+        console.log(result);
+    }
+);
+```
 
 ### Vue-DevTools、San-DevTools 等集成
 
@@ -293,9 +330,7 @@ export class SanDevtoolsPanel extends UI.VBox {
 }
 ```
 
-然后在 Frontend 中，通过`postMessage`方式跟 iframe 进行通信，这样利用 iframe 和 CDP 协议，对 San-DevTools 的通信消息进行透传。
-
-![](./docs/imgs/san-devtools.png)
+然后在 Frontend 嵌入的页面中，可以直接建立自己的 WebSocket 链接直接跟 Backend 进行通信。
 
 ## 开发插件相关资料
 

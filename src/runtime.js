@@ -45,6 +45,9 @@ class Runtime {
     }
     // hidden：默认是不会通知home的
     createWebsocketUrl(pathname, query = {hidden: 1}) {
+        // if (!pathname) {
+        //     pathname = `/backend/${nanoid()}`;
+        // }
         return url.format({
             protocol: protocol === 'https:' ? 'wss:' : 'ws:',
             hostname,

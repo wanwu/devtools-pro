@@ -67,6 +67,7 @@
         "autoprefixer": "^10.2.5",
         "babel-loader": "^8.2.2",
         "babel-plugin-import": "^1.13.3",
+        "chrome-remote-interface": "^0.30.0",
         "clean-webpack-plugin": "^4.0.0-alpha.0",
         "commitizen": "^4.0.3",
         "commitlint-config-gitmoji": "1.0.1",
