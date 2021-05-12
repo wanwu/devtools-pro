@@ -53,6 +53,9 @@ class Server extends EventEmitter {
 
         this.app.use(router.routes());
     }
+    isSSL() {
+        return !!this.options.https;
+    }
     _setupHttps() {
         if (this.options.https) {
             for (const property of ['ca', 'pfx', 'key', 'cert']) {
@@ -115,7 +118,7 @@ class Server extends EventEmitter {
         if (this._wsServer) {
             return;
         }
-        const wss = new WebSocketServer();
+        const wss = new WebSocketServer(this);
         this._wsServer = wss;
         wss.init(this._server);
     }

@@ -1098,10 +1098,10 @@
     methods "^1.1.2"
     path-to-regexp "^6.1.0"
 
-"@ksky521/chobitsu@^0.3.0":
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/@ksky521/chobitsu/-/chobitsu-0.3.0.tgz#bc991827cb6d9e2e8e493408fb447446091ec132"
-  integrity sha512-2fGgCFC/bAMqhNKZzSolTHL85orsyiCdDkEGFnq4mzzJTB3qtsztGXXw96xyZuEDeXTUIRtX6UkLtJiEjpvQ1A==
+"@ksky521/chobitsu@^0.3.1":
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/@ksky521/chobitsu/-/chobitsu-0.3.1.tgz#18878f5f51dabff0c8d6fbe8e79bfc0a36de541f"
+  integrity sha512-h4eTRw0lAsLRWIM0IJX18/Hb7omlRqe+o7NVXFqXodKiDIk0UYirQgnxxSjj0dQu3D8hKvPH1qxvDoa8HyQnSg==
 
 "@ksky521/cz-emoji@^1.2.1":
   version "1.2.1"
@@ -6081,6 +6081,11 @@ mkdirp@^0.5.1, mkdirp@^0.5.5, mkdirp@~0.5.1:
   integrity sha512-NKmAlESf6jMGym1++R0Ra7wvhV+wFW63FaSOFPwRahvea0gMUcGUhVeAg/0BC0wiv9ih5NYPB1Wn1UEI1/L+xQ==
   dependencies:
     minimist "^1.2.5"
+
+mobile-detect@^1.4.5:
+  version "1.4.5"
+  resolved "https://registry.yarnpkg.com/mobile-detect/-/mobile-detect-1.4.5.tgz#da393c3c413ca1a9bcdd9ced653c38281c0fb6ad"
+  integrity sha512-yc0LhH6tItlvfLBugVUEtgawwFU2sIe+cSdmRJJCTMZ5GEJyLxNyC/NIOAOGk67Fa8GNpOttO3Xz/1bHpXFD/g==
 
 ms@2.0.0:
   version "2.0.0"

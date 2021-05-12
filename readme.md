@@ -191,12 +191,28 @@ DevTools Frontend 通过 Module 和 Extension 机制为 Application 增加了“
 
 ### Backend
 
-当被调试的页面引入`hostname:port/backend.js`时，backend 的文件会被合并到`backend.js`中输出。这里提供了全局命名空间`$devtools`，它的定义在[./src/runtime.js](./src/runtime.js)中，主要方法有：
+当被调试的页面引入`hostname:port/backend.js`时，backend 的文件会被合并到`backend.js`中输出。这里提供了全局命名空间`$devtools`，它的定义在[./src/runtime.js](./src/runtime.js)中。后面[通信](#通信)部分会详细介绍
+
+### 通信
+
+在原来的 CDP 基础上，为了方便开发插件进行通信，直接绕过繁琐的 CDP 注册流程，我们利用 CDP 分别在 Frontend 和 Backend 提供了一条名字为`$Bridge` Domain（CDP domain）通信链路，自定义的插件推荐使用这种简单的方式进行通信。具体用法如下：
+
+runtime
+
+\$devtools
+
+#### 默认 CDP 触发方式
+
+在 Backend 中，`$devtools`提供了`sendCommand`和`registerMethod`两个方法，分别用于发送和接收来自**默认 CDP**（即已经在 Chrome DevTools 定义好的，非我们自己插件定义的）的消息，例如我们要让
+
+同时在 Frontend 中，我们要处理或者接收一个
+
+，主要方法有：
 
 -   `sendCommand(method, params)`：发送 CDP 消息给 frontend，在 frontend 需要对消息进行监听才能获取，`method`符合 CDP 的[domain 命名](https://chromedevtools.github.io/devtools-protocol/)
 -   `on/off`：两个方法则监听由 frontend 发送过来的信息
 
-#### 应用举例
+##### 应用举例
 
 发送一个`console.log`：
 

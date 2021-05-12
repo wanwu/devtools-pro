@@ -1,0 +1,6 @@
+export default (protocol, hostname, port, id) => {
+    // 注意，这里是&，不是?链接！！
+    return `${protocol}//${hostname}:${port}/${FRONTEND_PATH}?${
+        protocol === 'https:' ? 'wss' : 'ws'
+    }=${hostname}:${port}/frontend/${id}`;
+};

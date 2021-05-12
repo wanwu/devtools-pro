@@ -6,11 +6,15 @@ import url from 'url';
 import getSessionId from './utils/getSessionId';
 import Home from '@components/Home.san';
 import {getPlatform} from './utils/getUaInfo';
+import MobileDetect from 'mobile-detect';
+import createFrontendUrl from './utils/createFrontendUrl';
 
 const ANDROID = 0;
 const IOS = 1;
 const DESKTOP = 2;
 const UNKNOW = 3;
+// 开发的时候是 webpack 特殊处理
+const PORT = process.env.NODE_ENV === 'production' ? location.port : 8899;
 
 let app;
 const timerIdMap = new Map();
@@ -26,7 +30,7 @@ const handlers = {
         }
         const index = app.data.get('backends').findIndex(val => val.id === data.id);
         if (index < 0) {
-            return; 
+            return;
         }
         timerId = setTimeout(() => {
             app.data.splice('backends', [index, 1]);
@@ -44,6 +48,9 @@ const handlers = {
             data.metaData = {userAgent: '', platform: ''};
         }
         const metaData = data.metaData;
+        const userAgent = metaData.userAgent;
+        // https://github.com/hgoebl/mobile-detect.js
+        const md = MobileDetect(userAgent);
         const {system} = getPlatform(metaData.userAgent);
         let type = UNKNOW;
         if (system === 'windows' || system === 'macos' || system === 'linux') {
@@ -53,7 +60,10 @@ const handlers = {
         } else if (system === 'android') {
             type = ANDROID;
         }
-        data.metaData.type = type;
+        // 获取app和appVersion
+
+        metaData.type = type;
+        data.devtoolsurl = createFrontendUrl(location.protocol, location.hostname, PORT, data.id);
 
         // 插入数据
         const timerId = timerIdMap.get(data.id);
@@ -76,10 +86,18 @@ const handlers = {
         if (!data) {
             return;
         }
-        const {wsPort = '', wsHost = '', backendjs = ''} = data;
-        app.data.set('wsPort', wsPort);
-        app.data.set('wsHost', wsHost);
-        app.data.set('backendjs', backendjs);
+        app.data.set('wsPort', PORT);
+        app.data.set('wsHost', location.hostname);
+        app.data.set(
+            'backendjs',
+            url.format({
+                protocol: location.protocol,
+                hostname: location.hostname,
+                // 开发的时候是 webpack 特殊处理
+                port: PORT,
+                pathname: `/backend.js`
+            })
+        );
     }
 };
 
@@ -87,7 +105,7 @@ const sid = getSessionId();
 const wsUrl = url.format({
     protocol: location.protocol === 'https:' ? 'wss:' : 'ws:',
     hostname: location.hostname,
-    port: process.env.NODE_ENV === 'production' ? location.port : 8899,
+    port: PORT,
     pathname: `/home/${sid}`
 });
 

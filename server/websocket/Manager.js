@@ -17,10 +17,7 @@ module.exports = class HomeChannel {
         logger.verbose(`${getColorfulName('manager')} ${id} ${chalk.green('connected')}`);
         const channelData = {
             id,
-            channel,
-            wsPort: ws.port,
-            wsHost: ws.host,
-            backendjs: ws.backendjs
+            channel
         };
         this._channels.push(channelData);
 

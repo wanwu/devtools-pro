@@ -3,7 +3,7 @@
  */
 export function getPlatform(userAgent) {
     const ua = userAgent.toLowerCase();
-    const testUa = (regexp) => regexp.test(ua);
+    const testUa = regexp => regexp.test(ua);
     // 系统
     let system = 'unknow';
     if (testUa(/windows|win32|win64|wow32|wow64/g)) {

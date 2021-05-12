@@ -1,15 +1,15 @@
 const url = require('url');
-// const querystring = require('querystring');
+const querystring = require('querystring');
 
 const WebSocket = require('ws');
 const ChannelMultiplex = require('./websocket/ChannelMultiplex');
 const logger = require('lighthouse-logger');
 const Manager = require('./websocket/Manager');
 
-const {createBackendjsUrl, createFrontendUrl} = require('./utils');
-
 module.exports = class WebSocketServer {
-    constructor() {
+    constructor(serverInstance) {
+        this.serverInstance = serverInstance;
+        this.isSSL = serverInstance.isSSL();
         this.channelManager = new ChannelMultiplex();
         this.manager = new Manager(this);
 
@@ -43,10 +43,12 @@ module.exports = class WebSocketServer {
 
     init(server) {
         const wss = this._wss;
+        const isSSL = this.isSSL;
         const socketPaths = ['backend', 'frontend', 'home', 'heartbeat'];
         server.on('upgrade', function(request, socket, head) {
             const urlObj = url.parse(request.url);
             const [_, role, id = ''] = urlObj.pathname.split('/');
+            const q = querystring.parse(urlObj.query);
 
             logger.verbose('upgrade', role, id);
 
@@ -57,14 +59,15 @@ module.exports = class WebSocketServer {
                     ws.port = socket.localPort;
                     ws.host = socket.remoteAddress;
 
-                    switch (role) {
-                        case 'home': {
-                            ws.backendjs = createBackendjsUrl(ws.host, ws.port);
-                            break;
-                        } case 'backend': {
-                            ws.devtoolsurl = createFrontendUrl(ws.host, ws.port, id);
-                        }
-                    }
+                    // switch (role) {
+                    //     case 'home': {
+                    //         ws.backendjs = createBackendjsUrl(isSSL ? 'https:' : 'http:', ws.host, ws.port);
+                    //         break;
+                    //     }
+                    //     case 'backend': {
+                    //         ws.devtoolsurl = createFrontendUrl(isSSL ? 'https:' : 'http:', ws.host, ws.port, id);
+                    //     }
+                    // }
 
                     wss.emit('connection', ws, request);
                 });

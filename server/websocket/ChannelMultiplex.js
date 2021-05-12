@@ -19,17 +19,16 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         this._frontendMap.clear();
     }
     createBackendChannel(id, ws) {
-        const {backend_url: url, backend_title: title, backend_favicon: favicon} = ws;
+        // hidden是否通知到home
+        const {hidden = false} = ws;
         const channel = new Channel(ws, 'backend');
-        logger.verbose(`${getColorfulName('backend')} ${chalk.green('connected')} ${id}:${truncate(title, 10)}`);
+        logger.verbose(`${getColorfulName('backend')} ${chalk.green('connected')} ${id}`);
         const backendData = {
             id,
             get alive() {
                 return channel && channel.isAlive();
             },
-            channel,
-            port: ws.port,
-            devtoolsurl: ws.devtoolsurl
+            channel
         };
         this._backendMap.set(id, backendData);
         // 接收信息进行处理
@@ -47,7 +46,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
                                 }
                                 this._backendMap.set(payload.id, data);
                             }
-                            this.emit('backendUpdate', data);
+                            !hidden && this.emit('backendUpdate', data);
                         }
                         break;
                 }
@@ -57,13 +56,12 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         channel.on('close', () => {
             logger.verbose(`${getColorfulName('backend')} ${id} close`);
             channel.off('message', onMessage);
-            this.removeBackendChannel(id, title);
+            this.removeBackendChannel(id);
         });
-        this.emit('backendConnected', backendData);
+        !hidden && this.emit('backendConnected', backendData);
     }
     createFrontendChannel(id, ws) {
-        const backendId = id;
-        const backendChannel = this._backendMap.get(backendId);
+        const backendChannel = this._backendMap.get(id);
         if (!backendChannel || !backendChannel.channel) {
             // 这种情况是没有backend channel， frontend先于backend打开；或者backend关闭，frontend刷新
             // eslint-disable-next-line max-len
@@ -95,8 +93,8 @@ module.exports = class ChannelMultiplex extends EventEmitter {
 
         this.emit('frontendAppend', frontendData);
     }
-    removeBackendChannel(id, title = '') {
-        logger.verbose(`${getColorfulName('backend')} ${chalk.red('disconnected')} ${id}:${truncate(title, 10)}`);
+    removeBackendChannel(id) {
+        logger.verbose(`${getColorfulName('backend')} ${chalk.red('disconnected')} ${id}`);
         this._backendMap.delete(id);
         this.emit('backendDisconnected', {id});
     }

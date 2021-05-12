@@ -6,7 +6,7 @@ Protocol.inspectorBackend.registerCommand(
     '$Bridge.messageReceived',
     [
         {name: 'event', type: 'string', optional: false},
-        {name: 'payload', type: 'object', optional: false}
+        {name: 'payload', type: 'object', optional: true}
     ],
     [],
     false

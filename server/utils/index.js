@@ -32,12 +32,3 @@ function getColorfulName(role) {
     return chalk.cyan(role);
 }
 exports.getColorfulName = getColorfulName;
-
-exports.createBackendjsUrl = (address, port) => {
-    return `http://${address}:${port}${BACKENDJS_PATH}`;
-};
-
-exports.createFrontendUrl = (address, port, id) => {
-    // 注意，这里是&，不是?链接！！
-    return `http://${address}:${port}/${FRONTEND_PATH}?ws=${address}:${port}/frontend/${id}`;
-};

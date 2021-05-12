@@ -43,6 +43,7 @@
         "lodash-es": "^4.17.21",
         "lru-cache": "^6.0.0",
         "merge-stream": "^2.0.0",
+        "mobile-detect": "^1.4.5",
         "nanoid": "^3.1.22",
         "opener": "^1.5.2",
         "portfinder": "^1.0.28",
