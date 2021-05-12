@@ -124,6 +124,8 @@ const handlers = {
         if (!data) {
             return;
         }
+        handlers.backendConnected(data);
+
         app.data.set('wsPort', PORT);
         app.data.set('wsHost', location.hostname);
         app.data.set(
@@ -155,14 +157,9 @@ ws.onopen = () => {
     // 绿色
     app.data.set('status', 'connected');
 
-    setTimeout(() => {
-        ws.send('getConnectedChannel');
-    }, 0);
-
     ws.onmessage = e => {
         let data = e.data;
         data = JSON.parse(data);
-        console.log('onmessage', e);
         const handler = handlers[data.event];
         if (typeof handler === 'function') {
             handler(data.payload);

@@ -26,6 +26,8 @@ module.exports = class WebSocketServer {
                     break;
                 case 'home':
                     this.manager.createChannel(ws, id);
+                    const backendData = this.getChannelManager().getBackends();
+                    this.manager.send({payload: backendData, event: 'homeConnected'});
                     break;
                 case 'heartbeat':
                     this.manager.createChannel(ws);

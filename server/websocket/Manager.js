@@ -22,16 +22,6 @@ module.exports = class HomeChannel {
         this._channels.push(channelData);
 
         channel.on('close', () => this.removeChannel(id));
-        channel.on('message', (message) => {
-            if (message === 'getConnectedChannel') {
-                const backendData = this.wssInstance.getChannelManager().getBackends();
-                this.send({
-                    payload: backendData,
-                    event: 'connectedChannel'
-                });
-            }
-        });
-        this.send({payload: channelData, event: 'homeConnected'});
     }
 
     _addListeners() {
