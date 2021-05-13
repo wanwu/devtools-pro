@@ -34,6 +34,12 @@
                     <div class="description">
                         <div class="term"><s-badge count="{{2}}" style="{{{'background-color': 'rgba(25, 104, 250, .6)'}}}"/>  访问该页面，选择调试页面，点击链接开始调试</div>
                     </div>
+                    <div class="description">
+                        <div class="term"><s-badge count="{{3}}" style="{{{'background-color': 'rgba(25, 104, 250, .6)'}}}"/>  测试页面：</div>
+                        <div class="detail">
+                            <a target="_blank" href="{{demourl}}">{{demourl}}</a>
+                        </div>
+                    </div>
                 </s-col>
             </s-row>
             <div s-if="backends.length===0" class="empty-info">没有检测到待调试的页面</div>
@@ -45,12 +51,12 @@
             >
                 <s-list-item slot="renderItem" actions="{{['open','platform', 'app']}}">
                     <s-list-item-meta>
-                        <s-avatar size="large" slot="avatar" src="{{item.favicon || logo}}"></s-avatar>
-                        <a href="javascript:void(0);" slot="title">
+                        <s-avatar size="large" slot="avatar" src="{{item.favicon || unknown}}"></s-avatar>
+                        <a href="{{item.devtoolsurl}}" slot="title" title="start debugging" target="_blank">
                             <span class="meta-text" style="max-width:280px" title="{{item.title}}">{{item.title}}</span>
                             <em style="font-size:10px;color:#afafaf"> (id: {{item.id}})</em>
                         </a>
-                        <a href="javascript:void(0);" slot="description">
+                        <a href="{{item.devtoolsurl}}" slot="description" title="start debugging" target="_blank">
                             <s-icon
                                 on-click="copyText(item.url)"
                                 type="copy"
@@ -68,7 +74,7 @@
                             <s-button style="border:0;box-shadow: none;">
                                 <s-icon
                                     type="{{plat}}"
-                                    style="margin-right:8px;font-size:14px;color: {{item.metaData.platform !== plat ? '#d5d5d5' : '#fa8c16'}}"
+                                    style="margin-right:8px;font-size:14px;color: {{item.metaData.platform !== plat ? '#d5d5d5' : '#1890ff'}}"
                                 />
                             </s-button>
                         </s-popover>
@@ -135,6 +141,7 @@ export default class Home extends Component{
     initData() {
         return {
             unknown,
+            demourl: `${location.protocol}//${location.host}/demo.html`,
             pkgName: pkg.name,
             version: pkg.version,
             siteUrl: pkg.repository.url,

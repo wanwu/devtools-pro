@@ -28,21 +28,18 @@
                 inside();
             }
             var config = {
-                'js-native': {
-                    add: function() {
-                        jsNative.add({
-                            invoke: 'method.json',
-                            name: 'net.request',
-                            method: '_naNet.request',
-                            args: [
-                                {name: 'url', value: 'string'},
-                                {name: 'method', value: 'string'},
-                                {name: 'onsuccess', value: 'function'}
-                            ]
-                        });
+                Application: {
+                    'Set LocalStorage': function() {
+                        localStorage.setItem('hi', 'devtools-pro');
                     },
-                    invoke: function() {
-                        jsNative.invoke('net.request', ['my-url', 'GET', data => {}]);
+                    'Delete LocalStorage': function() {
+                        localStorage.removeItem('hi');
+                    },
+                    'Set Cookies': function() {
+                        document.cookie = 'hi=devtools-pro';
+                    },
+                    'Delete Cookies': function() {
+                        document.cookie = 'hi=;expires=Thu, 01 Jan 1970 00:00:00 GMT;';
                     }
                 },
                 Error: {
@@ -74,6 +71,23 @@
                     },
                     Fetch: function() {
                         fetch('home.html');
+                    }
+                },
+                'js-native：安装插件js-native-monitor才能用': {
+                    add: function() {
+                        jsNative.add({
+                            invoke: 'method.json',
+                            name: 'net.request',
+                            method: '_naNet.request',
+                            args: [
+                                {name: 'url', value: 'string'},
+                                {name: 'method', value: 'string'},
+                                {name: 'onsuccess', value: 'function'}
+                            ]
+                        });
+                    },
+                    invoke: function() {
+                        jsNative.invoke('net.request', ['my-url', 'GET', data => {}]);
                     }
                 }
             };
