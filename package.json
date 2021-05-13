@@ -17,6 +17,14 @@
         "dev:backend": "cross-env NODE_ENV=development DEBUG=true webpack serve --progress --config webpack.config.js",
         "dev:server": "cross-env nodemon bin/devtools.js --no-open --verbose"
     },
+    "keywords": [
+        "chrome-devtools",
+        "devtools-protocol",
+        "web inspector",
+        "inspector",
+        "debugging",
+        "extension"
+    ],
     "lint-staged": {
         "!(example|dist|output|__mocks__)/**/*.js": [
             "eslint"
