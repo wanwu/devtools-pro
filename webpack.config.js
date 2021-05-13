@@ -54,6 +54,8 @@ const plugins = [
         template: './pages/home.html'
     }),
     new HtmlWebpackPlugin({
+        inject: 'head',
+        scriptLoading: 'blocking',
         filename: 'demo.html',
         chunks: ['backend'],
         template: './pages/demo.html'
