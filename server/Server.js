@@ -37,9 +37,6 @@ class Server extends EventEmitter {
         this._start();
     }
     _addRouters() {
-        if (!this.app) {
-            // TODO
-        }
         const router = (this.router = new Router());
         // 插件添加的middleware
         this._middlewares.forEach(middleware => {
