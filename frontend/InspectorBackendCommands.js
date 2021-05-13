@@ -1710,6 +1710,7 @@ Protocol.inspectorBackend.registerEnum('Network.CookieSameSite', {
     Extended: 'Extended',
     None: 'None'
 });
+Protocol.inspectorBackend.registerEnum('Network.CookiePriority', {Low: 'Low', Medium: 'Medium', High: 'High'});
 Protocol.inspectorBackend.registerEnum('Network.ResourcePriority', {
     VeryLow: 'VeryLow',
     Low: 'Low',
