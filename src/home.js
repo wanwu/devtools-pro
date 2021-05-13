@@ -13,8 +13,61 @@ const ANDROID = 0;
 const IOS = 1;
 const DESKTOP = 2;
 const UNKNOW = 3;
+
+const baiduImg = 'https://b.bdstatic.com/searchbox/icms/searchbox/img/baiduapp-logo.png';
+const wechatImg = 'https://weixin.qq.com/zh_CN/htmledition/images/wechat_logo_109.2x219536.png';
+
+const APP_IMG_MAP = {
+    'baiduboxapp': baiduImg,
+    'WeChat': wechatImg
+}
+
 // 开发的时候是 webpack 特殊处理
 const PORT = process.env.NODE_ENV === 'production' ? location.port : 8899;
+
+/**
+ * 为data增加额外数据信息
+ * @param {*} data channel数据
+ * @returns 
+ */
+function normalizeData(data) {
+    if (!data || !data.id) {
+        return null;
+    }
+
+    // 获取设备类型
+    if (!data.metaData) {
+        data.metaData = {userAgent: '', platform: ''};
+    }
+    const metaData = data.metaData;
+    const userAgent = metaData.userAgent || '';
+    const {system} = getPlatform(userAgent);
+    let type = UNKNOW;
+    if (system === 'windows' || system === 'macos' || system === 'linux') {
+        type = DESKTOP;
+    } else if (system === 'ios') {
+        type = IOS;
+    } else if (system === 'android') {
+        type = ANDROID;
+    }
+
+    // app 信息 https://github.com/hgoebl/mobile-detect.js
+    const mobileInfo = new MobileDetect(userAgent);
+    const appName = mobileInfo.userAgent();
+    const appImg = APP_IMG_MAP[appName];
+    if (appImg) {
+        const appVersion = mobileInfo.versionStr(appName);
+        metaData.appInfo = {
+            app: appName,
+            img: appImg,
+            version: appVersion,
+        };
+    }
+
+    metaData.type = type;
+    data.devtoolsurl = createFrontendUrl(location.protocol, location.hostname, PORT, data.id);
+    return data;
+}
 
 let app;
 const timerIdMap = new Map();
@@ -38,32 +91,17 @@ const handlers = {
         }, 1e3);
         timerIdMap.set(data.id, timerId);
     },
-    backendConnected(data) {
-        if (!data || !data.id) {
+    backendConnected(source) {
+        if (Array.isArray(source)) {
+            const data = source.map(normalizeData).filter(Boolean);
+            app.data.set('backends', data);
             return;
         }
 
-        // 获取设备类型
-        if (!data.metaData) {
-            data.metaData = {userAgent: '', platform: ''};
-        }
-        const metaData = data.metaData;
-        const userAgent = metaData.userAgent;
-        // https://github.com/hgoebl/mobile-detect.js
-        const md = MobileDetect(userAgent);
-        const {system} = getPlatform(metaData.userAgent);
-        let type = UNKNOW;
-        if (system === 'windows' || system === 'macos' || system === 'linux') {
-            type = DESKTOP;
-        } else if (system === 'ios') {
-            type = IOS;
-        } else if (system === 'android') {
-            type = ANDROID;
-        }
-        // 获取app和appVersion
-
-        metaData.type = type;
-        data.devtoolsurl = createFrontendUrl(location.protocol, location.hostname, PORT, data.id);
+        let data = normalizeData(source)
+        if (!data) {
+            return;
+        };
 
         // 插入数据
         const timerId = timerIdMap.get(data.id);
@@ -86,6 +124,8 @@ const handlers = {
         if (!data) {
             return;
         }
+        handlers.backendConnected(data);
+
         app.data.set('wsPort', PORT);
         app.data.set('wsHost', location.hostname);
         app.data.set(
@@ -98,6 +138,9 @@ const handlers = {
                 pathname: `/backend.js`
             })
         );
+    },
+    connectedChannel(data) {
+        handlers.backendConnected(data);
     }
 };
 
