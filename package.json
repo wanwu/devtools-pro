@@ -14,7 +14,7 @@
         "dev": "run-p dev:backend dev:server",
         "build:backend": "cross-env NODE_ENV=production webpack --config webpack.config.js",
         "dev:backend": "cross-env NODE_ENV=development DEBUG=true webpack serve --progress --config webpack.config.js",
-        "dev:server": "cross-env nodemon bin/devtools.js --no-open --verbose --plugins ../js-native-monitor"
+        "dev:server": "cross-env nodemon bin/devtools.js --no-open --verbose"
     },
     "lint-staged": {
         "!(example|dist|output|__mocks__)/**/*.js": [
@@ -39,7 +39,7 @@
         "killable": "^1.0.1",
         "koa": "^2.13.1",
         "koa-send": "^5.0.1",
-        "lighthouse-logger": "^1.2.0",
+        "consola":"^2.15.3",
         "lodash-es": "^4.17.21",
         "lru-cache": "^6.0.0",
         "merge-stream": "^2.0.0",

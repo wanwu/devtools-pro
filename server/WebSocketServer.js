@@ -3,7 +3,7 @@ const querystring = require('querystring');
 
 const WebSocket = require('ws');
 const ChannelMultiplex = require('./websocket/ChannelMultiplex');
-const logger = require('lighthouse-logger');
+const logger = require('consola');
 const Manager = require('./websocket/Manager');
 
 module.exports = class WebSocketServer {
@@ -52,7 +52,7 @@ module.exports = class WebSocketServer {
             const [_, role, id = ''] = urlObj.pathname.split('/');
             const q = querystring.parse(urlObj.query) || {};
 
-            logger.verbose('upgrade', role, id);
+            logger.debug('upgrade', role, id);
 
             if (socketPaths.indexOf(role) !== -1) {
                 wss.handleUpgrade(request, socket, head, ws => {

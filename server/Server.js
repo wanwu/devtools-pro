@@ -14,7 +14,7 @@ const middlewares = ['alive', 'backend', 'frontend', 'dist' /*, 'json_protocol'*
 });
 
 const getCertificate = require('./utils/getCertificate');
-const logger = require('lighthouse-logger');
+const logger = require('consola');
 const WebSocketServer = require('./WebSocketServer');
 
 class Server extends EventEmitter {

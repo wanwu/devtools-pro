@@ -1,6 +1,6 @@
 const EventEmitter = require('events').EventEmitter;
 const chalk = require('chalk');
-const logger = require('lighthouse-logger');
+const logger = require('consola');
 
 const {truncate, getColorfulName} = require('../utils');
 const Channel = require('./Channel');
@@ -22,7 +22,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         // hidden是否通知到home
         const {hidden = false} = ws;
         const channel = new Channel(ws, 'backend');
-        logger.verbose(`${getColorfulName('backend')} ${chalk.green('connected')} ${id}`);
+        logger.debug(`${getColorfulName('backend')} ${chalk.green('connected')} ${id}`);
         const backendData = {
             id,
             get alive() {
@@ -54,7 +54,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         };
         channel.on('message', onMessage);
         channel.on('close', () => {
-            logger.verbose(`${getColorfulName('backend')} ${id} close`);
+            logger.debug(`${getColorfulName('backend')} ${id} close`);
             channel.off('message', onMessage);
             this.removeBackendChannel(id);
         });
@@ -69,7 +69,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         }
 
         const channel = new Channel(ws, 'frontend');
-        logger.verbose(
+        logger.debug(
             // eslint-disable-next-line max-len
             `${getColorfulName('frontend')} ${chalk.green('connected')} ${id} to backend ${
                 backendChannel.id
@@ -94,12 +94,12 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         this.emit('frontendAppend', frontendData);
     }
     removeBackendChannel(id) {
-        logger.verbose(`${getColorfulName('backend')} ${chalk.red('disconnected')} ${id}`);
+        logger.debug(`${getColorfulName('backend')} ${chalk.red('disconnected')} ${id}`);
         this._backendMap.delete(id);
         this.emit('backendDisconnected', {id});
     }
     removeFrontendChannel(id) {
-        logger.verbose(`${getColorfulName('frontend')} ${chalk.red('disconnected')} ${id}`);
+        logger.debug(`${getColorfulName('frontend')} ${chalk.red('disconnected')} ${id}`);
         this._frontendMap.delete(id);
         this.emit('frontendRemove', {id});
     }

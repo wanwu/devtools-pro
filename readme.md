@@ -261,7 +261,7 @@ runtime.bridge.registerEvent('PluginName.channelId', channelId => {
 middleware 的定义是在[server/Server.js](./server/Server.js#L50)，接受 3 个参数`middleware(router, logger, serverInstance)`：
 
 -   `router`是[koa-router](https://www.npmjs.com/package/koa-router)的实例；
--   `logger`是[lighthouse-logger](https://www.npmjs.com/package/lighthouse-logger)对象，有`logger.log`、`logger.verbose`、`logger.loggerfn`等方法；
+-   `logger`是[consola](https://www.npmjs.com/package/consola)对象，有`logger.log`、`logger.info`、`logger.debug`等方法；
 -   `serverInstance`是 Server 类实例
 
 #### 应用举例

@@ -1,17 +1,16 @@
 const path = require('path');
-const logger = require('lighthouse-logger');
+const logger = require('consola');
 const send = require('koa-send');
 const distPath = path.join(__dirname, '../../dist');
 module.exports = router => {
-    const log = logger.loggerfn('middle.dist');
-    router.get('/(.+)', async (ctx, next) => {
-        await next();
+    const log = logger.withTag('middle.dist');
+    async function staticSend(ctx) {
         if (ctx.body != null || ctx.status !== 404) {
             log(ctx.status);
             return;
         }
+        log.debug(ctx.path);
 
-        log(ctx.path);
         try {
             await send(ctx, ctx.path, {
                 maxage: 60 * 60 * 2 * 1e3,
@@ -22,9 +21,14 @@ module.exports = router => {
                 throw err;
             }
         }
+    }
+
+    router.get('/', async (ctx, next) => {
+        ctx.path = '/index.html';
+        await staticSend(ctx);
     });
-    // app.use(require('koa-static')(distPath, {defer: true}));
-    // router.get('/backend.js', async ctx => {
-    //     await send(ctx, ctx.path, {root: distPath});
-    // });
+    router.get('/(.+)', async (ctx, next) => {
+        await next();
+        await staticSend(ctx);
+    });
 };

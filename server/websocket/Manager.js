@@ -1,6 +1,6 @@
 const {nanoid} = require('nanoid');
 const chalk = require('chalk');
-const logger = require('lighthouse-logger');
+const logger = require('consola');
 
 const Channel = require('./Channel');
 const {getColorfulName} = require('../utils');
@@ -14,7 +14,7 @@ module.exports = class HomeChannel {
     }
     createChannel(ws, id = nanoid()) {
         const channel = new Channel(ws);
-        logger.verbose(`${getColorfulName('manager')} ${id} ${chalk.green('connected')}`);
+        logger.debug(`${getColorfulName('manager')} ${id} ${chalk.green('connected')}`);
         const channelData = {
             id,
             channel
@@ -38,7 +38,7 @@ module.exports = class HomeChannel {
         });
     }
     removeChannel(id) {
-        logger.verbose(`${getColorfulName('manager')} ${id} ${chalk.red('disconnected')}`);
+        logger.debug(`${getColorfulName('manager')} ${id} ${chalk.red('disconnected')}`);
         const idx = this._channels.findIndex(c => c.id === id);
         this._channels.splice(idx, 1);
     }

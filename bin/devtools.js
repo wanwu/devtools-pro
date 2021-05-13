@@ -16,7 +16,7 @@ const os = require('os');
 const updateNotifier = require('update-notifier');
 const semver = require('semver');
 const chalk = require('chalk');
-const logger = require('lighthouse-logger');
+const logger = require('consola');
 
 const {
     scriptName,
@@ -104,11 +104,23 @@ require('yargs')
 
             argv.logLevel = config.options.logLevel || 'info';
             if (argv.verbose) {
-                argv.logLevel = 'verbose';
+                /**
+                 Fatal: 0,
+                Error: 0,
+                Warn: 1,
+                Log: 2,
+                Info: 3,
+                Success: 3,
+                Debug: 4,
+                Trace: 5,
+                Silent: -Infinity,
+                Verbose: Infinity,
+                 */
+                logger.level = Infinity;
             } else if (argv.quiet) {
-                argv.logLevel = 'silent';
+                logger.level = 1;
             }
-            logger.setLevel(argv.logLevel);
+            // logger.setLevel(argv.logLevel);
 
             let port = argv.port || config.options.port || DEFAULT_PORT;
             const hostname = argv.hostname || config.options.hostname || '0.0.0.0';

@@ -5,6 +5,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="https://res.wx.qq.com/open/libs/weui/2.4.4/weui.min.css" />
+        <script src="http://localhost:8899/js-native.js" crossorigin></script>
         <title>Devtools Demo</title>
         <style>
             .page,
@@ -27,6 +28,23 @@
                 inside();
             }
             var config = {
+                'js-native': {
+                    add: function() {
+                        jsNative.add({
+                            invoke: 'method.json',
+                            name: 'net.request',
+                            method: '_naNet.request',
+                            args: [
+                                {name: 'url', value: 'string'},
+                                {name: 'method', value: 'string'},
+                                {name: 'onsuccess', value: 'function'}
+                            ]
+                        });
+                    },
+                    invoke: function() {
+                        jsNative.invoke('net.request', ['my-url', 'GET', data => {}]);
+                    }
+                },
                 Error: {
                     'Trigger Error': function() {
                         errorFn();

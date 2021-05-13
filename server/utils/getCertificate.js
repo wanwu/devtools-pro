@@ -8,7 +8,7 @@ const del = require('del');
 const findCacheDir = require('find-cache-dir');
 const selfsigned = require('selfsigned');
 const {name} = require('../../package.json');
-const logger = require('lighthouse-logger');
+const logger = require('consola');
 
 function getCertificate() {
     // Use a self-signed certificate if no certificate was configured.
@@ -26,7 +26,7 @@ function getCertificate() {
 
         // cert is more than 30 days old, kill it with fire
         if ((now - certificateStat.ctime) / certificateTtl > 30) {
-            logger.log('SSL Certificate is more than 30 days old. Removing.');
+            logger.info('SSL Certificate is more than 30 days old. Removing.');
 
             del.sync([certificatePath], {force: true});
 
@@ -35,7 +35,7 @@ function getCertificate() {
     }
 
     if (!certificateExists) {
-        logger.log('Generating SSL Certificate');
+        logger.info('Generating SSL Certificate');
 
         const attributes = [{name: 'commonName', value: 'localhost'}];
         const pems = createCertificate(attributes);
