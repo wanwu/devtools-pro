@@ -35,7 +35,6 @@ class Server extends EventEmitter {
 
         this._setupHttps();
         this._start();
-        this._addRouters();
     }
     _addRouters() {
         if (!this.app) {
@@ -102,6 +101,7 @@ class Server extends EventEmitter {
     _createServer() {
         this.app = new Koa();
         this.app.use(this._wrapContext.bind(this));
+        this._addRouters();
 
         if (this.options.https) {
             this._server = https.createServer(this.options.https, this.app.callback());
