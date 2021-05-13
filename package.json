@@ -10,6 +10,7 @@
     "module": "src/backend.js",
     "main": "dist/backend.js",
     "scripts": {
+        "prepublishOnly": "npm run build",
         "build": "npm-run-all build:**",
         "dev": "run-p dev:backend dev:server",
         "build:backend": "cross-env NODE_ENV=production webpack --config webpack.config.js",

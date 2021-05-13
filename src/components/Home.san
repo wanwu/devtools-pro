@@ -47,7 +47,7 @@
             >
                 <s-list-item slot="renderItem" actions="{{['open','platform', 'app']}}">
                     <s-list-item-meta>
-                        <s-avatar size="large" slot="avatar" src="{{item.favicon || logo}}"></s-avatar>
+                        <s-avatar size="large" slot="avatar" src="{{item.favicon || unknown}}"></s-avatar>
                         <a href="javascript:void(0);" slot="title">{{item.title}}<em style="font-size:10px;color:#afafaf"> (id: {{item.id}})</em></a>
                         <a href="javascript:void(0);" slot="description">
                             {{item.url}}
@@ -62,11 +62,9 @@
                         <s-icon type="chrome"/> Open Chrome DevTools
                     </a>
 
-                    <s-button slot="platform" style="border:0;box-shadow: none;">
-                        <s-icon
-                            type="{{item.metaData.platfrom}}"
-                        />
-                    </s-button>
+                    <a slot="platform" href="javascript:void(0);" title="{{item.metaData.platform}}">
+                        <s-icon type="{{item.metaData.platform}}" />
+                    </a>
                     <div slot="app" s-if="!!item.metaData.appInfo">
                         <img class="logo" src="{{item.metaData.appInfo.img}}" alt="{{item.metaData.appInfo.app}}">
                         {{item.metaData.appInfo.version}}
@@ -81,7 +79,7 @@
 import './home.less';
 import {Component} from 'san';
 import {Grid, Button, Tag, List, Avatar, Icon, Badge, Popover, message} from 'santd';
-import logo from '../icons/logo.svg?inline';
+import unknown from '../icons/unknown.svg?inline';
 /* global __config__ */
 import pkg from '../../package.json';
 
@@ -125,7 +123,7 @@ export default class Home extends Component{
     }
     initData() {
         return {
-            logo,
+            unknown,
             pkgName: pkg.name,
             version: pkg.version,
             siteUrl: pkg.repository.url,
