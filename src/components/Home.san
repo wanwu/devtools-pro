@@ -45,7 +45,7 @@
             >
                 <s-list-item slot="renderItem" actions="{{['open','platform', 'app']}}">
                     <s-list-item-meta>
-                        <s-avatar size="large" slot="avatar" src="{{item.favicon || logo}}"></s-avatar>
+                        <s-avatar size="large" slot="avatar" src="{{item.favicon || unknown}}"></s-avatar>
                         <a href="javascript:void(0);" slot="title">
                             <span class="meta-text" style="max-width:280px" title="{{item.title}}">{{item.title}}</span>
                             <em style="font-size:10px;color:#afafaf"> (id: {{item.id}})</em>
