@@ -2,3 +2,5 @@ examples
 __tests__
 devtools.config.js
 src
+yarn-error.log
+webpack.config.js
