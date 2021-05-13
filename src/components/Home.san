@@ -7,20 +7,18 @@
             <s-tag s-if="status ==='disconnected'" color="purple" slot="tags">Disconnected</s-tag>
             <s-tag s-if="status ==='connecting'" color="orange" slot="tags">Connecting</s-tag>
         </div>
+        <div class="sub-title">
+            <div class="description">
+                <div class="term">WebSocket Host：</div>
+                <div class="detail">{{wsHost}}</div>
+            </div>
+            <div class="description">
+                <div class="term">Port：</div>
+                <div class="detail">{{wsPort}}</div>
+            </div>
+        </div>
         <div class="wrap">
-            <s-row>
-                <s-col span="{{12}}">
-                    <div class="description">
-                        <div class="term">WebSocket Host：</div>
-                        <div class="detail">{{wsHost}}</div>
-                    </div>
-                </s-col>
-                <s-col span="{{12}}">
-                    <div class="description">
-                        <div class="term">Port：</div>
-                        <div class="detail">{{wsPort}}</div>
-                    </div>
-                </s-col>
+            <s-row class="tips">
                 <s-col span="{{24}}">
                     <div class="description">
                         <div class="term"><s-badge count="{{1}}" style="{{{'background-color': 'rgba(25, 104, 250, .6)'}}}"/>  添加 Backend.js 到调试页面顶部：</div>
@@ -48,29 +46,40 @@
                 <s-list-item slot="renderItem" actions="{{['open','platform', 'app']}}">
                     <s-list-item-meta>
                         <s-avatar size="large" slot="avatar" src="{{item.favicon || logo}}"></s-avatar>
-                        <a href="javascript:void(0);" slot="title">{{item.title}}<em style="font-size:10px;color:#afafaf"> (id: {{item.id}})</em></a>
+                        <a href="javascript:void(0);" slot="title">
+                            <span class="meta-text" style="max-width:280px" title="{{item.title}}">{{item.title}}</span>
+                            <em style="font-size:10px;color:#afafaf"> (id: {{item.id}})</em>
+                        </a>
                         <a href="javascript:void(0);" slot="description">
-                            {{item.url}}
                             <s-icon
                                 on-click="copyText(item.url)"
                                 type="copy"
                                 style="margin-right: 8px;color: grey"
                             />
+                            <span class="meta-text">{{item.url}}</span>
                         </a>
                     </s-list-item-meta>
-                    <a slot="open" on-click="openDevtools(item)">
-                        <s-icon type="chrome"/> Open Chrome DevTools
+                    <span slot="platform">
+                        <s-popover title="设备信息" s-for="plat in platforms">
+                            <template slot="content">
+                                <p><b>platform</b>: {{item.metaData.platform}}</p>
+                                <p style="width: 200px;word-break: break-word;"><b>userAgent:</b> {{item.metaData.userAgent}}</p>
+                            </template>
+                            <s-button style="border:0;box-shadow: none;">
+                                <s-icon
+                                    type="{{plat}}"
+                                    style="margin-right:8px;font-size:14px;color: {{item.metaData.platform !== plat ? '#d5d5d5' : '#fa8c16'}}"
+                                />
+                            </s-button>
+                        </s-popover>
+                    </span>
+                    <a slot="open" on-click="openDevtools(item)" class="action-edit">
+                        <s-icon type="chrome" style="margin-right:4px"/>Open Chrome DevTools
                     </a>
-
-                    <s-button slot="platform" style="border:0;box-shadow: none;">
-                        <s-icon
-                            type="{{item.metaData.platfrom}}"
-                        />
-                    </s-button>
-                    <div slot="app" s-if="!!item.metaData.appInfo">
+                    <template slot="app" s-if="!!item.metaData.appInfo">
                         <img class="logo" src="{{item.metaData.appInfo.img}}" alt="{{item.metaData.appInfo.app}}">
                         {{item.metaData.appInfo.version}}
-                    </div>
+                    </template>
                 </s-list-item>
                 <div slot="footer" class="footer">Powered by <s-button type="link" href="{{siteUrl}}"><b>{{pkgName}}</b></s-button> v{{version}}</div>
             </s-list>
@@ -131,7 +140,8 @@ export default class Home extends Component{
             siteUrl: pkg.repository.url,
             // 黄色
             status: 'connecting',
-            backends: []
+            backends: [],
+            platforms: ['android', 'apple', 'desktop', 'frown']
         };
     }
 }
