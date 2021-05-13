@@ -90,7 +90,7 @@
 import './home.less';
 import {Component} from 'san';
 import {Grid, Button, Tag, List, Avatar, Icon, Badge, Popover, message} from 'santd';
-import logo from '../icons/logo.svg?inline';
+import unknown from '../icons/unknown.svg?inline';
 /* global __config__ */
 import pkg from '../../package.json';
 
@@ -134,7 +134,7 @@ export default class Home extends Component{
     }
     initData() {
         return {
-            logo,
+            unknown,
             pkgName: pkg.name,
             version: pkg.version,
             siteUrl: pkg.repository.url,
