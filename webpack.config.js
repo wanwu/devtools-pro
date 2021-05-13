@@ -50,7 +50,6 @@ const plugins = [
     new HtmlWebpackPlugin({
         filename: 'index.html',
         chunks: ['home'],
-        alwaysWriteToDisk: true,
         template: './pages/home.html'
     }),
     new HtmlWebpackPlugin({
