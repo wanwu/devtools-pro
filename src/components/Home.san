@@ -45,7 +45,7 @@
                 size="large"
                 dataSource="{{backends}}"
             >
-                <s-list-item slot="renderItem" actions="{{['more', 'edit', 'app']}}">
+                <s-list-item slot="renderItem" actions="{{['open','platform', 'app']}}">
                     <s-list-item-meta>
                         <s-avatar size="large" slot="avatar" src="{{item.favicon || logo}}"></s-avatar>
                         <a href="javascript:void(0);" slot="title">{{item.title}}<em style="font-size:10px;color:#afafaf"> (id: {{item.id}})</em></a>
@@ -58,23 +58,15 @@
                             />
                         </a>
                     </s-list-item-meta>
-                    <span slot="more">
-                        <s-popover title="设备信息" s-for="plat in platforms">
-                            <template slot="content">
-                                <p><b>platform</b>: {{item.metaData.platform}}</p>
-                                <p style="width: 200px;word-break: break-word;"><b>userAgent:</b> {{item.metaData.userAgent}}</p>
-                            </template>
-                            <s-button style="border:0;box-shadow: none;">
-                                <s-icon
-                                    type="{{plat.icon}}"
-                                    style="margin-right: 8px; {{item.metaData.type !== plat.type ? 'color: #d5d5d5' : ''}}"
-                                />
-                            </s-button>
-                        </s-popover>
-                    </span>
-                    <a slot="edit" on-click="openDevtools(item)">
-                        Open Chrome DevTools
+                    <a slot="open" on-click="openDevtools(item)">
+                        <s-icon type="chrome"/> Open Chrome DevTools
                     </a>
+
+                    <s-button slot="platform" style="border:0;box-shadow: none;">
+                        <s-icon
+                            type="{{item.metaData.platfrom}}"
+                        />
+                    </s-button>
                     <div slot="app" s-if="!!item.metaData.appInfo">
                         <img class="logo" src="{{item.metaData.appInfo.img}}" alt="{{item.metaData.appInfo.app}}">
                         {{item.metaData.appInfo.version}}
@@ -139,25 +131,7 @@ export default class Home extends Component{
             siteUrl: pkg.repository.url,
             // 黄色
             status: 'connecting',
-            backends: [],
-            platforms: [
-                {
-                    icon: 'android',
-                    type: 0
-                },
-                {
-                    icon: 'apple',
-                    type: 1
-                },
-                {
-                    icon: 'laptop',
-                    type: 2
-                },
-                {
-                    icon: 'frown',
-                    type: 3
-                }                
-            ]
+            backends: []
         };
     }
 }

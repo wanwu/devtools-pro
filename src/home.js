@@ -9,18 +9,18 @@ import {getPlatform} from './utils/getUaInfo';
 import MobileDetect from 'mobile-detect';
 import createFrontendUrl from './utils/createFrontendUrl';
 
-const ANDROID = 0;
-const IOS = 1;
-const DESKTOP = 2;
-const UNKNOW = 3;
+const ANDROID = 'android';
+const IOS = 'apple';
+const DESKTOP = 'desktop';
+const UNKNOW = 'frown';
 
 const baiduImg = 'https://b.bdstatic.com/searchbox/icms/searchbox/img/baiduapp-logo.png';
 const wechatImg = 'https://weixin.qq.com/zh_CN/htmledition/images/wechat_logo_109.2x219536.png';
 
 const APP_IMG_MAP = {
-    'baiduboxapp': baiduImg,
-    'WeChat': wechatImg
-}
+    baiduboxapp: baiduImg,
+    wechat: wechatImg
+};
 
 // 开发的时候是 webpack 特殊处理
 const PORT = process.env.NODE_ENV === 'production' ? location.port : 8899;
@@ -28,7 +28,7 @@ const PORT = process.env.NODE_ENV === 'production' ? location.port : 8899;
 /**
  * 为data增加额外数据信息
  * @param {*} data channel数据
- * @returns 
+ * @returns
  */
 function normalizeData(data) {
     if (!data || !data.id) {
@@ -42,29 +42,29 @@ function normalizeData(data) {
     const metaData = data.metaData;
     const userAgent = metaData.userAgent || '';
     const {system} = getPlatform(userAgent);
-    let type = UNKNOW;
+    let platform = UNKNOW;
     if (system === 'windows' || system === 'macos' || system === 'linux') {
-        type = DESKTOP;
+        platform = DESKTOP;
     } else if (system === 'ios') {
-        type = IOS;
+        platform = IOS;
     } else if (system === 'android') {
-        type = ANDROID;
+        platform = ANDROID;
     }
-
+    // console.log(platform);
     // app 信息 https://github.com/hgoebl/mobile-detect.js
     const mobileInfo = new MobileDetect(userAgent);
     const appName = mobileInfo.userAgent();
-    const appImg = APP_IMG_MAP[appName];
+    const appImg = appName && APP_IMG_MAP[appName.toLowerCase()];
     if (appImg) {
         const appVersion = mobileInfo.versionStr(appName);
         metaData.appInfo = {
             app: appName,
             img: appImg,
-            version: appVersion,
+            version: appVersion
         };
     }
 
-    metaData.type = type;
+    metaData.platform = platform;
     data.devtoolsurl = createFrontendUrl(location.protocol, location.hostname, PORT, data.id);
     return data;
 }
@@ -98,10 +98,10 @@ const handlers = {
             return;
         }
 
-        let data = normalizeData(source)
+        let data = normalizeData(source);
         if (!data) {
             return;
-        };
+        }
 
         // 插入数据
         const timerId = timerIdMap.get(data.id);

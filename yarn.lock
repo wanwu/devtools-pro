@@ -7914,7 +7914,7 @@ san@~3.9.2:
   resolved "https://registry.yarnpkg.com/san/-/san-3.9.5.tgz#fc61a40ac891d20662516141d71b1a1150c41fc9"
   integrity sha512-g746ljkycqtIin38dzxhfQfEPgt2IC04G5TZH+qxIrigM107zYw5J/8hdcQiB06XolB3EK3AiZQx2EZpjII7pQ==
 
-santd@~1.0.5:
+santd@~1.0.6:
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/santd/-/santd-1.0.6.tgz#a6219e452cb261a7a94c47c8dfbfddc47f8d8f4f"
   integrity sha512-toR9SCboW2i/GE3rK/daVStnnwVyziRoGaeiiPAHrfW6wR9DqTG47W4xeM7YNdEf6tma+4oDH4cHwfB6NMcuvg==
