@@ -5,7 +5,7 @@ A web remote debugging tools, based on Chrome DevTools.
 </div>
 
 
-![image](https://user-images.githubusercontent.com/1073262/118255649-194b3d00-b4df-11eb-8698-6719212199f9.png)
+![image](https://user-images.githubusercontent.com/1073262/118256057-9eceed00-b4df-11eb-94f4-74676c2d8c9b.png)
 
 ## 🎉 Features
 
