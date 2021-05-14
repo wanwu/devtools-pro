@@ -67,10 +67,12 @@ mkdir devtools-pro
 git clone git@github.com:ksky521/devtools-pro.git devtools-pro
 ```
 
-2. 安装依赖
+2. 安装依赖 & 初始化
 
 ```bash
 yarn
+# 初始化：将chrome-devtools-frontend/front_end复制出来
+sh init.sh
 ```
 
 3. 开始开发

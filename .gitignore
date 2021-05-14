@@ -3,6 +3,7 @@ temp
 output
 dist
 devtools.config.js
+chrome-devtools-frontend
 # Logs
 logs
 *.log

@@ -1,9 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const CHROME_FRONTEND_PATH = path.join(
-    path.dirname(require.resolve('chrome-devtools-frontend/package.json')),
-    'front_end'
-);
+const CHROME_FRONTEND_PATH = path.join(__dirname, '../../chrome-devtools-frontend');
 const PREFIXER = '/devtools';
 const MODULES_JSON_FILE = 'devtools_app.json';
 const LOCAL_CHROME_FRONTEND_PATH = path.join(__dirname, '../../frontend');
