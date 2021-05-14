@@ -1,6 +1,22 @@
-# Devtools-Pro
+<h1 align="center">Devtools-Pro</h1>
 
-基于 Chrome DevTools 实现的 Web 可扩展的远程调试工具。
+<div align="center">
+A web remote debugging tools, based on Chrome DevTools.
+</div>
+
+## 🎉 Features
+
+-   基于 Chrome DevTools
+-   基于 WebSocket 远程调试
+-   可扩展，支持自定义插件
+
+## 📦 Installation
+
+```shell
+npm i -g devtools-pro
+# OR
+yarn global add devtools-pro
+```
 
 ## 命令行配置项
 
