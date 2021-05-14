@@ -4,6 +4,10 @@
 A web remote debugging tools, based on Chrome DevTools.
 </div>
 
+<div align="center">
+![image](https://user-images.githubusercontent.com/1073262/118255649-194b3d00-b4df-11eb-8698-6719212199f9.png)
+</div>
+
 ## 🎉 Features
 
 -   基于 Chrome DevTools
