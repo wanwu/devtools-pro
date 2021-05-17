@@ -1,26 +1,17 @@
 const path = require('path');
-const logger = require('consola');
-const send = require('koa-send');
+const sendFile = require('../utils/sendFile');
+
 const distPath = path.join(__dirname, '../../dist');
-module.exports = router => {
-    const log = logger.withTag('middle.dist');
+module.exports = (router, logger) => {
+    const log = logger.withTag('middle:dist');
     async function staticSend(ctx) {
+        // 前面中间件有返回则不发送
         if (ctx.body != null || ctx.status !== 404) {
             log(ctx.status);
             return;
         }
         log.debug(ctx.path);
-
-        try {
-            await send(ctx, ctx.path, {
-                maxage: 60 * 60 * 2 * 1e3,
-                root: distPath
-            });
-        } catch (err) {
-            if (err.status !== 404) {
-                throw err;
-            }
-        }
+        return await sendFile(ctx, ctx.path, distPath);
     }
 
     router.get('/', async (ctx, next) => {

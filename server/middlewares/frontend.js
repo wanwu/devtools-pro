@@ -4,7 +4,7 @@ const CHROME_FRONTEND_PATH = path.join(__dirname, '../../chrome-devtools-fronten
 const PREFIXER = '/devtools';
 const MODULES_JSON_FILE = 'devtools_app.json';
 const LOCAL_CHROME_FRONTEND_PATH = path.join(__dirname, '../../frontend');
-const send = require('koa-send');
+const sendStaticFile = require('../utils/sendFile');
 const LRU = require('lru-cache');
 const lru = new LRU(130);
 
@@ -63,18 +63,8 @@ function createRouterMiddleware(name, dir, log) {
     };
 }
 async function sendFile(ctx, next, relativePath, root, log) {
-    let done = false;
-    try {
-        log.debug(`sendFile ${relativePath}@${root}`);
-        done = await send(ctx, relativePath, {
-            maxage: 60 * 60 * 2 * 1e3,
-            root
-        });
-    } catch (err) {
-        if (err.status !== 404) {
-            throw err;
-        }
-    }
+    let done = await sendStaticFile(ctx, relativePath, root);
+
     if (!done) {
         await next();
     }
