@@ -23,6 +23,37 @@ class Runtime {
         });
     }
     /**
+     * 获取消息通道命名空间，返回on/emit
+     * @param {string} ns
+     * @returns
+     */
+    namespace(ns) {
+        const self = this;
+        const register = self.registerEvent.bind(self);
+        const sendCommand = self.sendCommand.bind(self);
+        return {
+            on(method, handler) {
+                register(`${domainName}.${method}`, handler);
+            },
+            emit(method, params) {
+                sendCommand(`${domainName}.${method}`, params);
+            }
+        };
+    }
+    getChromeDomain(domainName) {
+        const self = this;
+        const register = self._registerMethod.bind(self);
+        const sendCommand = self._sendCommand.bind(self);
+        return {
+            on(method, handler) {
+                register(`${domainName}.${method}`, handler);
+            },
+            emit(method, params) {
+                sendCommand(`${domainName}.${method}`, params);
+            }
+        };
+    }
+    /**
      * 注册frontend监听函数
      * @param {string} event 事件名
      * @param {function} handler 监听函数，handler返回数据在frontend会被立即接收
