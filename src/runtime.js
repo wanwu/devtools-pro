@@ -33,10 +33,10 @@ class Runtime {
         const sendCommand = self.sendCommand.bind(self);
         return {
             on(method, handler) {
-                register(`${domainName}.${method}`, handler);
+                register(`${ns}.${method}`, handler);
             },
             emit(method, params) {
-                sendCommand(`${domainName}.${method}`, params);
+                sendCommand(`${ns}.${method}`, params);
             }
         };
     }
