@@ -8,7 +8,6 @@ module.exports = (router, logger, serverInstance) => {
     const beFilepath = path.join(distPath, 'backend.js');
     router.get('/backend.js', async (ctx, next) => {
         let s = fs.readFileSync(beFilepath).toString();
-
         const backendFiles = serverInstance._backends || [];
         backendFiles.forEach(filepath => {
             s += fs.readFileSync(filepath).toString();
@@ -22,6 +21,7 @@ module.exports = (router, logger, serverInstance) => {
         // });
         // console.log(mergedStream.toString());
         // ctx.body = mergedStream;
+        ctx.setHeader('Content-Type', 'application/javascript');
         ctx.body = s;
     });
 };
