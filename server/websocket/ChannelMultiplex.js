@@ -24,6 +24,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         const channel = new Channel(ws, 'backend');
         logger.debug(`${getColorfulName('backend')} ${chalk.green('connected')} ${id}`);
         const backendData = {
+            hidden,
             id,
             get alive() {
                 return channel && channel.isAlive();
@@ -107,7 +108,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         return this._backendMap.get(id);
     }
     getBackends() {
-        return Array.from(this._backendMap.values());
+        return Array.from(this._backendMap.values()).filter(d => !d.hidden);
     }
     getFrontends() {
         return Array.from(this._frontendMap.values());
