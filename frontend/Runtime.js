@@ -16,7 +16,7 @@ const REMOTE_MODULE_FALLBACK_REVISION = '@010ddcfda246975d194964ccf20038ebbdec60
 class Runtime {
     ready(fn) {
         if (typeof fn === 'function') {
-            if (this.readyState) {
+            if (this._readyStatus) {
                 fn();
             } else this._readyFns.push(fn);
         }
@@ -26,6 +26,7 @@ class Runtime {
             a();
         });
         this._readyFns.length = 0;
+        this._readyStatus = true;
     }
     getBridge() {
         return new Promise(resolve => {
