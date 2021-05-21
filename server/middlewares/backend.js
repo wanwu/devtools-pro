@@ -21,7 +21,7 @@ module.exports = (router, logger, serverInstance) => {
         // });
         // console.log(mergedStream.toString());
         // ctx.body = mergedStream;
-        ctx.setHeader('Content-Type', 'application/javascript');
+        ctx.res.setHeader('Content-Type', 'application/javascript');
         ctx.body = s;
     });
 };
