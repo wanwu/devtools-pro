@@ -5,7 +5,7 @@
             "className": "Bridge.Main"
         }
     ],
-    "dependencies": ["sdk"],
+    "dependencies": ["sdk", "protocol"],
     "scripts": [],
     "modules": ["Bridge.js", "$_bridge.js", "$_bridge-legacy.js"],
     "resources": []

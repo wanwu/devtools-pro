@@ -4,7 +4,6 @@
 A web remote debugging tools, based on Chrome DevTools.
 </div>
 
-
 ![image](https://user-images.githubusercontent.com/1073262/118256057-9eceed00-b4df-11eb-94f4-74676c2d8c9b.png)
 
 ## 🎉 Features
@@ -87,8 +86,8 @@ yarn dev
 访问：
 
 -   1. 打开 home 页面：localhost:8080
--   2. 打开 demo 测试页面：点击home页面上测试页面链接 localhost:8080/demo.html
--   3. 打开 inspector：点击home页面上的【Open Chrome DevTools】
+-   2. 打开 demo 测试页面：点击 home 页面上测试页面链接 localhost:8080/demo.html
+-   3. 打开 inspector：点击 home 页面上的【Open Chrome DevTools】
 
 ## 原理
 
@@ -230,7 +229,9 @@ $devtools.registerEvent('PluginName.method', data => {
     return result;
 });
 // frontend插件中，发送命令给backend
-runtime.bridge.sendCommand('PluginName.method', {}).then(a => console.log(111, a));
+runtime.getBridge().then(bridge => {
+    bridge.sendCommand('PluginName.method', {}).then(a => console.log(111, a));
+});
 // 输出：111，处理完的返回数据
 // -> frontend发送数据之后，会得到一个Promise，得到的数据是backend的事件处理函数直接返回的数据。
 ```
@@ -266,13 +267,15 @@ $devtools.sendCommand('PluginName.channelId', channelId);
 然后在 Frontend 插件中：
 
 ```js
-runtime.bridge.registerEvent('PluginName.channelId', channelId => {
-    const wsUrl = `/frontend/${channelId}`;
-    const ws = new WebSocket(wsUrl);
-    ws.onmessage = event => {
-        console.log(event.data);
-    };
-    ws.send('i am ready');
+runtime.getBridge().then(bridge => {
+    bridge.registerEvent('PluginName.channelId', channelId => {
+        const wsUrl = `/frontend/${channelId}`;
+        const ws = new WebSocket(wsUrl);
+        ws.onmessage = event => {
+            console.log(event.data);
+        };
+        ws.send('i am ready');
+    });
 });
 ```
 
