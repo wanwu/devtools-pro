@@ -12,10 +12,11 @@
     "scripts": {
         "prepublishOnly": "npm run build",
         "build": "npm-run-all build:**",
-        "dev": "run-p dev:backend dev:server",
+        "dev": "npm run dev:chrome-frontend && run-p dev:backend dev:server",
         "build:backend": "cross-env NODE_ENV=production webpack --config webpack.config.js",
         "dev:backend": "cross-env NODE_ENV=development DEBUG=true webpack serve --progress --config webpack.config.js",
-        "dev:server": "cross-env nodemon bin/devtools.js --no-open --verbose"
+        "dev:server": "cross-env nodemon bin/devtools.js --no-open --verbose",
+        "dev:chrome-frontend": "sh init.sh"
     },
     "keywords": [
         "chrome-devtools",
