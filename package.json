@@ -1,6 +1,6 @@
 {
     "name": "devtools-pro",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "license": "MIT",
     "scriptName": "devtools-pro",
     "bin": {
@@ -10,7 +10,7 @@
     "module": "src/backend.js",
     "main": "dist/backend.js",
     "scripts": {
-        "prepublishOnly": "npm run build",
+        "prepublishOnly": "sh init.sh && npm run build",
         "build": "npm-run-all build:**",
         "dev": "npm run dev:chrome-frontend && run-p dev:backend dev:server",
         "build:backend": "cross-env NODE_ENV=production webpack --config webpack.config.js",
