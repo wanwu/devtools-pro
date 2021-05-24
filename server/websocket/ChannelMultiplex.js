@@ -93,12 +93,6 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         backendChannel.channel.on('close', () => channel.destroy());
 
         this.emit('frontendAppend', frontendData);
-        ws.send(
-            JSON.stringify({
-                event: 'backendConnectionFound',
-                payload: {backendId: backendChannel ? backendChannel.id : 'null'}
-            })
-        );
     }
     removeBackendChannel(id) {
         logger.debug(`${getColorfulName('backend')} ${chalk.red('disconnected')} ${id}`);
