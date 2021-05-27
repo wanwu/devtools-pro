@@ -1,5 +1,8 @@
 const fs = require('fs');
 const path = require('path');
+const resolvePkg = require('resolve-pkg');
+const globalDirs = require('global-dirs');
+
 module.exports = plugins => {
     if (Array.isArray(plugins)) {
         return plugins
@@ -9,8 +12,14 @@ module.exports = plugins => {
                 let devtools;
                 let name;
                 try {
-                    pluginPath = require.resolve(pluginName);
-                    const pkg = require(rp);
+                    const paths = [process.cwd(), globalDirs.yarn.packages, globalDirs.npm.packages];
+                    for (let cwd of paths) {
+                        pluginPath = resolvePkg(pluginName, {cwd});
+                        if (pluginPath) {
+                            break;
+                        }
+                    }
+                    const pkg = require(path.join(pluginPath, 'package.json'));
                     devtools = pkg.devtools;
                     name = pkg.name;
                 } catch (e) {
