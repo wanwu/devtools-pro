@@ -14,13 +14,8 @@ module.exports = class Channel extends EventEmitter {
         this._ws = ws;
         this._name = name;
         this._connections = [];
-        ws.on('close', (...args) => {
-            this.status = STATUS_CLOSED;
 
-            this.emit('close', ...args);
-            this.destroy();
-        });
-        ws.on('message', message => {
+        const onMessage = message => {
             logger.debug(`${getColorfulName(this._ws.role)} ${this._ws.id} Get Message`, truncate(message, 50));
             // 下面是frontend 发送给backend用的数据
             // const channelMessage = `@${this._name}\n${message}`;
@@ -30,7 +25,17 @@ module.exports = class Channel extends EventEmitter {
             });
             // 通过派发事件，将数据发送出去，结合 this.connect 实现来看
             this.emit('message', message);
-        });
+        };
+        const onClose = (...args) => {
+            this.status = STATUS_CLOSED;
+
+            this.emit('close', ...args);
+            this.destroy();
+            ws.off('close', onClose);
+            ws.off('message', onMessage);
+        };
+        ws.on('close', onClose);
+        ws.on('message', onMessage);
     }
     isAlive() {
         return this.status === STATUS_OPENING;
