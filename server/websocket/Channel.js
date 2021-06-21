@@ -47,7 +47,8 @@ module.exports = class Channel extends EventEmitter {
     }
     destroy() {
         this._connections.forEach(connection => {
-            connection.off('message', this.send);
+            connection.removeAllListeners('message');
+            connection.removeAllListeners('close');
         });
 
         this._connections = [];
