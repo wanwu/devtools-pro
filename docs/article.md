@@ -1,6 +1,6 @@
 # 移动 Webview 调试神器 DevTools-Pro
 
-在移动开发中，对于 Webview 的 H5 页面调试是很麻烦的，即使有了 vconsole 这类工具，也不过是在移动的 Webview 页面中进行调试，而且功能比较单一。而移动端的远程调试，在配置的时候有比较麻烦，而且安卓和 iOS 还不一样，需要单独调试，对于 APP 还需要内核支持，比如微信、百度 APP 这类需要安装对应的 inspector 工具，一顿操作下来，一步没配置好，说不定还不能用。
+在移动开发中，对于 Webview 的 H5 页面调试是很麻烦的，即使有了 vconsole 这类工具，也不过是在移动的 Webview 页面中进行调试，而且功能比较单一。而移动端的远程调试，在配置的时候又比较麻烦，而且安卓和 iOS 还不一样，需要单独调试，对于 APP 还需要内核支持，比如微信、百度 APP 这类需要安装对应的 inspector 工具，一顿操作下来，一步没配置好，说不定还不能用。
 
 对于习惯了 Chrome DevTools 的朋友，还是喜欢 Chrome DevTools 的强大功能和体验。
 
@@ -50,7 +50,7 @@ Options:
 -   port：server 端口号，默认 `8899`
 -   hostname：默认 `0.0.0.0`
 -   plugins：配置插件，[下面介绍](#插件开发)
--   https：server 默认是 http 的，如果要启用 https，可以设置`https=true`，或者使用此字段配置[nodejs/https 模块](https://nodejs.org/api/https.html)相关配置，例如：
+-   https：server 默认是 http 的，如果要启用 https，可以设置`https=true`，或者按照[nodejs/https 模块](https://nodejs.org/api/https.html)相关配置来配置`https`，例如：
 
 ```js
 https:{
@@ -191,7 +191,7 @@ DevTools Frontend 通过 `Module` 和 `Extension` 机制为 `Application` 增加
 
 ### 通信
 
-在原来的 CDP 基础上，为了方便开发插件开发，DevTools-pro 提供了两种 Backend 和 Frontend 插件的通信方式：**CDP 事件**和**自建 WebSocket**。
+在原来的 CDP 基础上，为了方便插件开发，DevTools-pro 提供了两种 Backend 和 Frontend 插件的通信方式：**CDP 事件**和**自建 WebSocket**。
 
 #### CDP 事件
 
@@ -234,7 +234,7 @@ ws.send('hi~');
 ws.on('open', onOpen);
 ```
 
-在 Frontend 插件中，需要利用 ChannelId 建立一条相同的 MessageChannel，这时候应该通过 CDP 事件将 channelId 由 Backend，发送的 Frontend：
+在 Frontend 插件中，需要利用 ChannelId 建立一条相同的 MessageChannel，这时候应该通过 CDP 事件将 channelId 由 Backend 发送给 Frontend：
 
 ```js
 // backend
