@@ -1,18 +1,18 @@
-<h1 align="center">Devtools-Pro</h1>
+# 移动 Webview 调试神器 DevTools-Pro
 
-<div align="center">
-A web remote debugging tools, based on Chrome DevTools.
-</div>
+在移动开发中，对于 Webview 的 H5 页面调试是很麻烦的，即使有了 vconsole 这类工具，也不过是在移动的 Webview 页面中进行调试，而且功能比较单一。而移动端的远程调试，在配置的时候有比较麻烦，而且安卓和 iOS 还不一样，需要单独调试，对于 APP 还需要内核支持，比如微信、百度 APP 这类需要安装对应的 inspector 工具，一顿操作下来，一步没配置好，说不定还不能用。
 
-![image](https://user-images.githubusercontent.com/1073262/118256057-9eceed00-b4df-11eb-94f4-74676c2d8c9b.png)
+对于习惯了 Chrome DevTools 的朋友，还是喜欢 Chrome DevTools 的强大功能和体验。
 
-## 🎉 Features
+有没有一个工具，可以在移动的 webview 上不受限于系统和 APP，直接实现 Webview 的远程调试，而且体验上跟 Chrome DevTools 一样呢？
 
--   基于 Chrome DevTools
--   基于 WebSocket 远程调试
--   可扩展，支持自定义插件
+> 本文将简单介绍下 DevTools-Pro 的使用，重点介绍下实现原理和如何打造一个属于自己的移动端调试神器，以及如何利用 DevTools-Pro 实现页面的自动化测试。
 
-## 📦 Installation
+## 使用方法
+
+DevTools-Pro 就是这么一个移动端 Webview 调试神器！DevTools-Pro 是基于 Chrome DevTools 项目进行开发的，利用 WebSocket 实现远程通信连接，支持自编写插件和面板，实现更加强大的功能。
+
+我们可以通过下面的方式进行安装：
 
 ```shell
 npm i -g devtools-pro
@@ -20,7 +20,7 @@ npm i -g devtools-pro
 yarn global add devtools-pro
 ```
 
-## 命令行配置项
+基本的使用方法是：
 
 ```bash
 devtools-pro -h
@@ -42,7 +42,7 @@ Options:
   -v, --version   Show version number                                  [boolean]
 ```
 
-## 配置文件`devtools.config.js`
+### 配置文件`devtools.config.js`
 
 为了方便项目统一配置，DevTools-pro 支持配置文件，可以在项目中创建一个名为`devtools.config.js`的文件，支持的配置项如下：
 
@@ -60,36 +60,7 @@ https:{
 }
 ```
 
-## 开发
-
-1. clone
-
-```bash
-mkdir devtools-pro
-git clone git@github.com:ksky521/devtools-pro.git devtools-pro
-```
-
-2. 安装依赖 & 初始化
-
-```bash
-yarn
-# 初始化：将chrome-devtools-frontend/front_end复制出来
-sh init.sh
-```
-
-3. 开始开发
-
-```bash
-yarn dev
-```
-
-访问：
-
--   1. 打开 home 页面：localhost:8080
--   2. 打开 demo 测试页面：点击 home 页面上测试页面链接 localhost:8080/demo.html
--   3. 打开 inspector：点击 home 页面上的【Open Chrome DevTools】
-
-## 原理
+## 实现原理
 
 DevTools-pro 是基于[chrome-devtools-frontend](https://github.com/ChromeDevTools/devtools-frontend)进行开发的，通过自建 WebSocket 通道实现 Frontend 和 Backend 的通信。
 
@@ -102,16 +73,16 @@ DevTools 主要由四部分组成：
 
 这四部分的交互逻辑如下图所示：
 
-![](./docs/imgs/devtools-flow.png)
+![](./imgs/devtools-flow.png)
 
 简单来说：被调试页面引入 Backend 后，会跟 Frontend 建立连接；在 backend 中，对于一些 JavaScript API 或者 DOM 操作等进行了监听和 mock，从而页面执行对应操作时，会发送消息到 Frontend。同时 Backend 也会监听来自于 Frontend 的消息，收到消息后进行对应处理。
 
 ## 插件开发
 
-DevTools-pro 是可以通过插件增加功能的，比如：
+DevTools-pro 在设计开始我们就设计了插件机制，通过提供的 API 可以添加自己的功能和面板，比如下面的功能可以来实现：
 
 -   增加 devtools 面板，例如集成 san-devtools、vue-devtools、react-devtools 等到 devtools-pro 中
--   主动在页面触发 [Chrome DevTools Protocol（CDP）](https://chromedevtools.github.io/devtools-protocol/)，接收/发送数据，例如将一些特殊的请求或者信息通过 CDP 发送到 devtools frontend 中展示
+-   主动在页面触发 [Chrome DevTools Protocol（后面简称 CDP）](https://chromedevtools.github.io/devtools-protocol/)，接收/发送数据，例如将一些特殊的请求或者信息通过 CDP 发送到 devtools frontend 中展示
 -   其他脑洞大开的想法
 
 插件可以发布一个 NPM 包，然后在项目下的`devtools.config.js`中通过`plugins`进行添加，一个 plugins 是一个 NPM 包，由以下三部分组成：
@@ -142,6 +113,8 @@ DevTools-pro 是可以通过插件增加功能的，比如：
     }
 }
 ```
+
+下面来详细介绍下 frontend、backend 和 middleware 具体实现。
 
 ### Frontend
 
@@ -175,7 +148,7 @@ dir 文件夹中的重要文件是模块描述文件`module.json`，通过文件
 }
 ```
 
-DevTools Frontend 通过 Module 和 Extension 机制为 Application 增加了“插件化”的能力，然后通过配置进行灵活的组装。
+DevTools Frontend 通过 `Module` 和 `Extension` 机制为 `Application` 增加了“插件化”的能力，然后通过配置进行灵活的组装。
 
 #### 应用举例
 
@@ -208,13 +181,13 @@ DevTools Frontend 通过 Module 和 Extension 机制为 Application 增加了“
 
 此部分可以参考[@ksky521/js-native-monitor](https://github.com/ksky521/js-native-monitor)实现。
 
-下面是我们自己实现的端能力调试面板：
+下面是我们团队自己实现的端能力调试面板，在这个面板可以看到端能力的调用记录和通信事件，同时支持 js-native 描述表的导入导出，以及端能力的 Mock 和拦截：
 
-![](./docs/imgs/boxx.png)
+![](./imgs/boxx.png)
 
 ### Backend
 
-当被调试的页面引入`hostname:port/backend.js`时，backend 的文件会被合并到`backend.js`中输出。这里提供了全局命名空间`$devtools`，它的定义在[./src/runtime.js](./src/runtime.js)中。后面[通信](#通信)部分会详细介绍
+当被调试的页面引入`hostname:port/backend.js`时，backend 的文件会被合并到`backend.js`中输出。这里提供了全局命名空间`$devtools`，它的定义在[./src/runtime.js](./src/runtime.js)中。下面[通信](#通信)部分会详细介绍。
 
 ### 通信
 
@@ -312,7 +285,7 @@ module.exports = router => {
 
 我们可以启动 DevTools-pro 之后，通过[chrome-remote-interface](https://github.com/cyrus-and/chrome-remote-interface)链接 WebSocket，然后通过发送 CDP 命令，进行自动化测试。
 
-![](./docs/imgs/devtools-test.png)
+![](./imgs/devtools-test.png)
 
 ```js
 const CDP = require('chrome-remote-interface');
