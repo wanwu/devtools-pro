@@ -74,6 +74,7 @@
         "@ecomfe/eslint-config": "^3.2.0",
         "@ksky521/cz-emoji": "^1.2.1",
         "autoprefixer": "^10.2.5",
+        "babel-eslint": "^10.1.0",
         "babel-loader": "^8.2.2",
         "babel-plugin-import": "^1.13.3",
         "chrome-devtools-frontend": "1.0.734346",
@@ -86,6 +87,7 @@
         "css-loader": "^5.2.4",
         "dayjs": "^1.10.4",
         "eslint": "^6.8.0",
+        "eslint-plugin-babel": "^5.3.0",
         "file-loader": "^6.2.0",
         "html-loader": "^2.1.2",
         "html-webpack-plugin": "^5.3.1",
@@ -114,7 +116,7 @@
     },
     "husky": {
         "hooks": {
-            "pre-commit": "lint-staged && node scripts/test.js"
+            "pre-commit": "lint-staged"
         }
     },
     "author": "ksky521",

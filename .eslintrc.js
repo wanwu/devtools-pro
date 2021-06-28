@@ -1,7 +1,6 @@
 module.exports = {
     extends: [
-        '@ecomfe/eslint-config',
-        'plugin:jest/recommended'
+        '@ecomfe/eslint-config'
     ],
     rules: {
         'comma-dangle': 'off'

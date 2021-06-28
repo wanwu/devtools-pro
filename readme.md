@@ -129,7 +129,7 @@ DevTools-pro 是可以通过插件增加功能的，比如：
     main: 'index.js',
     // ....
     devtools: {
-        // middleware
+        // frontend
         frontend: {
             name: 'jsna_monitor',
             type: '', // remote/autostart

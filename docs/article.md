@@ -100,7 +100,7 @@ DevTools-pro 在设计开始我们就设计了插件机制，通过提供的 API
     main: 'index.js',
     // ....
     devtools: {
-        // middleware
+        // frontend
         frontend: {
             name: 'jsna_monitor',
             type: '', // remote/autostart
