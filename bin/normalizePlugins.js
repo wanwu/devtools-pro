@@ -39,7 +39,7 @@ module.exports = plugins => {
             })
             .map(({devtools, name, pluginPath}) => {
                 /**
-             * // middleware
+             * // frontend
                 "frontend": {
                     "name": "jsna_monitor",
                     "type": "", // remote/autostart
