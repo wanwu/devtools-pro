@@ -35,6 +35,18 @@ module.exports = class WebSocketServer {
             }
         });
     }
+    getFrontendById(id) {
+        return this.channelManager.getFrontendChannelById(id);
+    }
+    getBackendById(id) {
+        return this.channelManager.getBackendById(id);
+    }
+    getFrontends() {
+        return this.channelManager.getFrontends();
+    }
+    getBackends() {
+        return this.channelManager.getBackends();
+    }
     destory() {
         this.channelManager.destory();
         this.manager.destroy();

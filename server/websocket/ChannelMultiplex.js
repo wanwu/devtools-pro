@@ -60,6 +60,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
             this.removeBackendChannel(id);
         });
         !hidden && this.emit('backendConnected', backendData);
+        return channel;
     }
     createFrontendChannel(id, ws) {
         const backendChannel = this._backendMap.get(id);
@@ -93,6 +94,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         backendChannel.channel.on('close', () => channel.destroy());
 
         this.emit('frontendAppend', frontendData);
+        return channel;
     }
     removeBackendChannel(id) {
         logger.debug(`${getColorfulName('backend')} ${chalk.red('disconnected')} ${id}`);
@@ -106,6 +108,9 @@ module.exports = class ChannelMultiplex extends EventEmitter {
     }
     getBackendById(id) {
         return this._backendMap.get(id);
+    }
+    getFrontendById(id) {
+        return this._frontendMap.get(id);
     }
     getBackends() {
         return Array.from(this._backendMap.values()).filter(d => !d.hidden);

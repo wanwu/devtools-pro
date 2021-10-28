@@ -9,13 +9,14 @@ const Koa = require('koa');
 const Router = require('@koa/router');
 const killable = require('killable');
 const EventEmitter = require('events').EventEmitter;
-const middlewares = ['alive', 'backend', 'frontend', 'dist' /*, 'json_protocol'*/].map(file => {
+const middlewares = ['alive', 'backend', 'frontend', 'dist'].map(file => {
     return require(path.join(__dirname, './middlewares', file));
 });
 
 const getCertificate = require('./utils/getCertificate');
 const logger = require('consola');
 const WebSocketServer = require('./WebSocketServer');
+const ProxyServer = require('./ProxyServer');
 
 class Server extends EventEmitter {
     constructor(options) {
@@ -99,9 +100,9 @@ class Server extends EventEmitter {
         this.app = new Koa();
         this.app.use(this._wrapContext.bind(this));
         this._addRouters();
-
-        if (this.options.https) {
-            this._server = https.createServer(this.options.https, this.app.callback());
+        const options = this.options;
+        if (options.https) {
+            this._server = https.createServer(options.https, this.app.callback());
         } else {
             this._server = http.createServer(this.app.callback());
         }
@@ -110,6 +111,16 @@ class Server extends EventEmitter {
             logger.error(err);
         });
         killable(this._server);
+    }
+    _createProxyServer() {
+        if (this._proxyServer) {
+            return;
+        }
+        const proxy = this.options.proxy || false;
+
+        if (proxy) {
+            this._proxyServer = new ProxyServer(this);
+        }
     }
     _createWebSocketServer() {
         if (this._wsServer) {
@@ -162,9 +173,13 @@ class Server extends EventEmitter {
         }
         return this.hostname;
     }
+    getChannelManager() {
+        return this._wsServer && this._wsServer.getChannelManager();
+    }
     close() {
         this._wsServer.destory();
         this._server.kill();
+        this._proxyServer && this._proxyServer.close();
     }
 }
 
