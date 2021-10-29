@@ -9,6 +9,14 @@ const createDebug = require('./utils/createDebug');
 const logger = require('./utils/logger');
 const {truncate} = require('./utils');
 const Connection = require('./proxy/Connection');
+const {
+    BEFORE_CREATE_REQUEST,
+    BEFORE_SEND_REQUEST,
+    BEFORE_SEND_REQUEST_HEADERS,
+    ERROR_OCCURRED,
+    BEFORE_SEND_RESPONSE_HEADERS,
+    BEFORE_SEND_RESPONSE_BODY
+} = require('./constants').FOXY_PUBLIC_HOOKS;
 const debug = createDebug('foxy');
 const DEFAULT_CHUNK_COLLECT_THRESHOLD = 20 * 1024 * 1024; // about 20 mb
 
@@ -26,10 +34,9 @@ class CommonReadableStream extends Readable {
 class Foxy extends Hookable {
     constructor(options) {
         super(logger);
-        this._blocking = true;
         this.options = options;
+        this._blocking = true;
         this._connectionMap = new Map();
-        this.logger = logger;
         const proxy = new MITMProxy();
         this.proxy = proxy;
         this._addBuiltInMiddleware();
@@ -102,9 +109,13 @@ class Foxy extends Hookable {
         callback(null, code, message);
         this._closeConnection(ctx);
     }
+    async _onResponse(ctx, callback) {
+        await this.callHook('responseStart', ctx.serverToProxyResponse);
+        callback();
+    }
     // 在发送给clinet response之前调用
     async _onResponseHeaders(ctx, callback) {
-        const orgiinalUrl = ctx.clientToProxyRequest.url;
+        const originalUrl = ctx.clientToProxyRequest.url;
         const serverRes = ctx.serverToProxyResponse;
         // await this.callHook('beforSendResponse', serverRes);
         const userRes = ctx.proxyToClientResponse;
@@ -127,6 +138,14 @@ class Foxy extends Hookable {
                     return userRes.end('response is empty');
                 }
 
+                const sendToClientHeaders = headersFilter(serverRes.headers);
+                sendToClientHeaders['content-length'] = Buffer.byteLength(body, 'utf8');
+                delete sendToClientHeaders['Content-Length'];
+                // rewrite
+                debug('rewrite mode', originalUrl);
+                await self.callHook(BEFORE_SEND_RESPONSE_HEADERS, sendToClientHeaders);
+                userRes.writeHead(serverRes.statusCode, sendToClientHeaders);
+
                 const rs = {
                     get responseBody() {
                         return body;
@@ -136,19 +155,12 @@ class Foxy extends Hookable {
                         body = value;
                     }
                 };
-                await self.callHook('responseInterceptor', rs);
-                // console.log(userRes);
+                await self.callHook(BEFORE_SEND_RESPONSE_BODY, rs);
 
-                const sendToClientHeaders = headersFilter(serverRes.headers);
-                sendToClientHeaders['content-length'] = Buffer.byteLength(body, 'utf8');
-                delete sendToClientHeaders['Content-Length'];
-
-                // rewrite
-                debug('rewrite mode', orgiinalUrl);
-                userRes.writeHead(serverRes.statusCode, sendToClientHeaders);
                 userRes.end(body);
             } else {
-                debug('stream mode', orgiinalUrl);
+                debug('stream mode', originalUrl);
+                await self.callHook('beforeSendResponseHeaders', serverRes.headers);
                 userRes.writeHead(serverRes.statusCode, serverRes.headers);
                 resDataStream.pipe(userRes);
             }
@@ -157,6 +169,7 @@ class Foxy extends Hookable {
             self._closeConnection();
         }
         serverRes.on('data', async chunk => {
+            // await self.callHook('responseData', chunk);
             // resChunks.push(chunk);
             if (resDataStream) {
                 // stream mode
@@ -179,6 +192,7 @@ class Foxy extends Hookable {
         });
 
         serverRes.on('end', async () => {
+            // await self.callHook('responseEnd');
             if (resDataStream) {
                 resDataStream.push(null); // indicate the stream is end
             } else {
@@ -186,27 +200,13 @@ class Foxy extends Hookable {
             }
         });
         serverRes.on('error', error => {
-            logger.error('server response error', error);
-            // logUtil.printLog('error happend in response:' + error, logUtil.T_ERR);
-            // reject(error);
+            this.callHook(ERROR_OCCURRED, {
+                who: 'serverResponse',
+                error
+            });
         });
-
-        return ctx.serverToProxyResponse.resume();
-    }
-    async _onResponse(ctx, callback) {
-        // const request = ctx.clientToProxyRequest;
-        const response = ctx.serverToProxyResponse;
-
-        const connection = this._connectionMap.get(ctx._id);
-        if (!ctx._id || !connection) {
-            // TODO connection不存在错误处理
-        }
-
-        connection.setResponse(response);
-
-        // TODO 发送 cdp Network.responseReceived 事件
-        this.callHook('cdp:Network.responseReceived', ctx);
-        callback();
+        // 继续
+        return serverRes.resume();
     }
     _closeConnection(ctx) {
         if (ctx && ctx._id) {
@@ -224,7 +224,7 @@ class Foxy extends Hookable {
         this._connectionMap.set(id, connection);
         ctx._id = id;
         // 用于修改发送server的请求参数
-        await this.callHook('beforeSendProxyReqeust', ctx.proxyToServerRequestOptions);
+        await this.callHook(BEFORE_CREATE_REQUEST, ctx.proxyToServerRequestOptions);
         const req = ctx.clientToProxyRequest;
         let isCanceled = false;
         const res = ctx.proxyToClientResponse;
@@ -252,20 +252,23 @@ class Foxy extends Hookable {
                 return this;
             }
         };
-        await this.callHook('requestInterceptor', req, fakeRes);
+        await this.callHook(BEFORE_SEND_REQUEST, {req, res: fakeRes});
         if (isCanceled) {
             return;
         }
         // 监听request body
         let reqChunks = [];
         ctx.onRequestData((ctx, chunk, callback) => {
+            // this.callHook('reqeustData', chunk)
             reqChunks.push(chunk);
             return callback(null, chunk);
         });
         ctx.onRequestEnd((ctx, callback) => {
-            connection.setRequest(req, ctx.isSSL, Buffer.concat(reqChunks).toString());
-
-            this.callHook('cdp:Network.requestWillBeSent', ctx);
+            // this.callHook('afterRequest', {
+            //     req,
+            //     isSSL: ctx.isSSL,
+            //     reqBody: Buffer.concat(reqChunks).toString()
+            // });
             return callback();
         });
 
@@ -273,7 +276,7 @@ class Foxy extends Hookable {
     }
     async _onRequestHeaders(ctx, callback) {
         const headers = ctx.proxyToServerRequestOptions.headers;
-        await this.callHook('requestHeadersInterceptor', headers);
+        await this.callHook(BEFORE_SEND_REQUEST_HEADERS, headers);
         ctx.proxyToServerRequestOptions.headers = headers;
         callback();
     }
@@ -307,7 +310,11 @@ class Foxy extends Hookable {
         }
 
         this._closeConnection();
-        this.logger.error(err);
+        this.callHook(ERROR_OCCURRED, {
+            who: 'unkown',
+            error: err,
+            errorKind
+        });
     }
     close() {
         this.proxy.close();
@@ -316,7 +323,7 @@ class Foxy extends Hookable {
     }
     listen(port, hostname) {
         this.proxy.listen({port});
-        this.logger.info('Foxy is ready to go!');
+        logger.info('Foxy is ready to go!');
     }
     _addBuiltInMiddleware() {
         const lifeCycle = {};
@@ -379,5 +386,5 @@ function headersFilter(originalHeaders) {
     return headers;
 }
 
-// const foxy = new Foxy();
-// foxy.listen(8001);
+const foxy = new Foxy();
+foxy.listen(8001);
