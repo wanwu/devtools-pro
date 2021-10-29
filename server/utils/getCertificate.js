@@ -14,7 +14,7 @@ function getCertificate() {
     // Use a self-signed certificate if no certificate was configured.
     // Cycle certs every 24 hours
     const certificateDir = findCacheDir({name}) || os.tmpdir();
-    const certificatePath = path.join(certificateDir, 'server.pem');
+    const certificatePath = path.join(certificateDir, 'ca.pem');
 
     let certificateExists = fs.existsSync(certificatePath);
 

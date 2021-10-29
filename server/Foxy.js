@@ -20,6 +20,7 @@ class CommonReadableStream extends Readable {
     }
     _read(size) {}
 }
+// TODO 统一server ssl认证到node-forge
 // TODO 把sslCaDir改到一个公共位置去，home temp dir
 // TODO 添加下载证书的链接
 class Foxy extends Hookable {
@@ -49,36 +50,7 @@ class Foxy extends Hookable {
     use(proxyMiddleware) {
         this.proxy.use(proxyMiddleware);
     }
-    _addBuiltInMiddleware() {
-        const lifeCycle = {};
-        [
-            'Error',
-            'CertificateRequired',
-            'CertificateMissing',
-            'Connect',
-            'WebSocketConnection',
-            'ResponseHeaders',
-            'WebSocketSend',
-            'WebSocketMessage',
-            'WebSocketClose',
-            'WebSocketError',
-            'WebSocketFrame',
 
-            'Request',
-            'RequestHeaders',
-            'RequestEnd',
-            'Response',
-            'RequestData',
-            'ResponseData',
-            'ResponseEnd'
-        ].forEach(event => {
-            if (typeof this[`_on${event}`] === 'function') {
-                lifeCycle[`on${event}`] = this[`_on${event}`].bind(this);
-            }
-        });
-
-        this.proxy.use(lifeCycle);
-    }
     setBlocking(blocking) {
         this._blocking = !!blocking;
     }
@@ -345,6 +317,36 @@ class Foxy extends Hookable {
     listen(port, hostname) {
         this.proxy.listen({port});
         this.logger.info('Foxy is ready to go!');
+    }
+    _addBuiltInMiddleware() {
+        const lifeCycle = {};
+        [
+            'Error',
+            'CertificateRequired',
+            'CertificateMissing',
+            'Connect',
+            'WebSocketConnection',
+            'ResponseHeaders',
+            'WebSocketSend',
+            'WebSocketMessage',
+            'WebSocketClose',
+            'WebSocketError',
+            'WebSocketFrame',
+
+            'Request',
+            'RequestHeaders',
+            'RequestEnd',
+            'Response',
+            'RequestData',
+            'ResponseData',
+            'ResponseEnd'
+        ].forEach(event => {
+            if (typeof this[`_on${event}`] === 'function') {
+                lifeCycle[`on${event}`] = this[`_on${event}`].bind(this);
+            }
+        });
+
+        this.proxy.use(lifeCycle);
     }
 }
 
