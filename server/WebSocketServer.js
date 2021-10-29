@@ -3,7 +3,7 @@ const querystring = require('querystring');
 
 const WebSocket = require('ws');
 const ChannelMultiplex = require('./websocket/ChannelMultiplex');
-const logger = require('consola');
+const logger = require('./utils/logger');
 const Manager = require('./websocket/Manager');
 
 module.exports = class WebSocketServer {

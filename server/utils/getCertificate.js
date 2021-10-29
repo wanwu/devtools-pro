@@ -8,7 +8,7 @@ const del = require('del');
 const findCacheDir = require('find-cache-dir');
 const selfsigned = require('selfsigned');
 const {name} = require('../../package.json');
-const logger = require('consola');
+const logger = require('./logger');
 
 function getCertificate() {
     // Use a self-signed certificate if no certificate was configured.

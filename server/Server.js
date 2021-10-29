@@ -14,9 +14,9 @@ const middlewares = ['alive', 'backend', 'frontend', 'dist'].map(file => {
 });
 
 const getCertificate = require('./utils/getCertificate');
-const logger = require('consola');
+const logger = require('./utils/logger');
 const WebSocketServer = require('./WebSocketServer');
-const ProxyServer = require('./ProxyServer');
+const ProxyServer = require('./Foxy');
 
 class Server extends EventEmitter {
     constructor(options) {

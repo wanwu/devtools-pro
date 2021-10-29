@@ -1,6 +1,6 @@
 const EventEmitter = require('events').EventEmitter;
 const {getColorfulName, truncate} = require('../utils');
-const logger = require('consola');
+const logger = require('../utils/logger');
 
 const CircularJSON = require('circular-json');
 

@@ -41,9 +41,7 @@
     "dependencies": {
         "@koa/router": "^10.0.0",
         "@ksky521/chobitsu": "^0.3.1",
-        "chalk": "^4.1.1",
         "circular-json": "^0.5.9",
-        "consola": "^2.15.3",
         "del": "^6.0.0",
         "figures": "^3.0.0",
         "colorette": "^2.0.16",

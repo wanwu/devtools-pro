@@ -1,7 +1,7 @@
 const EventEmitter = require('events').EventEmitter;
-const chalk = require('chalk');
-const logger = require('consola');
+const colorette = require('colorette');
 
+const logger = require('../utils/logger');
 const {truncate, getColorfulName} = require('../utils');
 const Channel = require('./Channel');
 
@@ -22,7 +22,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         // hidden是否通知到home
         const {hidden = false} = ws;
         const channel = new Channel(ws, 'backend');
-        logger.debug(`${getColorfulName('backend')} ${chalk.green('connected')} ${id}`);
+        logger.debug(`${getColorfulName('backend')} ${colorette.green('connected')} ${id}`);
         const backendData = {
             hidden,
             id,
@@ -73,7 +73,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         const channel = new Channel(ws, 'frontend');
         logger.debug(
             // eslint-disable-next-line max-len
-            `${getColorfulName('frontend')} ${chalk.green('connected')} ${id} to backend ${
+            `${getColorfulName('frontend')} ${colorette.green('connected')} ${id} to backend ${
                 backendChannel.id
             }:${truncate(backendChannel.title, 10)}`
         );
@@ -97,12 +97,12 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         return channel;
     }
     removeBackendChannel(id) {
-        logger.debug(`${getColorfulName('backend')} ${chalk.red('disconnected')} ${id}`);
+        logger.debug(`${getColorfulName('backend')} ${colorette.red('disconnected')} ${id}`);
         this._backendMap.delete(id);
         this.emit('backendDisconnected', {id});
     }
     removeFrontendChannel(id) {
-        logger.debug(`${getColorfulName('frontend')} ${chalk.red('disconnected')} ${id}`);
+        logger.debug(`${getColorfulName('frontend')} ${colorette.red('disconnected')} ${id}`);
         this._frontendMap.delete(id);
         this.emit('frontendRemove', {id});
     }
