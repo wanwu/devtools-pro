@@ -3,7 +3,6 @@ const zlib = require('zlib');
 module.exports = (responseBody, res) => {
     const contentEncoding = (res.headers['content-encoding'] || res.headers['Content-Encoding'] || '').toLowerCase();
     const contentLength = Buffer.byteLength(responseBody);
-
     if (!['gzip', 'deflate', 'br'].includes(contentEncoding) || !contentLength) {
         return Promise.resolve(responseBody);
     }

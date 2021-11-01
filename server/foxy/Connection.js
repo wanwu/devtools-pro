@@ -22,6 +22,7 @@ module.exports = class Connection {
     getId() {
         return this._id;
     }
+
     close() {
         this._request = null;
         this._respones = null;

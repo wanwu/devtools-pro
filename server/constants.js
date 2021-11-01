@@ -4,9 +4,9 @@ exports.BACKENDJS_PATH = '/backend.js';
 
 exports.FRONTEND_PATH = 'devtools/inspector.html';
 
-exports.FOXY_BUILDIN_HOOKS = {};
+exports.PROXY_INTERCEPTORS = {
+    WEBSOCKET_FRAME: 'websocketFrame',
 
-exports.FOXY_PUBLIC_HOOKS = {
     // 在创建proxy request之前触发，接受proxy request options
     // 用于rewrite请求options，比如修改域名对应关系
     BEFORE_CREATE_REQUEST: 'beforeCreateRequest',
