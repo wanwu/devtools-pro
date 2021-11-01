@@ -49,6 +49,7 @@
         "is-plain-obj": "^4.0.0",
         "is-glob": "^4.0.3",
         "http-mitm-proxy": "^0.9.0",
+        "istextorbinary": "^6.0.0",
         "chrome-remote-interface": "^0.31.0",
         "debug": "^4.3.2",
         "find-cache-dir": "^3.3.1",
