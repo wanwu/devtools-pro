@@ -41,6 +41,7 @@ module.exports = class Connection {
             body: null,
             statusCode: null,
             headers: [],
+            isBinary: false,
             isBigStream: false,
             resourceType: 'Other'
         };
@@ -72,9 +73,8 @@ module.exports = class Connection {
         } else if (resourceType === 'Other') {
             isBinary = isTextOrBinary.isBinary(body);
         }
-        this._binary = isBinary;
+        this._respones.isBinary = isBinary;
         this._respones.body = isBinary ? body.toString('base64') : body.toString('utf8');
-
         this._respones.isBigStream = isBigStream;
     }
     setRequestHeaders(headers) {

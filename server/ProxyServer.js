@@ -28,11 +28,11 @@ class CommonReadableStream extends Readable {
     }
     _read(size) {}
 }
-let id = 1;
 
 // TODO 统一server ssl认证到node-forge
 // TODO 把sslCaDir改到一个公共位置去，home temp dir
 // TODO 添加下载证书的链接
+// TODO 1. 接收事件，建立cdp连接，发送数据
 class ProxyServer extends EventEmitter {
     constructor(options) {
         super(logger);
@@ -57,6 +57,8 @@ class ProxyServer extends EventEmitter {
             interceptors[name] = new InterceptorFactory();
         });
         this.interceptors = interceptors;
+        // TODO 通过options创建拦截器，有规则的拦截
+        this._bindConnectionEvent();
     }
     async _runInterceptor(name, params, conn) {
         const filter = conn.getInterceptorFilter();
@@ -67,7 +69,7 @@ class ProxyServer extends EventEmitter {
     _addConnection(id, conn) {
         this._connectionMap.set(id, conn);
     }
-    _bindConnectEvent() {
+    _bindConnectionEvent() {
         this.on('_:requestHeaders', (conn, headers) => {
             conn.setRequestHeaders(headers);
         })

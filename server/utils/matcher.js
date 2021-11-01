@@ -1,75 +1,98 @@
-// source https://github.com/chimurai/http-proxy-middleware/blob/88136d181d/src/context-matcher.ts
 const isGlob = require('is-glob');
 const micromatch = require('micromatch');
-const url = require('url');
+const isObject = obj => obj && obj.constructor && obj.constructor === Object;
 
-const ERRORS = {
-    ERR_CONTEXT_MATCHER_GENERIC: 'Invalid context. Expecting something like: "/api" or ["/api", "/ajax"]',
-    ERR_CONTEXT_MATCHER_INVALID_ARRAY:
-        'Invalid context. Expecting something like: ["/api", "/ajax"] or ["/api/**", "!**.html"]'
+module.exports = function match(context, req) {
+    const url = req.url;
+    // - [x] 可以支持多个路径，比如：['/api', '/ajax'] √
+    // - [x] 可以支持多个路径，比如：['/api/**', '!**.html']
+
+    // 所以 url/method/headers 够用
+    if (isObject(context)) {
+        const {headers} = context;
+        let isMatch = 1;
+        ['method', 'url'].forEach(k => {
+            if (req[k]) {
+                isMatch &= test(context[k], req[k]);
+            }
+        });
+        if (headers && req.headers && isObject(headers)) {
+            Object.keys(headers).forEach(k => {
+                isMatch &= test(headers[k], req.headers[k]);
+            });
+        }
+        return isMatch;
+    }
+    // 默认是path路径匹配
+    return test(context, url);
 };
-module.exports = function match(context, uri, req) {
-    // single path
-    if (isStringPath(context)) {
-        return matchSingleStringPath(context, uri);
+
+function test(tester, testee) {
+    if (tester === undefined || testee === undefined) {
+        return true;
+    }
+    if (tester instanceof RegExp) {
+        return tester.test(testee);
+    }
+    if (isStringPath(tester)) {
+        return matchSingleStringPath(tester, testee);
     }
 
     // single glob path
-    if (isGlobPath(context)) {
-        return matchSingleGlobPath(context, uri);
+    if (isGlobPath(tester)) {
+        return matchSingleGlobPath(tester, testee);
     }
 
     // multi path
-    if (Array.isArray(context)) {
-        if (context.every(isStringPath)) {
-            return matchMultiPath(context, uri);
+    if (Array.isArray(tester)) {
+        if (tester.every(isStringPath)) {
+            return matchMultiPath(tester, testee);
         }
-        if (context.every(isGlobPath)) {
-            return matchMultiGlobPath(context, uri);
+        if (tester.every(isGlobPath)) {
+            return matchMultiGlobPath(tester, testee);
         }
 
-        throw new Error(ERRORS.ERR_CONTEXT_MATCHER_INVALID_ARRAY);
+        throw new Error(
+            'Invalid interceptor filter. Expecting something like: ["/api", "/ajax"] or ["/api/**", "!**.html"]'
+        );
     }
 
     // custom matching
-    if (typeof context === 'function') {
-        const pathname = getUrlPathName(uri);
-        return context(pathname, req);
+    if (typeof tester === 'function') {
+        return !!tester(testee);
     }
 
-    throw new Error(ERRORS.ERR_CONTEXT_MATCHER_GENERIC);
-};
-
+    // 最后相等
+    return tester == testee; // eslint-disable-line eqeqeq
+}
 /**
  * @param  {String} context '/api'
  * @param  {String} uri     'http://example.org/api/b/c/d.html'
  * @return {Boolean}
  */
-function matchSingleStringPath(context, uri) {
-    const pathname = getUrlPathName(uri);
-    return pathname.indexOf(context) === 0;
+function matchSingleStringPath(tester, testee) {
+    return testee.indexOf(tester) === 0;
 }
 
-function matchSingleGlobPath(pattern, uri) {
-    const pathname = getUrlPathName(uri);
-    const matches = micromatch([pathname], pattern);
+function matchSingleGlobPath(pattern, testee) {
+    const matches = micromatch([testee], pattern);
     return matches && matches.length > 0;
 }
 
-function matchMultiGlobPath(patternList, uri) {
-    return matchSingleGlobPath(patternList, uri);
+function matchMultiGlobPath(patternList, testee) {
+    return matchSingleGlobPath(patternList, testee);
 }
 
 /**
- * @param  {String} contextList ['/api', '/ajax']
- * @param  {String} uri     'http://example.org/api/b/c/d.html'
+ * @param  {String} arr ['/api', '/ajax']
+ * @param  {String} testee     'http://example.org/api/b/c/d.html'
  * @return {Boolean}
  */
-function matchMultiPath(contextList, uri) {
+function matchMultiPath(arr, testee) {
     let isMultiPath = false;
 
-    for (const context of contextList) {
-        if (matchSingleStringPath(context, uri)) {
+    for (const tester of arr) {
+        if (matchSingleStringPath(tester, testee)) {
             isMultiPath = true;
             break;
         }
@@ -77,17 +100,6 @@ function matchMultiPath(contextList, uri) {
 
     return isMultiPath;
 }
-
-/**
- * Parses URI and returns RFC 3986 path
- *
- * @param  {String} uri from req.url
- * @return {String}     RFC 3986 path
- */
-function getUrlPathName(uri) {
-    return uri && url.parse(uri).pathname;
-}
-
 function isStringPath(context) {
     return typeof context === 'string' && !isGlob(context);
 }

@@ -54,6 +54,7 @@ class Server extends EventEmitter {
         return !!this.options.https;
     }
     _setupHttps() {
+        // TODO 统一到http-mitm-proxy的方式，使用一个ca证书？
         if (this.options.https) {
             for (const property of ['ca', 'pfx', 'key', 'cert']) {
                 const value = this.options.https[property];
