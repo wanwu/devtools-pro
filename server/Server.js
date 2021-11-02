@@ -117,10 +117,11 @@ class Server extends EventEmitter {
         if (this._proxyServer) {
             return;
         }
-        const proxy = this.options.proxy || false;
 
+        const proxy = this.options.proxy || process.env.PROXY || false;
         if (proxy) {
             this._proxyServer = new ProxyServer(proxy, this);
+            this._proxyServer.listen();
         }
     }
     _createWebSocketServer() {

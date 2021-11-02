@@ -35,7 +35,7 @@ module.exports = (router, logger, serverInstance) => {
 
         if (realPath) {
             logger.debug(relativePath, 'use lru cache', realPath);
-            await sendFile(ctx, next, relativePath, realPath, log);
+            await sendFile(ctx, next, relativePath, realPath, logger);
             return;
         }
         const absoluteFilePath = path.join(LOCAL_CHROME_FRONTEND_PATH, relativePath);

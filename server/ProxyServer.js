@@ -329,7 +329,9 @@ class ProxyServer extends EventEmitter {
         this.removeAllListeners();
     }
     listen(port) {
-        this.proxy.listen({port: port || this.port});
+        port = port || this.port;
+        this.proxy.listen({port});
+        logger.info(`Proxy Server Available On Port: ${port}`);
     }
     _addBuiltInMiddleware() {
         const lifeCycle = {};
@@ -391,15 +393,15 @@ function copyHeaders(originalHeaders) {
 }
 module.exports = ProxyServer;
 
-const foxy = new ProxyServer();
-// foxy.interceptors.websocket.add(({websocket}) => {
-//     if (websocket.body !== '2probe' && websocket.body !== '3probe') {
-//         websocket.body = '1111';
-//     }
-//     // console.log(11111111, a.body.toString().slice(0, 100));
-// }, '/socket.io-client/*');
-// foxy.interceptors.response.add(({response}) => {
-//     response.body = '1111';
-//     // console.log(11111111, a.body.toString().slice(0, 100));
-// }, '/wangyongqing01/*');
-foxy.listen(8001);
+// const foxy = new ProxyServer();
+// // foxy.interceptors.websocket.add(({websocket}) => {
+// //     if (websocket.body !== '2probe' && websocket.body !== '3probe') {
+// //         websocket.body = '1111';
+// //     }
+// //     // console.log(11111111, a.body.toString().slice(0, 100));
+// // }, '/socket.io-client/*');
+// // foxy.interceptors.response.add(({response}) => {
+// //     response.body = '1111';
+// //     // console.log(11111111, a.body.toString().slice(0, 100));
+// // }, '/wangyongqing01/*');
+// foxy.listen(8001);
