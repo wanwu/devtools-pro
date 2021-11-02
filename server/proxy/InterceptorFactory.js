@@ -31,8 +31,8 @@ class InterceptorFactory {
 }
 
 module.exports = InterceptorFactory;
-module.exports.createFilter = req => {
+module.exports.createFilter = context => {
     return function interceptorFilterFunc(filterDetail) {
-        return matcher(filterDetail, req.url, req);
+        return matcher(filterDetail, context);
     };
 };

@@ -3,17 +3,14 @@
  */
 const path = require('path');
 const fs = require('fs');
-const os = require('os');
 const del = require('del');
-const findCacheDir = require('find-cache-dir');
 const selfsigned = require('selfsigned');
-const {name} = require('../../package.json');
 const logger = require('./logger');
-
+const findCacheDir = require('./findCacheDir');
 function getCertificate() {
     // Use a self-signed certificate if no certificate was configured.
     // Cycle certs every 24 hours
-    const certificateDir = findCacheDir({name}) || os.tmpdir();
+    const certificateDir = findCacheDir();
     const certificatePath = path.join(certificateDir, 'ca.pem');
 
     let certificateExists = fs.existsSync(certificatePath);

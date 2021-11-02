@@ -13,6 +13,7 @@ module.exports = class Connection {
     constructor(req, isSSL = false, websocketConnect) {
         this._isSSL = isSSL;
         this._id = genId();
+        this._blocking = true;
         this._protocol = isSSL ? 'https' : 'http';
         if (websocketConnect) {
             this._type = 'ws';
@@ -22,9 +23,9 @@ module.exports = class Connection {
             this._method = req.method;
             this._type = 'http';
         }
+        this._pathname = req.url; // pathname
         this._url = getFullUrl(this._protocol, req);
-        const interceptorFilter = InterceptorFactory.createFilter(req);
-        this._interceptorFilter = interceptorFilter;
+        this._host = req.headers.host;
         this._timing = {
             start: Date.now()
         };
@@ -43,8 +44,14 @@ module.exports = class Connection {
             headers: [],
             isBinary: false,
             isBigStream: false,
-            resourceType: 'Other'
+            resourceType: null
         };
+    }
+    isBlockable() {
+        return this._blocking === true;
+    }
+    setBlocking(blocking) {
+        this._blocking = !!blocking;
     }
     getType() {
         return this._type;
@@ -71,7 +78,7 @@ module.exports = class Connection {
         if (['Image', 'Media', 'Font'].includes(resourceType)) {
             isBinary = true;
         } else if (resourceType === 'Other') {
-            isBinary = isTextOrBinary.isBinary(body);
+            isBinary = isTextOrBinary.isBinary(null, body);
         }
         this._respones.isBinary = isBinary;
         this._respones.body = isBinary ? body.toString('base64') : body.toString('utf8');
@@ -91,10 +98,23 @@ module.exports = class Connection {
         return this._id;
     }
     getInterceptorFilter() {
-        return this._interceptorFilter;
+        // 创建filter context
+        const context = {
+            // type: this._type,
+            // protocol: this._protocol,
+            url: this._url,
+            pathname: this._pathname,
+            method: this._method,
+            host: this._host,
+            headers: this._request.headers,
+            sourceType: this._respones.resourceType,
+            statusCode: this._respones.statusCode,
+            userAgent: this._request.headers['user-agent'] || this._request.headers['User-Agent']
+        };
+        const interceptorFilter = InterceptorFactory.createFilter(context);
+        return interceptorFilter;
     }
     destroy() {
-        this._interceptorFilter = null;
         this._request = null;
         this._respones = null;
         this._timing = null;

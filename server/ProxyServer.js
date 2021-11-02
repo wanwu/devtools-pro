@@ -1,21 +1,21 @@
+const assert = require('assert');
 const EventEmitter = require('events').EventEmitter;
+
 const MITMProxy = require('http-mitm-proxy');
 const Readable = require('stream').Readable;
 const decompress = require('./utils/decompress');
 const createDebug = require('./utils/createDebug');
 const InterceptorFactory = require('./proxy/InterceptorFactory');
 const Connection = require('./proxy/Connection');
+const findCacheDir = require('./utils/findCacheDir');
 
 const logger = require('./utils/logger');
 const {truncate} = require('./utils');
 const {
     WEBSOCKET_FRAME,
-    BEFORE_CREATE_REQUEST,
     BEFORE_SEND_REQUEST,
-    BEFORE_SEND_REQUEST_HEADERS,
     ERROR_OCCURRED,
-    BEFORE_SEND_RESPONSE_HEADERS,
-    BEFORE_SEND_RESPONSE_BODY
+    BEFORE_SEND_RESPONSE
 } = require('./constants').PROXY_INTERCEPTORS;
 const debug = createDebug('foxy');
 const DEFAULT_CHUNK_COLLECT_THRESHOLD = 20 * 1024 * 1024; // about 20 mb
@@ -30,13 +30,15 @@ class CommonReadableStream extends Readable {
 }
 
 // TODO 统一server ssl认证到node-forge
-// TODO 把sslCaDir改到一个公共位置去，home temp dir
 // TODO 添加下载证书的链接
 // TODO 1. 接收事件，建立cdp连接，发送数据
 class ProxyServer extends EventEmitter {
-    constructor(options) {
+    constructor(options = {}) {
         super(logger);
         this.options = options;
+        this.port = options.port || 8001;
+        this.sslCaDir = options.sslCaDir || findCacheDir();
+        this.plugins = options.plugins || [];
         this._connectionMap = new Map();
         // 是否阻塞
         this._blocking = true;
@@ -45,18 +47,14 @@ class ProxyServer extends EventEmitter {
         this._addBuiltInMiddleware();
 
         const interceptors = {};
-        [
-            WEBSOCKET_FRAME,
-            BEFORE_CREATE_REQUEST,
-            BEFORE_SEND_REQUEST,
-            BEFORE_SEND_REQUEST_HEADERS,
-            ERROR_OCCURRED,
-            BEFORE_SEND_RESPONSE_HEADERS,
-            BEFORE_SEND_RESPONSE_BODY
-        ].forEach(name => {
+        [WEBSOCKET_FRAME, BEFORE_SEND_REQUEST, ERROR_OCCURRED, BEFORE_SEND_RESPONSE].forEach(name => {
             interceptors[name] = new InterceptorFactory();
         });
         this.interceptors = interceptors;
+        // TODO 是否加上pathrewirte？
+        this.plugins.forEach(plugin => {
+            plugin(interceptors);
+        });
         // TODO 通过options创建拦截器，有规则的拦截
         this._bindConnectionEvent();
     }
@@ -70,13 +68,13 @@ class ProxyServer extends EventEmitter {
         this._connectionMap.set(id, conn);
     }
     _bindConnectionEvent() {
-        this.on('_:requestHeaders', (conn, headers) => {
-            conn.setRequestHeaders(headers);
+        this.on('_:request', (conn, req) => {
+            conn.setRequestHeaders(req.headers);
         })
             .on('_:requestBody', (conn, body) => {
                 conn.setRequestBody(body);
             })
-            .on('_:serverRes', (conn, res) => {
+            .on('_:response', (conn, res) => {
                 conn.setResponse(res);
             })
             .on('_:responseHeaders', (conn, headers) => {
@@ -98,24 +96,27 @@ class ProxyServer extends EventEmitter {
     getBlocking() {
         return this._blocking;
     }
-    isBlockable() {
+    isBlockable(conn) {
+        if (conn && this._blocking === false) {
+            return conn.isBlockable();
+        }
         return this._blocking === true;
     }
     _onWebSocketConnection(ctx, callback) {
         const conn = new Connection(ctx.clientToProxyWebSocket.upgradeReq, ctx.isSSL, ctx.connectRequest);
         this._addConnection(ctx.id, conn);
 
-        if (!this.isBlockable()) {
+        if (!this.isBlockable(conn)) {
             return callback();
         }
         callback();
     }
     // The function that gets called for each WebSocket frame exchanged.
     async _onWebSocketFrame(ctx, type, fromServer, data, flags, callback) {
-        if (!this.isBlockable()) {
+        const conn = this._connectionMap.get(ctx.id);
+        if (!this.isBlockable(conn)) {
             return callback(null, data, flags);
         }
-        const conn = this._connectionMap.get(ctx.id);
 
         debug(
             'WEBSOCKET FRAME ' + type + ' received from ' + (fromServer ? 'server' : 'client'),
@@ -144,10 +145,10 @@ class ProxyServer extends EventEmitter {
         return callback(null, data, flags);
     }
     async _onWebSocketError(ctx, error) {
-        if (!this.isBlockable()) {
+        const conn = this._connectionMap.get(ctx.id);
+        if (!this.isBlockable(conn)) {
             return;
         }
-        const conn = this._connectionMap.get(ctx.id);
 
         await this._runInterceptor(ERROR_OCCURRED, error, conn);
         this.emit('error', {
@@ -158,10 +159,10 @@ class ProxyServer extends EventEmitter {
         });
     }
     _onWebSocketClose(ctx, code, message, callback) {
-        if (!this.isBlockable()) {
+        const conn = this._connectionMap.get(ctx.id);
+        if (!this.isBlockable(conn)) {
             return callback(null, code, message);
         }
-        const conn = this._connectionMap.get(ctx.id);
         this.emit('_:WebSocketClose', conn, code, message);
         callback(null, code, message);
     }
@@ -172,19 +173,17 @@ class ProxyServer extends EventEmitter {
         const id = (ctx.id = conn.getId());
         this._addConnection(id, conn);
 
-        if (!this.isBlockable()) {
+        if (!this.isBlockable(conn)) {
             return callback();
         }
 
         // 压缩中间件
         // ctx.use(MITMProxy.gunzip);
         ctx.use(MITMProxy.wildcard);
-
-        // 拦截器：用于修改发送server的请求参数
-        await this._runInterceptor(BEFORE_CREATE_REQUEST, ctx.proxyToServerRequestOptions, conn);
         let isCanceled = false;
-        // 拦截器：用于修改发送server的请求，暂时没用到
-        await this._runInterceptor(BEFORE_SEND_REQUEST, {req, request: req}, conn);
+        // 拦截器：用于修改发送server的请求参数
+        await this._runInterceptor(BEFORE_SEND_REQUEST, ctx.proxyToServerRequestOptions, conn);
+        this.emit('_:request', conn, ctx.proxyToServerRequestOptions);
         if (isCanceled) {
             return;
         }
@@ -202,33 +201,12 @@ class ProxyServer extends EventEmitter {
 
         callback();
     }
-    async _onRequestHeaders(ctx, callback) {
-        if (!this.isBlockable()) {
-            return callback();
-        }
-        const conn = this._connectionMap.get(ctx.id);
-
-        const headers = ctx.proxyToServerRequestOptions.headers;
-        // 拦截器：用于修改发送server的请求参数
-        await this._runInterceptor(BEFORE_SEND_REQUEST_HEADERS, headers, conn);
-        ctx.proxyToServerRequestOptions.headers = headers;
-        this.emit('_:requestHeaders', conn, headers);
-        callback();
-    }
-
-    // async _onResponse(ctx, callback) {
-    //     if (!this.isBlockable()) {
-    //         return callback();
-    //     }
-    //     // conn.setResponse(ctx.proxyToClientResponse);
-    //     callback();
-    // }
     // 在发送给clinet response之前调用
     async _onResponseHeaders(ctx, callback) {
-        if (!this.isBlockable()) {
+        const conn = this._connectionMap.get(ctx.id);
+        if (!this.isBlockable(conn)) {
             return callback();
         }
-        const conn = this._connectionMap.get(ctx.id);
 
         const originalUrl = ctx.clientToProxyRequest.url;
         const serverRes = ctx.serverToProxyResponse;
@@ -244,6 +222,7 @@ class ProxyServer extends EventEmitter {
             if (blocking) {
                 let body = Buffer.concat(resChunks);
                 body = await decompress(body, serverRes).catch(err => {
+                    // TODO 错误处理
                     logger.error(err);
                 });
                 if (!body) {
@@ -251,46 +230,68 @@ class ProxyServer extends EventEmitter {
                     return userRes.end('response is empty');
                 }
 
-                const sendToClientHeaders = headersFilter(serverRes.headers);
-
                 // rewrite
                 debug('rewrite mode', originalUrl);
-                await self._runInterceptor(BEFORE_SEND_RESPONSE_HEADERS, sendToClientHeaders, conn);
-                const transferEncoding =
-                    sendToClientHeaders['transfer-encoding'] || sendToClientHeaders['Transfer-Encoding'] || '';
+                const fakeRes = getRes(body);
+                await self._runInterceptor(BEFORE_SEND_RESPONSE, fakeRes, conn);
+
+                const headers = fakeRes.headers;
+                const transferEncoding = headers['transfer-encoding'] || headers['Transfer-Encoding'] || '';
 
                 // 处理chunked 情况
                 if (transferEncoding !== 'chunked') {
-                    sendToClientHeaders['content-length'] = Buffer.byteLength(body, 'utf8');
-                    delete sendToClientHeaders['Content-Length'];
+                    headers['content-length'] = Buffer.byteLength(body, 'utf8');
+                    delete headers['Content-Length'];
                 }
 
-                userRes.writeHead(serverRes.statusCode, sendToClientHeaders);
-                self.emit('_:responseHeaders', conn, sendToClientHeaders, serverRes.statusCode);
-
-                const rs = {
-                    get responseBody() {
-                        return body;
-                    },
-                    set responseBody(value) {
-                        typeof value === 'string' && (value = Buffer.from(value));
-                        body = value;
-                    }
-                };
-
-                await self._runInterceptor(BEFORE_SEND_RESPONSE_BODY, rs, conn);
-                self.emit('_:responseBody', conn, body);
-                userRes.end(body);
+                userRes.writeHead(fakeRes.statusCode, headers);
+                userRes.end(fakeRes.body);
+                self.emit('_:responseHeaders', conn, headers, fakeRes.statusCode);
+                self.emit('_:responseBody', conn, fakeRes.body);
             } else {
                 debug('stream mode', originalUrl);
+                const fakeRes = getRes(resDataStream);
 
-                await self._runInterceptor(BEFORE_SEND_RESPONSE_HEADERS, serverRes.headers, conn);
+                await self._runInterceptor(BEFORE_SEND_RESPONSE, fakeRes, conn);
 
-                self.emit('_:responseHeaders', conn, serverRes.headers);
-                userRes.writeHead(serverRes.statusCode, serverRes.headers, serverRes.statusCode);
+                userRes.writeHead(fakeRes.statusCode, fakeRes.headers);
+                fakeRes.body.pipe(userRes);
+                self.emit('_:responseHeaders', conn, fakeRes.headers, fakeRes.statusCode);
+                self.emit('_:responseBody', conn, fakeRes.body, true);
+            }
+            function getRes(body) {
+                const sendToClientHeaders = copyHeaders(serverRes.headers);
+                let statusCode = serverRes.statusCode;
+                return {
+                    get statusCode() {
+                        return statusCode;
+                    },
+                    set statusCode(code) {
+                        if (userRes.headerSent) {
+                            return;
+                        }
 
-                self.emit('_:responseBody', conn, resDataStream, true);
-                resDataStream.pipe(userRes);
+                        assert(Number.isInteger(code), 'status code must be a number');
+                        assert(code >= 100 && code <= 999, `invalid status code: ${code}`);
+                        statusCode = code;
+                    },
+                    headers: sendToClientHeaders,
+                    get body() {
+                        return body;
+                    },
+                    set body(val) {
+                        if (userRes.finished) {
+                            return;
+                        }
+                        // no content
+                        if (null == val) {
+                            statusCode = 204;
+                            return;
+                        }
+                        typeof val === 'string' && (val = Buffer.from(val));
+                        body = val;
+                    }
+                };
             }
         }
         serverRes.on('data', async chunk => {
@@ -333,10 +334,11 @@ class ProxyServer extends EventEmitter {
         return serverRes.resume();
     }
     async _onError(ctx, err, errorKind) {
-        if (!this.isBlockable()) {
-            return;
-        }
         if (ctx) {
+            const conn = this._connectionMap.get(ctx.id);
+            if (!this.isBlockable(conn)) {
+                return;
+            }
             const req = ctx.clientToProxyRequest;
             const res = ctx.proxyToClientResponse;
             if (!req && !res) {
@@ -363,7 +365,7 @@ class ProxyServer extends EventEmitter {
             const msg =
                 `Error occured while trying to proxy: ${req.url}` + errorKind ? `, error message: ${errorKind}` : '';
             res.end(msg);
-            const conn = this._connectionMap.get(ctx.id);
+
             await this._runInterceptor(ERROR_OCCURRED, {err, errorKind}, conn);
         } else {
             // TODO 未知错误处理
@@ -378,7 +380,7 @@ class ProxyServer extends EventEmitter {
         this.removeAllListeners();
     }
     listen(port) {
-        this.proxy.listen({port});
+        this.proxy.listen({port: port || this.port});
     }
     _addBuiltInMiddleware() {
         const lifeCycle = {};
@@ -411,7 +413,7 @@ class ProxyServer extends EventEmitter {
     }
 }
 
-function headersFilter(originalHeaders) {
+function copyHeaders(originalHeaders) {
     const headers = {};
 
     let keys = Object.keys(originalHeaders);
@@ -442,7 +444,7 @@ function headersFilter(originalHeaders) {
 module.exports = ProxyServer;
 
 const foxy = new ProxyServer();
-foxy.interceptors[BEFORE_SEND_RESPONSE_BODY].add(a => {
-    console.log(11111111, a.responseBody.toString());
+foxy.interceptors[BEFORE_SEND_RESPONSE].add(a => {
+    console.log(11111111, a.body.toString());
 }, '/wangyongqing01/*');
 foxy.listen(8001);

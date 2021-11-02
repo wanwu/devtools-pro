@@ -2,11 +2,8 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const findCacheDir = require('find-cache-dir');
-
-module.exports = (name = 'foxy', thunk) => {
-    if (!name) {
-        throw new Error('getCacheDir function need a path as params');
-    }
+const {name: pkgName} = require('../../package.json');
+module.exports = (name = pkgName, thunk) => {
     /**
      *
      * const thunk = findCacheDir({name: 'foo', thunk: true});

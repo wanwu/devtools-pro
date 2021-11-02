@@ -2,29 +2,41 @@ const isGlob = require('is-glob');
 const micromatch = require('micromatch');
 const isObject = obj => obj && obj.constructor && obj.constructor === Object;
 
-module.exports = function match(context, req) {
-    const url = req.url;
+module.exports = function match(options, context) {
+    if (typeof options === 'function') {
+        return options(context);
+    }
+
+    if (isObject(options)) {
+        // const {pathname, url, headers, method, host, sourceType, userAgent, statusCode} = context;
+
+        const keys = Object.keys(context).filter(key => key !== 'headers');
+
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+            const value = context[key];
+            if (options[key] && test(options[key], value)) {
+                return true;
+            }
+        }
+
+        if (options.headers && context.headers) {
+            const headersKey = Object.keys(options.headers);
+            for (let i = 0; i < headersKey.length; i++) {
+                const key = headersKey[i];
+                const value = context.headers[key];
+                if (options.headers[key] && test(options.headers[key], value)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+    // 默认是string path路径匹配
     // - [x] 可以支持多个路径，比如：['/api', '/ajax'] √
     // - [x] 可以支持多个路径，比如：['/api/**', '!**.html']
-
-    // 所以 url/method/headers 够用
-    if (isObject(context)) {
-        const {headers} = context;
-        let isMatch = 1;
-        ['method', 'url'].forEach(k => {
-            if (req[k]) {
-                isMatch &= test(context[k], req[k]);
-            }
-        });
-        if (headers && req.headers && isObject(headers)) {
-            Object.keys(headers).forEach(k => {
-                isMatch &= test(headers[k], req.headers[k]);
-            });
-        }
-        return isMatch;
-    }
-    // 默认是path路径匹配
-    return test(context, url);
+    return test(context, context);
 };
 
 function test(tester, testee) {
@@ -52,9 +64,7 @@ function test(tester, testee) {
             return matchMultiGlobPath(tester, testee);
         }
 
-        throw new Error(
-            'Invalid interceptor filter. Expecting something like: ["/api", "/ajax"] or ["/api/**", "!**.html"]'
-        );
+        throw new Error('Invalid interceptor filter.');
     }
 
     // custom matching
@@ -65,13 +75,9 @@ function test(tester, testee) {
     // 最后相等
     return tester == testee; // eslint-disable-line eqeqeq
 }
-/**
- * @param  {String} context '/api'
- * @param  {String} uri     'http://example.org/api/b/c/d.html'
- * @return {Boolean}
- */
+
 function matchSingleStringPath(tester, testee) {
-    return testee.indexOf(tester) === 0;
+    return testee.indexOf(tester) !== -1;
 }
 
 function matchSingleGlobPath(pattern, testee) {
@@ -83,11 +89,6 @@ function matchMultiGlobPath(patternList, testee) {
     return matchSingleGlobPath(patternList, testee);
 }
 
-/**
- * @param  {String} arr ['/api', '/ajax']
- * @param  {String} testee     'http://example.org/api/b/c/d.html'
- * @return {Boolean}
- */
 function matchMultiPath(arr, testee) {
     let isMultiPath = false;
 
