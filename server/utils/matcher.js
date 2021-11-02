@@ -8,7 +8,7 @@ module.exports = function match(options, context) {
     }
 
     if (isObject(options)) {
-        // const {pathname, url, headers, method, host, sourceType, userAgent, statusCode} = context;
+        // const {path, url, headers, method, host, sourceType, userAgent, statusCode} = context;
 
         const keys = Object.keys(context).filter(key => key !== 'headers');
 
@@ -36,7 +36,7 @@ module.exports = function match(options, context) {
     // 默认是string path路径匹配
     // - [x] 可以支持多个路径，比如：['/api', '/ajax'] √
     // - [x] 可以支持多个路径，比如：['/api/**', '!**.html']
-    return test(options, context.pathname);
+    return test(options, context.path);
 };
 
 function test(tester, testee) {

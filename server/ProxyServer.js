@@ -11,12 +11,7 @@ const findCacheDir = require('./utils/findCacheDir');
 
 const logger = require('./utils/logger');
 const {truncate} = require('./utils');
-const {
-    WEBSOCKET_FRAME,
-    BEFORE_SEND_REQUEST,
-    ERROR_OCCURRED,
-    BEFORE_SEND_RESPONSE
-} = require('./constants').PROXY_INTERCEPTORS;
+
 const debug = createDebug('foxy');
 const DEFAULT_CHUNK_COLLECT_THRESHOLD = 20 * 1024 * 1024; // about 20 mb
 
@@ -47,7 +42,7 @@ class ProxyServer extends EventEmitter {
         this._addBuiltInMiddleware();
 
         const interceptors = {};
-        [WEBSOCKET_FRAME, BEFORE_SEND_REQUEST, ERROR_OCCURRED, BEFORE_SEND_RESPONSE].forEach(name => {
+        ['request', 'response', 'websocket'].forEach(name => {
             interceptors[name] = new InterceptorFactory();
         });
         this.interceptors = interceptors;
@@ -68,27 +63,11 @@ class ProxyServer extends EventEmitter {
         this._connectionMap.set(id, conn);
     }
     _bindConnectionEvent() {
-        this.on('_:request', (conn, req) => {
-            conn.setRequestHeaders(req.headers);
-        })
-            .on('_:requestBody', (conn, body) => {
-                conn.setRequestBody(body);
-            })
-            .on('_:response', (conn, res) => {
-                conn.setResponse(res);
-            })
-            .on('_:responseHeaders', (conn, headers) => {
-                conn.setResponseHeaders(headers);
-            })
-            .on('_:responseBody', (conn, body, isBigStream) => {
-                conn.setResponseBody(body, isBigStream);
-            })
-            .on('_:WebSocketClose', (conn, code, message) => {
-                conn.close(code, message);
-            })
-            .on('_:WebSocketFrame', (conn, frame) => {
-                conn.setWebSocketMessage(frame);
-            });
+        this.on('_:WebSocketClose', (conn, code, message) => {
+            conn.close(code, message);
+        }).on('_:WebSocketFrame', (conn, frame) => {
+            conn.setWebSocketMessage(frame);
+        });
     }
     setBlocking(blocking) {
         this._blocking = !!blocking;
@@ -135,7 +114,7 @@ class ProxyServer extends EventEmitter {
             }
         };
         if (ctx.clientToProxyWebSocket.readyState === 1) {
-            await this._runInterceptor(WEBSOCKET_FRAME, r, conn);
+            await this._runInterceptor('websocket', r, conn);
             this.emit('_:WebSocketFrame', conn, {
                 type,
                 fromServer,
@@ -150,7 +129,6 @@ class ProxyServer extends EventEmitter {
             return;
         }
 
-        await this._runInterceptor(ERROR_OCCURRED, error, conn);
         this.emit('error', {
             id: ctx.id,
             conn,
@@ -166,10 +144,10 @@ class ProxyServer extends EventEmitter {
         this.emit('_:WebSocketClose', conn, code, message);
         callback(null, code, message);
     }
-
     async _onRequest(ctx, callback) {
         const req = ctx.clientToProxyRequest;
-        const conn = new Connection(req, ctx.isSSL);
+        const userRes = ctx.proxyToClientResponse;
+        const conn = new Connection(req, userRes, ctx.isSSL);
         const id = (ctx.id = conn.getId());
         this._addConnection(id, conn);
 
@@ -180,22 +158,23 @@ class ProxyServer extends EventEmitter {
         // 压缩中间件
         // ctx.use(MITMProxy.gunzip);
         ctx.use(MITMProxy.wildcard);
-        let isCanceled = false;
+        debug('remote request options', ctx.proxyToServerRequestOptions);
+
+        const {request, response} = conn;
         // 拦截器：用于修改发送server的请求参数
-        await this._runInterceptor(BEFORE_SEND_REQUEST, ctx.proxyToServerRequestOptions, conn);
-        this.emit('_:request', conn, ctx.proxyToServerRequestOptions);
-        if (isCanceled) {
+        await this._runInterceptor('request', {request, response}, conn);
+        // 处理 res.end 提前触发的情况
+        if (response.finished) {
             return;
         }
         // 监听request body
         let reqChunks = [];
         ctx.onRequestData((ctx, chunk, callback) => {
             reqChunks.push(chunk);
-            // this.emit('_:requestData', conn, chunk);
             return callback(null, chunk);
         });
         ctx.onRequestEnd((ctx, callback) => {
-            this.emit('_:requestBody', conn, Buffer.concat(reqChunks));
+            request.body = Buffer.concat(reqChunks);
             return callback();
         });
 
@@ -211,15 +190,17 @@ class ProxyServer extends EventEmitter {
         const originalUrl = ctx.clientToProxyRequest.url;
         const serverRes = ctx.serverToProxyResponse;
         const userRes = ctx.proxyToClientResponse;
-        this.emit('_:response', conn, serverRes);
 
         let resChunks = [];
         let resDataStream = null;
         let resSize = 0;
-        let blocking = true;
+        let isStreamMode = false;
         const self = this;
         async function finished() {
-            if (blocking) {
+            conn.response.headers = copyHeaders(serverRes.headers);
+            conn.response.statusCode = serverRes.statusCode;
+            if (isStreamMode) {
+                debug('rewrite mode', originalUrl);
                 let body = Buffer.concat(resChunks);
                 body = await decompress(body, serverRes).catch(err => {
                     // TODO 错误处理
@@ -231,11 +212,13 @@ class ProxyServer extends EventEmitter {
                 }
 
                 // rewrite
-                debug('rewrite mode', originalUrl);
-                const fakeRes = getRes(body);
-                await self._runInterceptor(BEFORE_SEND_RESPONSE, fakeRes, conn);
+                conn.response.body = body;
 
-                const headers = fakeRes.headers;
+                const {request, response} = conn;
+
+                await self._runInterceptor('response', {request, response}, conn);
+
+                const headers = response.headers;
                 const transferEncoding = headers['transfer-encoding'] || headers['Transfer-Encoding'] || '';
 
                 // 处理chunked 情况
@@ -244,54 +227,17 @@ class ProxyServer extends EventEmitter {
                     delete headers['Content-Length'];
                 }
 
-                userRes.writeHead(fakeRes.statusCode, headers);
-                userRes.end(fakeRes.body);
-                self.emit('_:responseHeaders', conn, headers, fakeRes.statusCode);
-                self.emit('_:responseBody', conn, fakeRes.body);
+                userRes.writeHead(response.statusCode, headers);
+                userRes.end(response.body);
             } else {
                 debug('stream mode', originalUrl);
-                const fakeRes = getRes(resDataStream);
+                conn.response.body = resDataStream;
+                const {request, response} = conn;
 
-                await self._runInterceptor(BEFORE_SEND_RESPONSE, fakeRes, conn);
+                await self._runInterceptor('response', {request, response}, conn);
 
-                userRes.writeHead(fakeRes.statusCode, fakeRes.headers);
-                fakeRes.body.pipe(userRes);
-                self.emit('_:responseHeaders', conn, fakeRes.headers, fakeRes.statusCode);
-                self.emit('_:responseBody', conn, fakeRes.body, true);
-            }
-            function getRes(body) {
-                const sendToClientHeaders = copyHeaders(serverRes.headers);
-                let statusCode = serverRes.statusCode;
-                return {
-                    get statusCode() {
-                        return statusCode;
-                    },
-                    set statusCode(code) {
-                        if (userRes.headerSent) {
-                            return;
-                        }
-
-                        assert(Number.isInteger(code), 'status code must be a number');
-                        assert(code >= 100 && code <= 999, `invalid status code: ${code}`);
-                        statusCode = code;
-                    },
-                    headers: sendToClientHeaders,
-                    get body() {
-                        return body;
-                    },
-                    set body(val) {
-                        if (userRes.finished) {
-                            return;
-                        }
-                        // no content
-                        if (null == val) {
-                            statusCode = 204;
-                            return;
-                        }
-                        typeof val === 'string' && (val = Buffer.from(val));
-                        body = val;
-                    }
-                };
+                userRes.writeHead(response.statusCode, response.headers);
+                response.body.pipe(userRes);
             }
         }
         serverRes.on('data', async chunk => {
@@ -304,8 +250,8 @@ class ProxyServer extends EventEmitter {
                 resSize += chunk.length;
                 resChunks.push(chunk);
 
-                if (blocking && resSize >= DEFAULT_CHUNK_COLLECT_THRESHOLD) {
-                    blocking = false;
+                if (!isStreamMode && resSize >= DEFAULT_CHUNK_COLLECT_THRESHOLD) {
+                    isStreamMode = true;
                     resDataStream = new CommonReadableStream();
                     while (resChunks.length) {
                         resDataStream.push(resChunks.shift());
@@ -365,8 +311,6 @@ class ProxyServer extends EventEmitter {
             const msg =
                 `Error occured while trying to proxy: ${req.url}` + errorKind ? `, error message: ${errorKind}` : '';
             res.end(msg);
-
-            await this._runInterceptor(ERROR_OCCURRED, {err, errorKind}, conn);
         } else {
             // TODO 未知错误处理
         }
@@ -443,8 +387,8 @@ function copyHeaders(originalHeaders) {
 }
 module.exports = ProxyServer;
 
-// const foxy = new ProxyServer();
-// foxy.interceptors[BEFORE_SEND_RESPONSE].add(a => {
-//     console.log(11111111, a.body.toString().slice(0, 100));
-// }, '*/wangyongqing01/*');
-// foxy.listen(8001);
+const foxy = new ProxyServer();
+foxy.interceptors.request.add(a => {
+    console.log(11111111, a.body.toString().slice(0, 100));
+}, '*/wangyongqing01/*');
+foxy.listen(8001);

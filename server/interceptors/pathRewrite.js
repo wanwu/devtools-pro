@@ -3,13 +3,24 @@ const isPlainObj = require('is-plain-obj');
 
 const logger = require('../utils/logger');
 
+module.exports = (rewriteConfig, filterOptions) => {
+    const rewriteFn = createPathRewriter(rewriteConfig);
+    return interceptor => {
+        interceptor.request.add(request => {
+            const result = rewriteFn(request.path);
+            if (result) {
+                request.path = result;
+            }
+        }, filterOptions);
+    };
+};
 /**
  * Create rewrite function, to cache parsed rewrite rules.
  *
  * @param {Object} rewriteConfig
  * @return {Function} Function to rewrite paths; This function should accept `path` (request.url) as parameter
  */
-module.exports = function createPathRewriter(rewriteConfig) {
+function createPathRewriter(rewriteConfig) {
     let rulesCache;
 
     if (!isValidRewriteConfig(rewriteConfig)) {
@@ -36,7 +47,7 @@ module.exports = function createPathRewriter(rewriteConfig) {
 
         return result;
     }
-};
+}
 
 function isValidRewriteConfig(rewriteConfig) {
     if (typeof rewriteConfig === 'function') {
