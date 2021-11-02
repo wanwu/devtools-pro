@@ -6,7 +6,7 @@ const logger = require('../utils/logger');
 module.exports = (rewriteConfig, filterOptions) => {
     const rewriteFn = createPathRewriter(rewriteConfig);
     return interceptor => {
-        interceptor.request.add(request => {
+        interceptor.request.add(({request}) => {
             const result = rewriteFn(request.path);
             if (result) {
                 request.path = result;

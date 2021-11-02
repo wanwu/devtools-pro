@@ -1,4 +1,3 @@
-const assert = require('assert');
 const EventEmitter = require('events').EventEmitter;
 
 const MITMProxy = require('http-mitm-proxy');
@@ -50,23 +49,21 @@ class ProxyServer extends EventEmitter {
         this.plugins.forEach(plugin => {
             plugin(interceptors);
         });
-        // TODO 通过options创建拦截器，有规则的拦截
-        this._bindConnectionEvent();
     }
     async _runInterceptor(name, params, conn) {
         const filter = conn.getInterceptorFilter();
         if (this.interceptors[name] && filter) {
+            debug(`interceptor: ${name}`);
             await this.interceptors[name].run(params, filter);
         }
     }
-    _addConnection(id, conn) {
-        this._connectionMap.set(id, conn);
+    _addConnection(conn) {
+        this._connectionMap.set(conn.getId(), conn);
     }
-    _bindConnectionEvent() {
-        this.on('_:WebSocketClose', (conn, code, message) => {
-            conn.close(code, message);
-        }).on('_:WebSocketFrame', (conn, frame) => {
-            conn.setWebSocketMessage(frame);
+    _removeConnection(conn) {
+        process.nextTick(() => {
+            conn.close();
+            this._connectionMap.delete(conn.id);
         });
     }
     setBlocking(blocking) {
@@ -82,9 +79,13 @@ class ProxyServer extends EventEmitter {
         return this._blocking === true;
     }
     _onWebSocketConnection(ctx, callback) {
-        const conn = new Connection(ctx.clientToProxyWebSocket.upgradeReq, ctx.isSSL, ctx.connectRequest);
-        this._addConnection(ctx.id, conn);
-
+        const conn = new Connection(
+            ctx.clientToProxyWebSocket.upgradeReq,
+            ctx.clientToProxyWebSocket,
+            ctx.isSSL,
+            ctx.connectRequest
+        );
+        this._addConnection(conn);
         if (!this.isBlockable(conn)) {
             return callback();
         }
@@ -101,10 +102,10 @@ class ProxyServer extends EventEmitter {
             'WEBSOCKET FRAME ' + type + ' received from ' + (fromServer ? 'server' : 'client'),
             ctx.clientToProxyWebSocket.upgradeReq.url,
             ctx.clientToProxyWebSocket.readyState,
-            truncate(data)
+            truncate(data, 50)
         );
         const r = {
-            type,
+            type, // message/ping/pong
             fromServer,
             get body() {
                 return data;
@@ -114,12 +115,8 @@ class ProxyServer extends EventEmitter {
             }
         };
         if (ctx.clientToProxyWebSocket.readyState === 1) {
-            await this._runInterceptor('websocket', r, conn);
-            this.emit('_:WebSocketFrame', conn, {
-                type,
-                fromServer,
-                body: data
-            });
+            debug('websocket is ready');
+            await this._runInterceptor('websocket', {request: conn.request, websocket: r}, conn);
         }
         return callback(null, data, flags);
     }
@@ -141,15 +138,15 @@ class ProxyServer extends EventEmitter {
         if (!this.isBlockable(conn)) {
             return callback(null, code, message);
         }
-        this.emit('_:WebSocketClose', conn, code, message);
         callback(null, code, message);
+
+        this._removeConnection(conn);
     }
     async _onRequest(ctx, callback) {
         const req = ctx.clientToProxyRequest;
         const userRes = ctx.proxyToClientResponse;
         const conn = new Connection(req, userRes, ctx.isSSL);
-        const id = (ctx.id = conn.getId());
-        this._addConnection(id, conn);
+        this._addConnection(conn);
 
         if (!this.isBlockable(conn)) {
             return callback();
@@ -158,13 +155,18 @@ class ProxyServer extends EventEmitter {
         // 压缩中间件
         // ctx.use(MITMProxy.gunzip);
         ctx.use(MITMProxy.wildcard);
-        debug('remote request options', ctx.proxyToServerRequestOptions);
-
         const {request, response} = conn;
         // 拦截器：用于修改发送server的请求参数
         await this._runInterceptor('request', {request, response}, conn);
+
+        // 处理proxyToServerRequestOptions
+        Object.keys(ctx.proxyToServerRequestOptions).forEach(k => {
+            ctx.proxyToServerRequestOptions[k] = request[k] || ctx.proxyToServerRequestOptions[k];
+        });
+
         // 处理 res.end 提前触发的情况
         if (response.finished) {
+            debug('提前结束，自己修改了res');
             return;
         }
         // 监听request body
@@ -194,12 +196,11 @@ class ProxyServer extends EventEmitter {
         let resChunks = [];
         let resDataStream = null;
         let resSize = 0;
-        let isStreamMode = false;
         const self = this;
         async function finished() {
             conn.response.headers = copyHeaders(serverRes.headers);
             conn.response.statusCode = serverRes.statusCode;
-            if (isStreamMode) {
+            if (!resDataStream) {
                 debug('rewrite mode', originalUrl);
                 let body = Buffer.concat(resChunks);
                 body = await decompress(body, serverRes).catch(err => {
@@ -224,7 +225,7 @@ class ProxyServer extends EventEmitter {
                 // 处理chunked 情况
                 if (transferEncoding !== 'chunked') {
                     headers['content-length'] = Buffer.byteLength(body, 'utf8');
-                    delete headers['Content-Length'];
+                    delete headers['content-length'];
                 }
 
                 userRes.writeHead(response.statusCode, headers);
@@ -239,6 +240,8 @@ class ProxyServer extends EventEmitter {
                 userRes.writeHead(response.statusCode, response.headers);
                 response.body.pipe(userRes);
             }
+
+            this._removeConnection(conn);
         }
         serverRes.on('data', async chunk => {
             // resChunks.push(chunk);
@@ -250,8 +253,7 @@ class ProxyServer extends EventEmitter {
                 resSize += chunk.length;
                 resChunks.push(chunk);
 
-                if (!isStreamMode && resSize >= DEFAULT_CHUNK_COLLECT_THRESHOLD) {
-                    isStreamMode = true;
+                if (resSize >= DEFAULT_CHUNK_COLLECT_THRESHOLD) {
                     resDataStream = new CommonReadableStream();
                     while (resChunks.length) {
                         resDataStream.push(resChunks.shift());
@@ -361,7 +363,6 @@ function copyHeaders(originalHeaders) {
     const headers = {};
 
     let keys = Object.keys(originalHeaders);
-
     // ignore chunked, gzip...
     keys = keys.filter(key => !['content-encoding', 'transfer-encoding'].includes(key.toLowerCase()));
 
@@ -388,7 +389,14 @@ function copyHeaders(originalHeaders) {
 module.exports = ProxyServer;
 
 const foxy = new ProxyServer();
-foxy.interceptors.request.add(a => {
-    console.log(11111111, a.body.toString().slice(0, 100));
-}, '*/wangyongqing01/*');
+// foxy.interceptors.websocket.add(({websocket}) => {
+//     if (websocket.body !== '2probe' && websocket.body !== '3probe') {
+//         websocket.body = '1111';
+//     }
+//     // console.log(11111111, a.body.toString().slice(0, 100));
+// }, '/socket.io-client/*');
+// foxy.interceptors.response.add(({response}) => {
+//     response.body = '1111';
+//     // console.log(11111111, a.body.toString().slice(0, 100));
+// }, '/wangyongqing01/*');
 foxy.listen(8001);

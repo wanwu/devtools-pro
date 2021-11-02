@@ -11,7 +11,6 @@ const getType = require('cache-content-type');
 const onFinish = require('on-finished');
 const destroy = require('destroy');
 const InterceptorFactory = require('./InterceptorFactory');
-const getResourceType = require('../utils/getResourceType');
 
 const stringify = url.format;
 let id = 1;
@@ -24,24 +23,18 @@ module.exports = class Connection {
         this._id = genId();
         this._blocking = true;
         this._protocol = isSSL ? 'https' : 'http';
-        if (websocketConnect) {
-            this._type = 'ws';
-            this._method = 'CONNECT';
-            this._protocol = isSSL ? 'wss' : 'ws';
-        } else {
-            this._method = req.method;
-            this._type = 'http';
-        }
-        const request = createRequest(req);
+        this.isWebSocket = !!websocketConnect;
+        const request = createRequest(req, isSSL);
         this.request = request;
-        this.request.fullUrl = getFullUrl(this._protocol, req);
 
         this.timing = {
             start: Date.now()
         };
-
-        this.respones = this.respones = createResponse(res, req);
-        this.websocketMessages = [];
+        if (this.isWebSocket) {
+            this.websocket = createWebSocket(res, req);
+        } else {
+            this.response = createResponse(res, req);
+        }
     }
     isBlockable() {
         return this._blocking === true;
@@ -50,56 +43,35 @@ module.exports = class Connection {
         this._blocking = !!blocking;
     }
 
-    isWebSocket() {
-        return this._type === 'ws';
-    }
-    setWebSocketMessage(frame) {
-        // type = ping/pong/message
-        const {type, fromServer, body} = frame;
-    }
     getId() {
         return this._id;
     }
     getInterceptorFilter() {
         // 创建filter context
         const context = {
-            // type: this._type,
-            // protocol: this._protocol,
             url: this.request.url,
-            fullUrl: this.request.fullUrl,
             path: this.request.path,
             method: this.request.method,
             host: this.request.host,
-            headers: this.request.headers,
-            reSourceType: this.respones.resourceType,
-            statusCode: this.respones.statusCode,
-            userAgent: this.request.headers['user-agent'] || this.request.headers['User-Agent']
+            headers: this.request.headers
         };
         const interceptorFilter = InterceptorFactory.createFilter(context);
         return interceptorFilter;
     }
     destroy() {
         this.request = null;
-        this.respones = null;
+        this.response = null;
         this.timing = null;
-        this._websocketMessages.length = 0;
     }
     getTiming() {
         return this.timing;
     }
-    close(code, msg) {
-        this._close = code;
-        this._closeMsg = msg;
+    close() {
         this.destroy();
     }
 };
-
-function getFullUrl(protocol, req) {
-    let parsedUrl = url.parse(req.url);
-    parsedUrl.protocol = protocol;
-    parsedUrl.host = req.headers.host;
-
-    return url.format(parsedUrl);
+function createWebSocket(ws) {
+    return Object.call(null);
 }
 function createResponse(userRes, req) {
     const cloneRes = Object.create(null);
@@ -124,15 +96,21 @@ function createResponse(userRes, req) {
             if (!name || !value) {
                 return;
             }
+            if (this.headerSent) {
+                return;
+            }
 
-            cloneRes.headers[name] = value;
+            if (typeof value !== 'string') {
+                value = String(value);
+            }
+            cloneRes.headers[name.toLowerCase()] = value;
         },
         removeHeader(name) {
             cloneRes.headers[name] = null;
             delete cloneRes.headers[name];
         },
         getHeader(name) {
-            return cloneRes.headers[name];
+            return cloneRes.headers[name.toLowerCase()];
         },
         write(chunk) {
             userRes.write(chunk);
@@ -166,7 +144,6 @@ function createResponse(userRes, req) {
             if (!this._explicitStatus) {
                 this.statusCode = 200;
             }
-
             // set the content-type only if not yet set
             const setType = !this.getHeader('Content-Type');
 
@@ -260,21 +237,22 @@ function createResponse(userRes, req) {
         set type(type) {
             type = getType(type);
             if (type) {
-                this.resourceType = getResourceType(type);
-                this.set('Content-Type', type);
+                this.setHeader('Content-Type', type);
             } else {
-                this.remove('Content-Type');
+                this.removeHeader('Content-Type');
             }
         }
     });
 }
-function createRequest(req) {
+function createRequest(req, isSSL) {
     const clonedReq = Object.create(null);
 
     ['headers', 'url', 'method'].forEach(k => {
         clonedReq[k] = req[k];
     });
-    clonedReq.host = clonedReq.headers.host;
+    const hostPort = parseHostAndPort(req, isSSL ? 443 : 80);
+    clonedReq.host = hostPort.host;
+    clonedReq.port = hostPort.port;
 
     return Object.create({
         // ========readonly========
@@ -285,6 +263,12 @@ function createRequest(req) {
             return req.url;
         },
         // ========writeable=====
+        get port() {
+            return clonedReq.port;
+        },
+        set port(port) {
+            clonedReq.port = port;
+        },
         get host() {
             return clonedReq.host;
         },
@@ -340,14 +324,49 @@ function createRequest(req) {
 
             this.url = stringify(url);
         },
+        // ========methods=======
         setHeader(key, value) {
             if (!value || !key) {
                 return;
             }
-            clonedReq.headers[key] = value;
+            if (typeof value !== 'string') {
+                value = String(value);
+            }
+            clonedReq.headers[key.toLowerCase()] = value;
         },
         getHeader(key) {
-            return clonedReq.headers[key];
+            return clonedReq.headers[key.toLowerCase()];
         }
     });
+}
+
+function parseHostAndPort(req, defaultPort) {
+    const m = req.url.match(/^http:\/\/([^\/]+)(.*)/);
+    if (m) {
+        req.url = m[2] || '/';
+        return parseHost(m[1], defaultPort);
+    } else if (req.headers.host) {
+        return parseHost(req.headers.host, defaultPort);
+    }
+    return null;
+}
+
+function parseHost(hostString, defaultPort) {
+    const m = hostString.match(/^http:\/\/(.*)/);
+    if (m) {
+        const parsedUrl = url.parse(hostString);
+        return {
+            host: parsedUrl.hostname,
+            port: parsedUrl.port
+        };
+    }
+
+    const hostPort = hostString.split(':');
+    const host = hostPort[0];
+    const port = hostPort.length === 2 ? +hostPort[1] : defaultPort;
+
+    return {
+        host: host,
+        port: port
+    };
 }
