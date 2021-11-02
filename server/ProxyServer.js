@@ -443,8 +443,8 @@ function copyHeaders(originalHeaders) {
 }
 module.exports = ProxyServer;
 
-const foxy = new ProxyServer();
-foxy.interceptors[BEFORE_SEND_RESPONSE].add(a => {
-    console.log(11111111, a.body.toString());
-}, '/wangyongqing01/*');
-foxy.listen(8001);
+// const foxy = new ProxyServer();
+// foxy.interceptors[BEFORE_SEND_RESPONSE].add(a => {
+//     console.log(11111111, a.body.toString().slice(0, 100));
+// }, '*/wangyongqing01/*');
+// foxy.listen(8001);
