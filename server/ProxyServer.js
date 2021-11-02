@@ -1,6 +1,6 @@
 const EventEmitter = require('events').EventEmitter;
-
 const MITMProxy = require('http-mitm-proxy');
+const WebSocket = require('ws');
 const Readable = require('stream').Readable;
 const decompress = require('./utils/decompress');
 const createDebug = require('./utils/createDebug');
@@ -12,8 +12,8 @@ const logger = require('./utils/logger');
 const {truncate} = require('./utils');
 
 const debug = createDebug('foxy');
-const DEFAULT_CHUNK_COLLECT_THRESHOLD = 20 * 1024 * 1024; // about 20 mb
 
+const DEFAULT_CHUNK_COLLECT_THRESHOLD = 20 * 1024 * 1024; // about 20 mb
 class CommonReadableStream extends Readable {
     constructor(config) {
         super({
@@ -27,8 +27,10 @@ class CommonReadableStream extends Readable {
 // TODO 添加下载证书的链接
 // TODO 1. 接收事件，建立cdp连接，发送数据
 class ProxyServer extends EventEmitter {
-    constructor(options = {}) {
+    constructor(options = {}, serverInstance) {
         super(logger);
+        this.serverInstance = serverInstance;
+
         this.options = options;
         this.port = options.port || 8001;
         this.sslCaDir = options.sslCaDir || findCacheDir();
@@ -114,7 +116,7 @@ class ProxyServer extends EventEmitter {
                 data = value;
             }
         };
-        if (ctx.clientToProxyWebSocket.readyState === 1) {
+        if (ctx.clientToProxyWebSocket.readyState === WebSocket.OPEN) {
             debug('websocket is ready');
             await this._runInterceptor('websocket', {request: conn.request, websocket: r}, conn);
         }

@@ -120,7 +120,7 @@ class Server extends EventEmitter {
         const proxy = this.options.proxy || false;
 
         if (proxy) {
-            this._proxyServer = new ProxyServer(this);
+            this._proxyServer = new ProxyServer(proxy, this);
         }
     }
     _createWebSocketServer() {
@@ -137,7 +137,7 @@ class Server extends EventEmitter {
 
         return this._server.listen(port, hostname, err => {
             this._createWebSocketServer();
-
+            this._createProxyServer();
             if (typeof fn === 'function') {
                 fn.call(this._server, err);
             }
