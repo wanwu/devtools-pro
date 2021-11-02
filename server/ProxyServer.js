@@ -28,7 +28,8 @@ class CommonReadableStream extends Readable {
 // TODO 1. 接收事件，建立cdp连接，发送数据
 class ProxyServer extends EventEmitter {
     constructor(options = {}, serverInstance) {
-        super(logger);
+        super();
+        options = typeof options === 'object' ? options : {};
         this.serverInstance = serverInstance;
 
         this.options = options;
@@ -40,6 +41,7 @@ class ProxyServer extends EventEmitter {
         this._blocking = true;
         const proxy = new MITMProxy();
         this.proxy = proxy;
+
         this._addBuiltInMiddleware();
 
         const interceptors = {};
@@ -47,7 +49,6 @@ class ProxyServer extends EventEmitter {
             interceptors[name] = new InterceptorFactory();
         });
         this.interceptors = interceptors;
-        // TODO 是否加上pathrewirte？
         this.plugins.forEach(plugin => {
             plugin(interceptors);
         });

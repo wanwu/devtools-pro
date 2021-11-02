@@ -4,7 +4,6 @@ const path = require('path');
 
 const distPath = path.join(__dirname, '../../dist');
 module.exports = (router, logger, serverInstance) => {
-    // const log = logger.withTag('middle:backend');
     const beFilepath = path.join(distPath, 'backend.js');
     router.get('/backend.js', async (ctx, next) => {
         let s = fs.readFileSync(beFilepath).toString();
