@@ -5,7 +5,6 @@
 
 const color = require('colorette');
 
-
 const path = require('path');
 const figures = require('figures');
 const LogLevel = {};
@@ -42,7 +41,7 @@ class Logger {
     }
     setLevel(level) {
         if ((typeof level === 'string' && LogLevel[level]) || typeof level === 'number') {
-            this._level = level;
+            this._level = typeof level === 'number' ? level : LogLevel[level];
         }
     }
 

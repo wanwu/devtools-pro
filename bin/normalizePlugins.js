@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const resolvePkg = require('resolve-pkg');
 const globalDirs = require('global-dirs');
+const logger = require('../server/utils/logger');
 
 module.exports = plugins => {
     if (Array.isArray(plugins)) {
@@ -73,7 +74,7 @@ module.exports = plugins => {
                     try {
                         middleware = require(path.join(pluginPath, middleware));
                     } catch (e) {
-                        console.error(`DevTools Plugin '${name}' middleware is error!`);
+                        logger.error(`DevTools Plugin '${name}' middleware is error!`);
                         throw e;
                     }
                 }

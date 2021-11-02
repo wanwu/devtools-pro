@@ -15,8 +15,8 @@ const os = require('os');
 /* eslint-disable no-console */
 const updateNotifier = require('update-notifier');
 const semver = require('semver');
-const chalk = require('chalk');
-const logger = require('consola');
+const colorette = require('colorette');
+const logger = require('../server/utils/logger');
 
 const {
     scriptName,
@@ -95,7 +95,7 @@ require('yargs')
                 if (Array.isArray(config.plugins)) {
                     config.plugins.forEach(p => plugins.push(p));
                 } else {
-                    throw `config.plugins is must be an Array`;
+                    throw 'config.plugins is must be an Array';
                 }
             }
             if (plugins && plugins.length) {
@@ -104,23 +104,13 @@ require('yargs')
 
             argv.logLevel = config.options.logLevel || 'info';
             if (argv.verbose) {
-                /**
-                 Fatal: 0,
-                Error: 0,
-                Warn: 1,
-                Log: 2,
-                Info: 3,
-                Success: 3,
-                Debug: 4,
-                Trace: 5,
-                Silent: -Infinity,
-                Verbose: Infinity,
-                 */
-                logger.level = Infinity;
+                logger.setLevel(Infinity);
             } else if (argv.quiet) {
                 logger.level = 1;
+                logger.setLevel(1);
+            } else {
+                logger.setLevel(argv.logLevel);
             }
-            // logger.setLevel(argv.logLevel);
 
             let port = argv.port || config.options.port || DEFAULT_PORT;
             const hostname = argv.hostname || config.options.hostname || '0.0.0.0';
@@ -157,11 +147,11 @@ require('yargs')
                     const protocol = https ? 'https://' : 'http://';
 
                     console.log(
-                        [chalk.yellow('Starting up Devtools Server.'), chalk.yellow('\nAvailable on:')].join('')
+                        [colorette.yellow('Starting up Devtools Server.'), colorette.yellow('\nAvailable on:')].join('')
                     );
                     const urls = [];
                     if (argv.address && hostname !== '0.0.0.0') {
-                        const url = '    ' + protocol + canonicalHost + ':' + chalk.green(port.toString());
+                        const url = '    ' + protocol + canonicalHost + ':' + colorette.green(port.toString());
                         urls.push(url);
                         console.log(url);
                     } else {
@@ -169,7 +159,8 @@ require('yargs')
                             /* eslint-disable max-nested-callbacks */
                             ifaces[dev].forEach(details => {
                                 if (details.family === 'IPv4') {
-                                    const url = '  ' + protocol + details.address + ':' + chalk.green(port.toString());
+                                    const url =
+                                        '  ' + protocol + details.address + ':' + colorette.green(port.toString());
                                     urls.push(url);
                                     console.log(url);
                                 }
@@ -178,9 +169,9 @@ require('yargs')
                     }
                     console.log('');
                     // TODO 文案
-                    console.log(`${chalk.yellow('Backend url:')}`);
+                    console.log(`${colorette.yellow('Backend url:')}`);
                     urls.forEach(u => {
-                        console.log(u + chalk.green(BACKENDJS_PATH));
+                        console.log(u + colorette.green(BACKENDJS_PATH));
                     });
                     console.log('');
                     console.log('Hit CTRL-C to stop the server');
@@ -201,7 +192,7 @@ function checkNodeVersion(wanted, id) {
             // prettier-ignore
             // eslint-disable-next-line
             'You are using Node ' + process.version + ', but this version of ' + id +
-             ' requires ' + chalk.yellow('Node ' + wanted) + '.\nPlease upgrade your Node version.'
+             ' requires ' + colorette.yellow('Node ' + wanted) + '.\nPlease upgrade your Node version.'
         );
         process.exit(1);
     }
@@ -260,12 +251,12 @@ async function loadConfig(configPath) {
 }
 
 process.on('SIGINT', () => {
-    console.log(chalk.red('San-Devtool server stopped.'));
+    console.log(colorette.red('San-Devtool server stopped.'));
     process.exit();
 });
 
 process.on('SIGTERM', () => {
-    console.log(chalk.red('San-Devtool server stopped.'));
+    console.log(colorette.red('San-Devtool server stopped.'));
     process.exit();
 });
 process.on('uncaughtException', error => {
