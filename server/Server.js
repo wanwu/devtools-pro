@@ -17,6 +17,7 @@ const getCertificate = require('./utils/getCertificate');
 const logger = require('./utils/logger');
 const WebSocketServer = require('./WebSocketServer');
 const ProxyServer = require('./ProxyServer');
+const CDPMessager = require('./proxy/CDPMessager');
 
 class Server extends EventEmitter {
     constructor(options) {
@@ -120,8 +121,11 @@ class Server extends EventEmitter {
 
         const proxy = this.options.proxy || process.env.PROXY || false;
         if (proxy) {
-            this._proxyServer = new ProxyServer(proxy, this);
+            const proxyServer = (this._proxyServer = new ProxyServer(proxy, this));
             this._proxyServer.listen();
+            setTimeout(() => {
+                CDPMessager(this.getWsUrl(), proxyServer);
+            }, 3e3);
         }
     }
     _createWebSocketServer() {
@@ -147,7 +151,16 @@ class Server extends EventEmitter {
     getUrl(pathname = '/', query = '') {
         return url.format({
             hostname: this.getAddress(),
-            protocol: this.options.https ? 'https://' : 'http:',
+            protocol: this.options.https ? 'https:' : 'http:',
+            port: this.port,
+            pathname: pathname,
+            query: query
+        });
+    }
+    getWsUrl(pathname = '/', query = '') {
+        return url.format({
+            hostname: this.getAddress(),
+            protocol: this.options.https ? 'wss:' : 'ws:',
             port: this.port,
             pathname: pathname,
             query: query

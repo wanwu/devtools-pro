@@ -31,6 +31,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
             },
             channel
         };
+
         this._backendMap.set(id, backendData);
         // 接收信息进行处理
         const onMessage = e => {

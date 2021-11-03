@@ -88,6 +88,8 @@ class ProxyServer extends EventEmitter {
             ctx.isSSL,
             ctx.connectRequest
         );
+        ctx.id = conn.getId();
+
         this._addConnection(conn);
         if (!this.isBlockable(conn)) {
             return callback();
@@ -128,13 +130,13 @@ class ProxyServer extends EventEmitter {
         if (!this.isBlockable(conn)) {
             return;
         }
-
-        this.emit('error', {
-            id: ctx.id,
-            conn,
-            who: 'websocket',
-            error
-        });
+        // TODO 错误处理
+        // this.emit('error', {
+        //     id: ctx.id,
+        //     conn,
+        //     who: 'websocket',
+        //     error
+        // });
     }
     _onWebSocketClose(ctx, code, message, callback) {
         const conn = this._connectionMap.get(ctx.id);
@@ -142,13 +144,13 @@ class ProxyServer extends EventEmitter {
             return callback(null, code, message);
         }
         callback(null, code, message);
-
         this._removeConnection(conn);
     }
     async _onRequest(ctx, callback) {
         const req = ctx.clientToProxyRequest;
         const userRes = ctx.proxyToClientResponse;
         const conn = new Connection(req, userRes, ctx.isSSL);
+        ctx.id = conn.getId();
         this._addConnection(conn);
 
         if (!this.isBlockable(conn)) {
@@ -166,6 +168,7 @@ class ProxyServer extends EventEmitter {
         Object.keys(ctx.proxyToServerRequestOptions).forEach(k => {
             ctx.proxyToServerRequestOptions[k] = request[k] || ctx.proxyToServerRequestOptions[k];
         });
+        this.emit('requestWillBeSent', conn);
 
         // 处理 res.end 提前触发的情况
         if (response.finished) {
@@ -244,7 +247,7 @@ class ProxyServer extends EventEmitter {
                 response.body.pipe(userRes);
             }
 
-            this._removeConnection(conn);
+            self._removeConnection(conn);
         }
         serverRes.on('data', async chunk => {
             // resChunks.push(chunk);
