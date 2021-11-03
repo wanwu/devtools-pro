@@ -23,12 +23,15 @@ module.exports = class Connection {
         this._id = genId();
         this._blocking = true;
         this._protocol = isSSL ? 'https' : 'http';
+        this._chunks = [];
+
         this.isWebSocket = !!websocketConnect;
         const request = createRequest(req, isSSL);
         this.request = request;
 
         this.timing = {
-            start: Date.now()
+            wallTime: Date.now() / 1000,
+            start: getTime()
         };
         if (this.isWebSocket) {
             this.websocket = createWebSocket(res, req);
@@ -42,7 +45,6 @@ module.exports = class Connection {
     setBlocking(blocking) {
         this._blocking = !!blocking;
     }
-
     getId() {
         return this._id;
     }
@@ -62,9 +64,21 @@ module.exports = class Connection {
         this.request = null;
         this.response = null;
         this.timing = null;
+        this._chunks.length = 0;
+        this._chunks = null;
+    }
+    dataReceived(chunk) {
+        if (this._chunks.length === 0) {
+            this.markTiming('dataReceived');
+        }
+
+        this._chunks.push(chunk);
     }
     getTiming() {
         return this.timing;
+    }
+    markTiming(key) {
+        this.timing[key] = getTime();
     }
     close() {
         this.destroy();
@@ -79,6 +93,7 @@ function createResponse(userRes, req) {
 
     return Object.create({
         // =========readonly==========
+
         get res() {
             return userRes;
         },
@@ -119,6 +134,12 @@ function createResponse(userRes, req) {
             userRes.end(str);
         },
         // =========write==========
+        get statusMessage() {
+            return cloneRes.statusMessage;
+        },
+        set statusMessage(val) {
+            cloneRes.statusMessage = val;
+        },
         get body() {
             return cloneRes._body;
         },
@@ -369,4 +390,10 @@ function parseHost(hostString, defaultPort) {
         host: host,
         port: port
     };
+}
+const initTime = process.hrtime();
+function getTime() {
+    let diff = process.hrtime(initTime);
+
+    return diff[0] + diff[1] / 1e9;
 }

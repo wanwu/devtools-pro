@@ -1,4 +1,9 @@
+const EventEmitter = require('events').EventEmitter;
 const WebSocket = require('ws');
+const createDebug = require('../utils/createDebug');
+const debugMsgReceived = createDebug('CDP:Received');
+const debugMsgSent = createDebug('CDP:sent');
+
 class ProtocolError extends Error {
     constructor(request, response) {
         let {message} = response;
@@ -12,8 +17,9 @@ class ProtocolError extends Error {
     }
 }
 
-module.exports = class CDPClient {
+module.exports = class CDPClient extends EventEmitter {
     constructor() {
+        super();
         this.ws = null;
         this._callbacks = {};
         this._nextCommandId = 1;
@@ -26,8 +32,16 @@ module.exports = class CDPClient {
         return new Promise((resolve, reject) => {
             ws.on('open', this._onOpen.bind(this));
             ws.on('error', this._onError.bind(this));
+            ws.on('message', this._onMessage.bind(this));
             resolve();
         });
+    }
+    _onMessage(data) {
+        // {"id":7,"method":"Network.getResponseBody","params":{"requestId":"1061"}}
+        const message = JSON.parse(data);
+        const {method, params} = message;
+        debugMsgReceived(method, params);
+        this.emit('message', message);
     }
     _onError(e) {
         this._connected = false;
@@ -45,47 +59,65 @@ module.exports = class CDPClient {
         // 清空消息
         this._messageStack.length = 0;
     }
-    sendRawMessage(message) {
-        if (this._ws && this._ws.readyState > 0) {
-            this._ws.send(`@${this._name}\n${message}`);
+    sendRawMessage(message, callback) {
+        const id = this._nextCommandId++;
+        if (this._ws && this._ws.readyState === 1) {
+            message = typeof message === 'string' ? message : JSON.stringify(message);
+            this._ws.send(message, err => {
+                if (err) {
+                    if (typeof callback === 'function') {
+                        callback(err);
+                    }
+                } else {
+                    this._callbacks[id] = callback;
+                }
+            });
         } else {
             this._messageStack.push(message);
         }
     }
-    send(...args) {
+    sendResult(id, result) {
+        const message = {
+            id: String(id),
+            result
+        };
+        this.sendRawMessage(JSON.stringify(message));
+    }
+    sendCommand(...args) {
         let method = args[0];
         const optionals = args.slice(1);
         let params = optionals.find(x => typeof x === 'object');
         let sessionId = optionals.find(x => typeof x === 'string');
         let callback = optionals.find(x => typeof x === 'function');
-        // return a promise when a callback is not provided
+        debugMsgSent(method, params);
         if (typeof callback === 'function') {
-            this._enqueueCommand(method, params, sessionId, callback);
+            this._sendCommand(method, params, sessionId, callback);
             return undefined;
         }
         return new Promise((resolve, reject) => {
-            this._enqueueCommand(method, params, sessionId, (error, response) => {
+            this._sendCommand(method, params, sessionId, (error, response) => {
                 if (error) {
                     const request = {method, params, sessionId};
-                    reject(
-                        error instanceof Error
-                            ? error // low-level WebSocket error
-                            : new ProtocolError(request, response)
-                    );
+                    reject(error instanceof Error ? error : new ProtocolError(request, response));
                 } else {
                     resolve(response);
                 }
             });
         });
     }
-
+    _sendCommand(method, params, sessionId, callback) {
+        const message = {
+            method,
+            sessionId,
+            params: params || {}
+        };
+        this.sendRawMessage(message, callback);
+    }
     close(callback) {
         const closeWebSocket = callback => {
-            // don't close if it's already closed
             if (this._ws.readyState === 3) {
                 callback();
             } else {
-                // don't notify on user-initiated shutdown ('disconnect' event)
                 this._ws.removeAllListeners('close');
                 this._ws.once('close', () => {
                     this._ws.removeAllListeners();
@@ -100,26 +132,6 @@ module.exports = class CDPClient {
         }
         return new Promise((resolve, reject) => {
             closeWebSocket(resolve);
-        });
-    }
-    // send a command to the remote endpoint and register a callback for the reply
-    _enqueueCommand(method, params, sessionId, callback) {
-        const id = this._nextCommandId++;
-        const message = {
-            id,
-            method,
-            sessionId,
-            params: params || {}
-        };
-        this._ws.send(JSON.stringify(message), err => {
-            if (err) {
-                // handle low-level WebSocket errors
-                if (typeof callback === 'function') {
-                    callback(err);
-                }
-            } else {
-                this._callbacks[id] = callback;
-            }
         });
     }
 };

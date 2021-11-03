@@ -330,6 +330,8 @@ CDP(
 );
 ```
 
+> 使用 chrome-remote-interface 需要添加[json_protocol](./server/middlewares/json_protocol.js)中间件。
+
 ### Vue-DevTools、San-DevTools 等集成
 
 我们可以在 frontend 的 module 中，添加一个 iframe 面板：

@@ -55,9 +55,9 @@ class ProxyServer extends EventEmitter {
     }
     async _runInterceptor(name, params, conn) {
         const filter = conn.getInterceptorFilter();
-        if (this.interceptors[name] && filter) {
+        if (this.interceptors[name] && filter && conn.request) {
             debug(`interceptor: ${name}`);
-            await this.interceptors[name].run(params, filter);
+            await this.interceptors[name].run(params, filter.bind(conn));
         }
     }
     _addConnection(conn) {
@@ -188,6 +188,20 @@ class ProxyServer extends EventEmitter {
 
         callback();
     }
+    _onResponse(ctx, callback) {
+        const conn = this._connectionMap.get(ctx.id);
+        if (!this.isBlockable(conn)) {
+            return callback();
+        }
+        const serverRes = ctx.serverToProxyResponse;
+        conn.response.headers = copyHeaders(serverRes.headers);
+        conn.response.statusCode = serverRes.statusCode;
+        conn.response.statusMessage = serverRes.statusMessage;
+
+        conn.markTiming('responseReceived');
+        this.emit('responseReceived', conn);
+        callback();
+    }
     // 在发送给clinet response之前调用
     async _onResponseHeaders(ctx, callback) {
         const conn = this._connectionMap.get(ctx.id);
@@ -206,6 +220,7 @@ class ProxyServer extends EventEmitter {
         async function finished() {
             conn.response.headers = copyHeaders(serverRes.headers);
             conn.response.statusCode = serverRes.statusCode;
+            conn.response.statusMessage = serverRes.statusMessage;
             if (!resDataStream) {
                 debug('rewrite mode', originalUrl);
                 let body = Buffer.concat(resChunks);
@@ -246,11 +261,13 @@ class ProxyServer extends EventEmitter {
                 userRes.writeHead(response.statusCode, response.headers);
                 response.body.pipe(userRes);
             }
-
             self._removeConnection(conn);
         }
         serverRes.on('data', async chunk => {
             // resChunks.push(chunk);
+            conn.dataReceived(chunk);
+            this.emit('dataReceived', conn, chunk);
+
             if (resDataStream) {
                 // stream mode
                 resDataStream.push(chunk);
@@ -271,6 +288,8 @@ class ProxyServer extends EventEmitter {
         });
 
         serverRes.on('end', async () => {
+            conn.markTiming('responseFinished');
+            this.emit('loadingFinished', conn);
             if (resDataStream) {
                 resDataStream.push(null); // indicate the stream is end
             } else {
@@ -395,16 +414,3 @@ function copyHeaders(originalHeaders) {
     return headers;
 }
 module.exports = ProxyServer;
-
-// const foxy = new ProxyServer();
-// // foxy.interceptors.websocket.add(({websocket}) => {
-// //     if (websocket.body !== '2probe' && websocket.body !== '3probe') {
-// //         websocket.body = '1111';
-// //     }
-// //     // console.log(11111111, a.body.toString().slice(0, 100));
-// // }, '/socket.io-client/*');
-// // foxy.interceptors.response.add(({response}) => {
-// //     response.body = '1111';
-// //     // console.log(11111111, a.body.toString().slice(0, 100));
-// // }, '/wangyongqing01/*');
-// foxy.listen(8001);
