@@ -25,7 +25,8 @@ class CommonReadableStream extends Readable {
 
 // TODO 统一server ssl认证到node-forge
 // TODO 添加下载证书的链接
-// TODO 1. 接收事件，建立cdp连接，发送数据
+// TODO CLI/home 增加proxy链接信息说明
+// TODO 增加精细化拦截配置项 blocking
 class ProxyServer extends EventEmitter {
     constructor(options = {}, serverInstance) {
         super();
@@ -33,6 +34,8 @@ class ProxyServer extends EventEmitter {
         this.serverInstance = serverInstance;
 
         this.options = options;
+        // TODO 增加blocking实现
+        this.blockingFilter = options.blockingFilter;
         this.port = options.port || 8001;
         this.sslCaDir = options.sslCaDir || findCacheDir('ssl');
         this.plugins = options.plugins || [];
