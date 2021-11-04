@@ -26,6 +26,10 @@ const messageHandler = {
         const {id, params} = message;
         client.sendResult(id, {postData: '1111'});
     },
+    // TODO 禁用缓存
+    // {"id":3,"method":"Network.setCacheDisabled","params":{"cacheDisabled":true}}
+    // TODO 网络限制
+    // {"id":4,"method":"Network.emulateNetworkConditions","params":{"offline":false,"latency":562.5,"downloadThroughput":188743.68000000002,"uploadThroughput":86400,"connectionType":"cellular3g"}}
     'Page.canScreencast': (message, client) => {
         client.sendResult(message.id, false);
     },
@@ -108,7 +112,7 @@ function messagerFormatter(type, connection, extInfo) {
                 loaderId: '23.1',
                 documentURL: 'https://github.com/ksky521',
                 request: {
-                    url: request.url,
+                    url: request.fullUrl || request.url,
                     method: 'GET',
                     headers: request.headers,
                     initialPriority: 'High',
@@ -130,7 +134,7 @@ function messagerFormatter(type, connection, extInfo) {
                 timestamp: timing.responseReceived,
                 type: getResourceType(response.type, request.url),
                 response: {
-                    url: request.url,
+                    url: request.fullUrl || request.url,
                     status: response.statusCode,
                     statusText: response.statusMessage,
                     headers: response.headers,

@@ -26,7 +26,7 @@ module.exports = class Connection {
         this._chunks = [];
 
         this.isWebSocket = !!websocketConnect;
-        const request = createRequest(req, isSSL);
+        const request = createRequest(req, isSSL, this.isWebSocket);
         this.request = request;
 
         this.timing = {
@@ -268,16 +268,18 @@ function createResponse(userRes, req) {
         }
     });
 }
-function createRequest(req, isSSL) {
+function createRequest(req, isSSL, isWS) {
     const clonedReq = Object.create(null);
 
     ['headers', 'url', 'method'].forEach(k => {
         clonedReq[k] = req[k];
     });
+    clonedReq.isSSL = isSSL;
     const hostPort = parseHostAndPort(req, isSSL ? 443 : 80);
     clonedReq.host = hostPort.host;
     clonedReq.port = hostPort.port;
-
+    clonedReq.protocol = isWS ? (isSSL ? 'wss:' : 'ws:') : isSSL ? 'https:' : 'http:';
+    clonedReq.fullUrl = getFullUrl(clonedReq);
     return Object.create({
         // ========readonly========
         get req() {
@@ -286,17 +288,28 @@ function createRequest(req, isSSL) {
         get originalUrl() {
             return req.url;
         },
+        get protocol() {
+            return clonedReq.protocol;
+        },
         // ========writeable=====
+        get fullUrl() {
+            return clonedReq.fullUrl;
+        },
+        set fullUrl(val) {
+            clonedReq.fullUrl = val;
+        },
         get port() {
             return clonedReq.port;
         },
         set port(port) {
+            clonedReq.fullUrl = getFullUrl(clonedReq);
             clonedReq.port = port;
         },
         get host() {
             return clonedReq.host;
         },
         set host(value) {
+            clonedReq.fullUrl = getFullUrl(clonedReq);
             clonedReq.host = value;
         },
         get headers() {
@@ -315,6 +328,8 @@ function createRequest(req, isSSL) {
             return clonedReq.url;
         },
         set url(val) {
+            clonedReq.fullUrl = getFullUrl(clonedReq);
+
             clonedReq.url = val;
         },
         get body() {
@@ -402,4 +417,21 @@ function getTime() {
     let diff = process.hrtime(initTime);
 
     return diff[0] + diff[1] / 1e9;
+}
+
+function getFullUrl(req) {
+    let parsedUrl = url.parse(req.url);
+    parsedUrl.protocol = req.protocol;
+    parsedUrl.host = req.host;
+    parsedUrl.port = req.port;
+    if (req.isSSL && parsedUrl.port === 443) {
+        parsedUrl.port = undefined;
+        delete parsedUrl.port;
+    }
+    if (req.isSSL && parsedUrl.port === 80) {
+        parsedUrl.port = undefined;
+        delete parsedUrl.port;
+    }
+
+    return url.format(parsedUrl);
 }
