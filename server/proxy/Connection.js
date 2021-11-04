@@ -4,8 +4,8 @@
 const url = require('url');
 const assert = require('assert');
 const Stream = require('stream');
-
 const parse = require('parseurl');
+const only = require('only');
 const statuses = require('statuses');
 const getType = require('cache-content-type');
 const onFinish = require('on-finished');
@@ -132,6 +132,9 @@ function createResponse(userRes, req) {
         },
         end(str) {
             userRes.end(str);
+        },
+        toJSON() {
+            return only(this, ['statusCode', 'statusMessage', 'headers', 'length', 'type']);
         },
         // =========write==========
         get statusMessage() {
@@ -357,6 +360,9 @@ function createRequest(req, isSSL) {
         },
         getHeader(key) {
             return clonedReq.headers[key.toLowerCase()];
+        },
+        toJSON() {
+            return only(this, ['method', 'url', 'headers', 'host', 'port']);
         }
     });
 }

@@ -1,7 +1,41 @@
 const {nanoid} = require('nanoid');
-const mime = require('mime-types');
 const CDPClient = require('./CDPClient');
+const getResourceType = require('../utils/getResourceType');
+const Recorder = require('./Recorder');
+const debug = require('../utils/createDebug')('CDPMessager');
 const client = new CDPClient();
+const recorder = new Recorder();
+const proxyEventHandler = {
+    loadingFinished: conn => {
+        // 添加记录，存入缓存
+        recorder.addRecord(conn);
+    }
+};
+
+const messageHandler = {
+    'Network.getResponseBody': async (message, client) => {
+        const {id, params} = message;
+        const record = await recorder.getRecord(params.requestId).catch(() => {});
+        client.sendResult(id, {
+            body: record.body,
+            base64Encoded: record.base64Encoded
+        });
+    },
+    'Network.getRequestPostData': async (message, client) => {
+        // TODO
+        const {id, params} = message;
+        client.sendResult(id, {postData: '1111'});
+    },
+    'Page.canScreencast': (message, client) => {
+        client.sendResult(message.id, false);
+    },
+    'Network.canEmulateNetworkConditions': (message, client) => {
+        client.sendResult(message.id, false);
+    },
+    'Emulation.canEmulate': (message, client) => {
+        client.sendResult(message.id, false);
+    }
+};
 module.exports = async function CDPMessager(wsUrl, proxyServer) {
     const sid = nanoid();
     cdpMessagerReceiver(client);
@@ -37,23 +71,22 @@ module.exports = async function CDPMessager(wsUrl, proxyServer) {
         proxyServer.on(event, (conn, extInfo) => {
             // console.log(event, conn.request.url);
             const method = `Network.${event}`;
+            if (proxyEventHandler[event]) {
+                proxyEventHandler[event](conn);
+            }
             const message = messagerFormatter(event, conn, extInfo);
             client.sendCommand(method, message);
         });
     });
-};
-
-const messageHandler = {
-    'Network.getResponseBody': (message, client) => {
-        const {id, params} = message;
-        console.log('--->', id, params);
-    }
 };
 function cdpMessagerReceiver(client) {
     client.on('message', message => {
         const {method} = message;
         if (messageHandler[method]) {
             messageHandler[method](message, client);
+        } else {
+            debug(`Unhandled message: ${method}`);
+            client.sendResult(message.id, {});
         }
     });
 }
@@ -91,16 +124,16 @@ function messagerFormatter(type, connection, extInfo) {
                 requestId: `${connection.getId()}`,
                 loaderId: '23.1',
                 timestamp: timing.responseReceived,
-                type: getResourceType(response.getHeader('content-type'), request.url),
+                type: getResourceType(response.type, request.url),
                 response: {
                     url: request.url,
                     status: response.statusCode,
                     statusText: response.statusMessage,
                     headers: response.headers,
-                    mimeType: response.getHeader('content-type') || '',
+                    mimeType: response.type || '',
                     connectionReused: true,
                     connectionId: '0',
-                    encodedDataLength: parseInt(response.getHeader('content-length'), 10),
+                    encodedDataLength: response.length,
                     fromDiskCache: false,
                     fromServiceWorker: false,
                     fromPrefetchCache: false,
@@ -139,41 +172,4 @@ function messagerFormatter(type, connection, extInfo) {
             break;
     }
     return message;
-}
-
-function getResourceType(contentType, path) {
-    if (contentType && contentType.match) {
-        contentType = contentType.toLowerCase();
-        if (contentType.match(/application/)) {
-            const newContentType = mime.lookup(path);
-            if (newContentType) {
-                contentType = newContentType;
-            }
-        }
-        if (contentType.match('text/css')) {
-            return 'Stylesheet';
-        }
-        if (contentType.match('text/html')) {
-            return 'Document';
-        }
-        if (contentType.match('/(x-)?javascript')) {
-            return 'Script';
-        }
-        if (contentType.match('image/')) {
-            // TODO svg图片处理 image/svg+xml
-            return 'Image';
-        }
-        if (contentType.match('video/')) {
-            return 'Media';
-        }
-        if (contentType.match('font/') || contentType.match('/(x-font-)?woff')) {
-            return 'Font';
-        }
-        if (contentType.match('/(json|xml)')) {
-            return 'XHR';
-        }
-    }
-
-    return 'Other';
-    // 'XHR', 'Fetch', 'EventSource', 'Script', 'Stylesheet', 'Image', 'Media', 'Font', 'Document', 'TextTrack', 'WebSocket', 'Other', 'SourceMapScript', 'SourceMapStyleSheet', 'Manifest', 'SignedExchange'
 }

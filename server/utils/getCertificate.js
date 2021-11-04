@@ -10,7 +10,7 @@ const findCacheDir = require('./findCacheDir');
 function getCertificate() {
     // Use a self-signed certificate if no certificate was configured.
     // Cycle certs every 24 hours
-    const certificateDir = findCacheDir();
+    const certificateDir = findCacheDir('ssl');
     const certificatePath = path.join(certificateDir, 'ca.pem');
 
     let certificateExists = fs.existsSync(certificatePath);

@@ -78,7 +78,7 @@ module.exports = class CDPClient extends EventEmitter {
     }
     sendResult(id, result) {
         const message = {
-            id: String(id),
+            id: parseInt(id, 10),
             result
         };
         this.sendRawMessage(JSON.stringify(message));

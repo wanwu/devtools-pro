@@ -34,7 +34,7 @@ class ProxyServer extends EventEmitter {
 
         this.options = options;
         this.port = options.port || 8001;
-        this.sslCaDir = options.sslCaDir || findCacheDir();
+        this.sslCaDir = options.sslCaDir || findCacheDir('ssl');
         this.plugins = options.plugins || [];
         this._connectionMap = new Map();
         // 是否阻塞
@@ -261,6 +261,7 @@ class ProxyServer extends EventEmitter {
                 userRes.writeHead(response.statusCode, response.headers);
                 response.body.pipe(userRes);
             }
+            self.emit('loadingFinished', conn);
             self._removeConnection(conn);
         }
         serverRes.on('data', async chunk => {
@@ -289,7 +290,6 @@ class ProxyServer extends EventEmitter {
 
         serverRes.on('end', async () => {
             conn.markTiming('responseFinished');
-            this.emit('loadingFinished', conn);
             if (resDataStream) {
                 resDataStream.push(null); // indicate the stream is end
             } else {
