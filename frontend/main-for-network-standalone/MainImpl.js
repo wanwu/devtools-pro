@@ -304,6 +304,8 @@ export class MainImpl {
         }
         // Used for browser tests.
         Host.InspectorFrontendHost.readyForTest();
+        // warn 修改，增加runtime ready
+        self.runtime.setReady();
         // Asynchronously run the extensions.
         setTimeout(this._lateInitialization.bind(this), 100);
         MainImpl.timeEnd('Main._initializeTarget');

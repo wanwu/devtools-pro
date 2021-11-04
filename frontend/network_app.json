@@ -1,6 +1,7 @@
 {
     "modules": [
         {"name": "network-main", "type": "autostart"},
+        {"name": "$_bridge", "type": "autostart"},
 
         {"name": "emulation", "type": "autostart"},
         {"name": "mobile_throttling", "type": "autostart"},

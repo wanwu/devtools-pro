@@ -69,6 +69,12 @@ class ProxyServer extends EventEmitter {
             this._connectionMap.delete(conn.id);
         });
     }
+    stopBlocking() {
+        this._blocking = false;
+    }
+    startBlocking() {
+        this._blocking = true;
+    }
     setBlocking(blocking) {
         this._blocking = !!blocking;
     }

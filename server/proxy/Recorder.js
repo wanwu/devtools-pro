@@ -119,6 +119,10 @@ class Recorder {
         logger.info('delete response recorder cache...');
         try {
             fse.removeSync(this.cachePath);
+            // 清理lru cache
+            this.lru.reset();
+            // 重建cache dir
+            this.cachePath = findCacheDir(CACHE_DIR_PREFIX);
             logger.success('success!');
         } catch (e) {
             logger.error(e);

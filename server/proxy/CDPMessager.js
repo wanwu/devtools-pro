@@ -13,8 +13,31 @@ const proxyEventHandler = {
         recorder.addRecord(conn);
     }
 };
-
+let proxyServerInstance;
+// 来自backend的消息处理
 const messageHandler = {
+    // 私建的消息通道
+    '$Bridge.messageChannel': async (message, client) => {
+        const {id, params} = message;
+        messageHandler[params.event](params.payload, client);
+    },
+    'Networks.toggleRecord': async (message, client) => {
+        if (!proxyServerInstance && !proxyServerInstance.stopBlocking) {
+            return;
+        }
+        const {toggled} = message;
+        // 记录
+        if (toggled) {
+            // 开始，通知proxyServer开启拦截
+            proxyServerInstance.startBlocking();
+        } else {
+            // 停止拦截
+            proxyServerInstance.stopBlocking();
+        }
+    },
+    'Networks.clearCache': async (message, client) => {
+        recorder.clean();
+    },
     'Network.getResponseBody': async (message, client) => {
         const {id, params} = message;
         const record = await recorder.getRecord(params.requestId).catch(() => {});
@@ -30,11 +53,11 @@ const messageHandler = {
     },
     // TODO 禁用缓存
     // {"id":3,"method":"Network.setCacheDisabled","params":{"cacheDisabled":true}}
-    // TODO 网络限制
-    // {"id":4,"method":"Network.emulateNetworkConditions","params":{"offline":false,"latency":562.5,"downloadThroughput":188743.68000000002,"uploadThroughput":86400,"connectionType":"cellular3g"}}
     'Page.canScreencast': (message, client) => {
         client.sendResult(message.id, false);
     },
+    // TODO 网络限制
+    // {"id":4,"method":"Network.emulateNetworkConditions","params":{"offline":false,"latency":562.5,"downloadThroughput":188743.68000000002,"uploadThroughput":86400,"connectionType":"cellular3g"}}
     'Network.canEmulateNetworkConditions': (message, client) => {
         client.sendResult(message.id, false);
     },
@@ -43,6 +66,7 @@ const messageHandler = {
     }
 };
 async function CDPMessager(wsUrl, proxyServer) {
+    proxyServerInstance = proxyServer;
     const sid = nanoid();
     cdpMessagerReceiver(client);
     const id = `${BLOCKING_IGNORE_STRING}-${sid}`;

@@ -232,7 +232,21 @@ export class NetworkPanel extends UI.Panel {
         }
         this._panelToolbar.appendToolbarItem(UI.Toolbar.createActionButton(this._toggleRecordAction));
         const clearButton = new UI.ToolbarButton(Common.UIString('Clear'), 'largeicon-clear');
-        clearButton.addEventListener(UI.ToolbarButton.Events.Click, () => SDK.networkLog.reset(), this);
+        // warn 清理
+        clearButton.addEventListener(
+            UI.ToolbarButton.Events.Click,
+            () => {
+                // 清理所有请求，
+                SDK.networkLog.reset();
+                runtime
+                    .getBridge()
+                    .then(bridge => {
+                        bridge.sendCommand('Networks.clearCache', {});
+                    })
+                    .catch(e => {});
+            },
+            this
+        );
         this._panelToolbar.appendToolbarItem(clearButton);
         this._panelToolbar.appendSeparator();
 
@@ -325,6 +339,7 @@ export class NetworkPanel extends UI.Panel {
      * @param {boolean} toggled
      */
     _toggleRecord(toggled) {
+        // warn recording 状态发送数据
         this._toggleRecordAction.setToggled(toggled);
         this._networkLogView.setRecording(toggled);
         if (!toggled && this._filmStripRecorder) {
@@ -333,6 +348,12 @@ export class NetworkPanel extends UI.Panel {
         // TODO(einbinder) This should be moved to a setting/action that NetworkLog owns but NetworkPanel controls, but
         // always be present in the command menu.
         SDK.networkLog.setIsRecording(toggled);
+        runtime
+            .getBridge()
+            .then(bridge => {
+                bridge.sendCommand('Networks.toggleRecord', {toggled});
+            })
+            .catch(e => {});
     }
 
     /**
