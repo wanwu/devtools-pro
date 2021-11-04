@@ -260,14 +260,22 @@ export class NetworkPanel extends UI.Panel {
         this._panelToolbar.appendToolbarItem(searchToggle);
         this._panelToolbar.appendSeparator();
 
-        // warn 去掉 preserve log
-        // this._panelToolbar.appendToolbarItem(
-        //     new UI.ToolbarSettingCheckbox(
-        //         this._preserveLogSetting,
-        //         Common.UIString('Do not clear log on page reload / navigation'),
-        //         Common.UIString('Preserve log')
-        //     )
-        // );
+        // warn 去掉 preserve log，换成主动注入backend
+        this._autoInjectBackendSetting = Common.settings.moduleSetting('network_log.auto-inject-backend');
+        this._autoInjectBackendSetting.addChangeListener(({data}) => {
+            runtime
+                .getBridge()
+                .then(bridge => {
+                    bridge.sendCommand('Networks.setAutoInjectBackend', {autoInject: data});
+                })
+                .catch(e => {});
+        });
+        const autoInjectBackendCheckbox = new UI.ToolbarSettingCheckbox(
+            Common.moduleSetting('network_log.auto-inject-backend'),
+            Common.UIString('Inject devtools-pro backend.js (html/htm only).'),
+            Common.UIString('Auto inject Backend')
+        );
+        this._panelToolbar.appendToolbarItem(autoInjectBackendCheckbox);
 
         const disableCacheCheckbox = new UI.ToolbarSettingCheckbox(
             Common.moduleSetting('cacheDisabled'),

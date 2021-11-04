@@ -21,6 +21,14 @@ const messageHandler = {
         const {id, params} = message;
         messageHandler[params.event](params.payload, client);
     },
+    // 主动在html/htm页面注入backend.js
+    'Networks.setAutoInjectBackend': async (message, client) => {
+        if (!proxyServerInstance && !proxyServerInstance.stopBlocking) {
+            return;
+        }
+        const {autoInject} = message;
+        proxyServerInstance.setAutoInjectBackendjs(autoInject);
+    },
     'Networks.toggleRecord': async (message, client) => {
         if (!proxyServerInstance && !proxyServerInstance.stopBlocking) {
             return;

@@ -63,6 +63,25 @@
             ]
         },
         {
+            "type": "setting",
+            "category": "Network",
+            "title": "Auto inject Backend",
+            "settingName": "network_log.auto-inject-backend",
+            "settingType": "boolean",
+            "defaultValue": false,
+            "tags": "preserve, inject",
+            "options": [
+                {
+                    "value": true,
+                    "title": "Inject devtools-pro backend.js (html/htm only)."
+                },
+                {
+                    "value": false,
+                    "title": "Do not auto inject devtools-pro backend.js"
+                }
+            ]
+        },
+        {
             "type": "action",
             "actionId": "network.toggle-recording",
             "iconClass": "largeicon-start-recording",

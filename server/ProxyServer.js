@@ -56,6 +56,11 @@ class ProxyServer extends EventEmitter {
             plugin(interceptors);
         });
     }
+    // TODO 主动注入backend.js
+    setAutoInjectBackendjs(autoInject) {
+        // 添加responst inspectors，修改response body
+        console.log('请完成setAutoInjectBackendjs！', autoInject);
+    }
     async _runInterceptor(name, params, conn) {
         const filter = conn.getInterceptorFilter();
         if (this.interceptors[name] && filter && conn.request) {
