@@ -1,15 +1,17 @@
 // 修改自 https://github.com/chimurai/http-proxy-middleware/blob/master/src/path-rewriter.ts
 const isPlainObj = require('is-plain-obj');
 
-const logger = require('../utils/logger');
+const logger = require('../server/utils/logger');
 
 module.exports = (rewriteConfig, filterOptions) => {
     const rewriteFn = createPathRewriter(rewriteConfig);
     return interceptor => {
-        interceptor.request.add(({request}) => {
-            const result = rewriteFn(request.path);
+        return interceptor.request.add(({request}) => {
+            // TODO 这里是url重写
+            // '^/api/old-path': '/api/new-path'
+            const result = rewriteFn(request.url);
             if (result) {
-                request.path = result;
+                request.url = result;
             }
         }, filterOptions);
     };

@@ -36,6 +36,9 @@ class ProxyServer extends EventEmitter {
         this.options = options;
         // TODO 增加blocking实现
         this.blockingFilter = options.blockingFilter;
+        // TODO forward配置
+        this.forward = options.forward;
+
         this.port = options.port || 8001;
         this.sslCaDir = options.sslCaDir || findCacheDir('ssl');
         this.plugins = options.plugins || [];
