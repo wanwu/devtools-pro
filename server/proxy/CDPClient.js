@@ -33,6 +33,7 @@ module.exports = class CDPClient extends EventEmitter {
             ws.on('open', this._onOpen.bind(this));
             ws.on('error', this._onError.bind(this));
             ws.on('message', this._onMessage.bind(this));
+            ws.on('close', this._onClose.bind(this));
             resolve();
         });
     }
@@ -51,18 +52,23 @@ module.exports = class CDPClient extends EventEmitter {
     _onOpen() {
         this._connected = true;
 
-        if (this._ws && this._ws.readyState === 1) {
-            for (const message of this._messageStack) {
-                this._ws.send(message);
-            }
-        }
+        // if (this._ws && this._ws.readyState === 1) {
+        //     for (const message of this._messageStack) {
+        //         this._ws.send(message);
+        //     }
+        // }
         // 清空消息
         this._messageStack.length = 0;
+        this.emit('open');
+    }
+    _onClose() {
+        this.emit('close');
     }
     sendRawMessage(message, callback) {
         const id = this._nextCommandId++;
         if (this._ws && this._ws.readyState === 1) {
             message = typeof message === 'string' ? message : JSON.stringify(message);
+            // message = '@' + this.id + '\n' + message;
             this._ws.send(message, err => {
                 if (err) {
                     if (typeof callback === 'function') {

@@ -52,7 +52,7 @@ class Recorder {
         const filename = this.getCacheFile(BODY_FILE_PRFIX + id);
         const record = this.lru.get(id);
         if (!record) {
-            logger.warn(`record is empty:${id}`);
+            logger.warn(`record is empty or expire:${id}`);
             return {
                 body: '',
                 base64Encoded: false
@@ -89,7 +89,7 @@ class Recorder {
         const {contentType, isBinary, type} = record;
 
         const charsetMatch = contentType.match(/charset='?([a-zA-Z0-9-]+)'?/);
-        if (['XHR', 'Fetch', 'Script', 'Stylesheet', 'Document'].includes(type)) {
+        if (charsetMatch && charsetMatch[1] && ['XHR', 'Fetch', 'Script', 'Stylesheet', 'Document'].includes(type)) {
             const currentCharset = charsetMatch[1].toLowerCase();
             if (currentCharset !== 'utf-8' && iconv.encodingExists(currentCharset)) {
                 body = iconv.decode(body, currentCharset);

@@ -3,6 +3,8 @@ const CDPClient = require('./CDPClient');
 const getResourceType = require('../utils/getResourceType');
 const Recorder = require('./Recorder');
 const debug = require('../utils/createDebug')('CDPMessager');
+const getTime = require('../utils/getTime');
+const {BLOCKING_IGNORE_STRING} = require('../constants');
 const client = new CDPClient();
 const recorder = new Recorder();
 const proxyEventHandler = {
@@ -24,7 +26,7 @@ const messageHandler = {
     'Network.getRequestPostData': async (message, client) => {
         // TODO
         const {id, params} = message;
-        client.sendResult(id, {postData: '1111'});
+        // client.sendResult(id, {postData: '1111'});
     },
     // TODO 禁用缓存
     // {"id":3,"method":"Network.setCacheDisabled","params":{"cacheDisabled":true}}
@@ -43,20 +45,24 @@ const messageHandler = {
 async function CDPMessager(wsUrl, proxyServer) {
     const sid = nanoid();
     cdpMessagerReceiver(client);
+    const id = `${BLOCKING_IGNORE_STRING}-${sid}`;
 
-    await client.connect(`${wsUrl}backend/${sid}`);
+    client.on('open', () => {
+        client.sendRawMessage(
+            JSON.stringify({
+                event: 'updateBackendInfo',
+                payload: {
+                    // TODO 添加一个Cool favicon
+                    id,
+                    title: 'Devtools Foxy',
+                    url: 'https://github.com/ksky521'
+                }
+            })
+        );
+    });
 
-    client.sendRawMessage(
-        JSON.stringify({
-            event: 'updateBackendInfo',
-            payload: {
-                // TODO 添加一个Cool favicon
-                id: sid,
-                title: 'Devtools Foxy',
-                url: 'https://github.com/ksky521'
-            }
-        })
-    );
+    // warn @blocking_ignore@ 不捕捉这个请求
+    await client.connect(`${wsUrl}backend/${id}`);
 
     // 发送一条测试信息
     [
@@ -79,7 +85,9 @@ async function CDPMessager(wsUrl, proxyServer) {
                 proxyEventHandler[event](conn);
             }
             const message = messagerFormatter(event, conn, extInfo);
-            client.sendCommand(method, message);
+            if (message) {
+                client.sendCommand(method, message);
+            }
         });
     });
 }
@@ -101,8 +109,14 @@ function cdpMessagerReceiver(client) {
 
 // cdp 协议格式化
 function messagerFormatter(type, connection, extInfo) {
+    if (!connection) {
+        return;
+    }
     const timing = connection.getTiming();
     const {request, response} = connection;
+    if (!request || !connection.getId() || !connection.isBlockable()) {
+        return;
+    }
     let message;
     switch (type) {
         case 'requestWillBeSent':
@@ -165,18 +179,77 @@ function messagerFormatter(type, connection, extInfo) {
             };
             break;
         case 'webSocketClosed':
+            message = {
+                requestId: `${connection.getId()}`,
+                timestamp: getTime()
+            };
             break;
         case 'webSocketCreated':
+            message = {
+                requestId: `${connection.getId()}`,
+                url: request.fullUrl || request.url
+            };
             break;
         case 'webSocketFrameError':
             break;
         case 'webSocketFrameReceived':
+            let rbody = extInfo.body;
+            if (Buffer.isBuffer(rbody)) {
+                rbody = rbody.toString();
+            }
+            message = {
+                requestId: `${connection.getId()}`,
+                response: {
+                    opcode: 1,
+                    //
+                    mask: false,
+                    // WebSocket message payload data. If the opcode is 1,
+                    // this is a text message and payloadData is a UTF-8 string.
+                    // If the opcode isn't 1, then payloadData is a base64 encoded string representing binary data.
+                    payloadData: rbody
+                },
+                timestamp: getTime()
+            };
             break;
         case 'webSocketFrameSent':
+            let sbody = extInfo.body;
+            if (Buffer.isBuffer(sbody)) {
+                sbody = sbody.toString();
+            }
+            message = {
+                requestId: `${connection.getId()}`,
+                response: {
+                    opcode: 1,
+                    //
+                    mask: false,
+                    // WebSocket message payload data. If the opcode is 1,
+                    // this is a text message and payloadData is a UTF-8 string.
+                    // If the opcode isn't 1, then payloadData is a base64 encoded string representing binary data.
+                    payloadData: sbody
+                },
+                timestamp: getTime()
+            };
             break;
         case 'webSocketHandshakeResponseReceived':
+            message = {
+                requestId: `${connection.getId()}`,
+                response: {
+                    status: 101,
+                    statusText: 'Switching Protocols',
+                    headers: response.headers
+                },
+                timestamp: getTime()
+            };
             break;
         case 'webSocketWillSendHandshakeRequest':
+            message = {
+                requestId: `${connection.getId()}`,
+                request: {
+                    headers: request.headers
+                },
+                timestamp: timing.start,
+                wallTime: timing.wallTime
+            };
             break;
     }
     return message;

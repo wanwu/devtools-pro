@@ -11,7 +11,7 @@ const findCacheDir = require('./utils/findCacheDir');
 const logger = require('./utils/logger');
 const {truncate} = require('./utils');
 
-const debug = createDebug('foxy');
+const debug = createDebug('proxyserver');
 
 const DEFAULT_CHUNK_COLLECT_THRESHOLD = 20 * 1024 * 1024; // about 20 mb
 class CommonReadableStream extends Readable {
@@ -89,11 +89,12 @@ class ProxyServer extends EventEmitter {
             ctx.connectRequest
         );
         ctx.id = conn.getId();
-
+        debug('websocket:connect', `${ctx.id},${ctx.clientToProxyWebSocket.upgradeReq.url}`);
         this._addConnection(conn);
         if (!this.isBlockable(conn)) {
             return callback();
         }
+        this.emit('webSocketCreated', conn);
         callback();
     }
     // The function that gets called for each WebSocket frame exchanged.
@@ -123,6 +124,10 @@ class ProxyServer extends EventEmitter {
             debug('websocket is ready');
             await this._runInterceptor('websocket', {request: conn.request, websocket: r}, conn);
         }
+        if (type === 'message') {
+            fromServer ? this.emit('webSocketFrameReceived', conn, r) : this.emit('webSocketFrameSent', conn, r);
+        }
+
         return callback(null, data, flags);
     }
     async _onWebSocketError(ctx, error) {
@@ -140,10 +145,13 @@ class ProxyServer extends EventEmitter {
     }
     _onWebSocketClose(ctx, code, message, callback) {
         const conn = this._connectionMap.get(ctx.id);
+        debug('websocket:close', `${ctx.id},${ctx.clientToProxyWebSocket.upgradeReq.url}`);
+
         if (!this.isBlockable(conn)) {
             return callback(null, code, message);
         }
         callback(null, code, message);
+        this.emit('webSocketClosed', conn);
         this._removeConnection(conn);
     }
     async _onRequest(ctx, callback) {
@@ -152,6 +160,7 @@ class ProxyServer extends EventEmitter {
         const conn = new Connection(req, userRes, ctx.isSSL);
         ctx.id = conn.getId();
         this._addConnection(conn);
+        debug('onrequest', `${ctx.id},${req.url}`);
 
         if (!this.isBlockable(conn)) {
             return callback();
@@ -205,11 +214,14 @@ class ProxyServer extends EventEmitter {
     // 在发送给clinet response之前调用
     async _onResponseHeaders(ctx, callback) {
         const conn = this._connectionMap.get(ctx.id);
+
         if (!this.isBlockable(conn)) {
             return callback();
         }
 
         const originalUrl = ctx.clientToProxyRequest.url;
+        debug('onrequest', `${ctx.id},${originalUrl}`);
+
         const serverRes = ctx.serverToProxyResponse;
         const userRes = ctx.proxyToClientResponse;
 
@@ -222,7 +234,7 @@ class ProxyServer extends EventEmitter {
             conn.response.statusCode = serverRes.statusCode;
             conn.response.statusMessage = serverRes.statusMessage;
             if (!resDataStream) {
-                debug('rewrite mode', originalUrl);
+                debug('body stringify', originalUrl);
                 let body = Buffer.concat(resChunks);
                 body = await decompress(body, serverRes).catch(err => {
                     // TODO 错误处理
@@ -252,7 +264,7 @@ class ProxyServer extends EventEmitter {
                 userRes.writeHead(response.statusCode, headers);
                 userRes.end(response.body);
             } else {
-                debug('stream mode', originalUrl);
+                debug('body is big stream', originalUrl);
                 conn.response.body = resDataStream;
                 const {request, response} = conn;
 
@@ -268,6 +280,7 @@ class ProxyServer extends EventEmitter {
             // resChunks.push(chunk);
             conn.dataReceived(chunk);
             this.emit('dataReceived', conn, chunk);
+            debug('responseData', `${ctx.id},${originalUrl}`);
 
             if (resDataStream) {
                 // stream mode
@@ -290,6 +303,8 @@ class ProxyServer extends EventEmitter {
 
         serverRes.on('end', async () => {
             conn.markTiming('responseFinished');
+            debug('responseEnd', `${ctx.id},${originalUrl}`);
+
             if (resDataStream) {
                 resDataStream.push(null); // indicate the stream is end
             } else {

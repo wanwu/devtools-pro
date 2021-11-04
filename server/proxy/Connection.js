@@ -10,6 +10,8 @@ const statuses = require('statuses');
 const getType = require('cache-content-type');
 const onFinish = require('on-finished');
 const destroy = require('destroy');
+const getTime = require('../utils/getTime');
+const {BLOCKING_IGNORE_STRING} = require('../constants');
 const InterceptorFactory = require('./InterceptorFactory');
 
 const stringify = url.format;
@@ -35,12 +37,16 @@ module.exports = class Connection {
         };
         if (this.isWebSocket) {
             this.websocket = createWebSocket(res, req);
+            // 查找自己的ws请求，忽略掉
+            if (request.url.indexOf(BLOCKING_IGNORE_STRING) !== -1) {
+                this._blocking = false;
+            }
         } else {
             this.response = createResponse(res, req);
         }
     }
     isBlockable() {
-        return this._blocking === true;
+        return this._blocking === true && this.request;
     }
     setBlocking(blocking) {
         this._blocking = !!blocking;
@@ -49,6 +55,9 @@ module.exports = class Connection {
         return this._id;
     }
     getInterceptorFilter() {
+        if (!this.request) {
+            return () => {};
+        }
         // 创建filter context
         const context = {
             url: this.request.url,
@@ -411,12 +420,6 @@ function parseHost(hostString, defaultPort) {
         host: host,
         port: port
     };
-}
-const initTime = process.hrtime();
-function getTime() {
-    let diff = process.hrtime(initTime);
-
-    return diff[0] + diff[1] / 1e9;
 }
 
 function getFullUrl(req) {
