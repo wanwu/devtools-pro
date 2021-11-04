@@ -1,6 +1,6 @@
 {
     "modules": [
-        {"name": "network_main", "type": "autostart"},
+        {"name": "network-main", "type": "autostart"},
 
         {"name": "emulation", "type": "autostart"},
         {"name": "mobile_throttling", "type": "autostart"},

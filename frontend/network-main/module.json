@@ -7,5 +7,5 @@
     ],
     "dependencies": ["components"],
     "scripts": [],
-    "modules": ["network_main.js", "network_main-legacy.js", "NetworkMain.js"]
+    "modules": ["network-main.js", "network-main-legacy.js", "NetworkMain.js"]
 }

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import * as NetworkMainModule from './network_main.js';
+import * as NetworkMainModule from './network-main.js';
 
 self.NetworkMain = self.NetworkMain || {};
 NetworkMain = NetworkMain || {};
