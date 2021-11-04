@@ -14,9 +14,9 @@
         {"name": "perf_ui"},
         {"name": "common", "type": "autostart"},
         {"name": "ui", "type": "autostart"},
-        {"name": "main-for-network-only", "type": "autostart"},
+        {"name": "main-for-network-standalone", "type": "autostart"},
         {"name": "search"},
-        {"name": "network"},
+        {"name": "network-standalone"},
 
         {"name": "bindings", "type": "autostart"},
         {"name": "components", "type": "autostart"},

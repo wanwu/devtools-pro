@@ -342,11 +342,13 @@ class ProxyServer extends EventEmitter {
             // TODO 未知错误处理
         }
     }
+
     close() {
         this.proxy.close();
         for (const conn of this._connectionMap.values()) {
             conn.destroy();
         }
+
         this._connectionMap.clear();
         this.removeAllListeners();
     }

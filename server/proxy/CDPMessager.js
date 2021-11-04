@@ -36,7 +36,7 @@ const messageHandler = {
         client.sendResult(message.id, false);
     }
 };
-module.exports = async function CDPMessager(wsUrl, proxyServer) {
+async function CDPMessager(wsUrl, proxyServer) {
     const sid = nanoid();
     cdpMessagerReceiver(client);
 
@@ -78,7 +78,11 @@ module.exports = async function CDPMessager(wsUrl, proxyServer) {
             client.sendCommand(method, message);
         });
     });
+}
+CDPMessager.close = () => {
+    recorder && recorder.clean();
 };
+module.exports = CDPMessager;
 function cdpMessagerReceiver(client) {
     client.on('message', message => {
         const {method} = message;

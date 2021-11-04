@@ -354,8 +354,8 @@
     "dependencies": ["extensions", "host", "platform", "sdk", "persistence"],
     "scripts": [],
     "modules": [
-        "main-for-network-only.js",
-        "main-for-network-only-legacy.js",
+        "main-for-network-standalone.js",
+        "main-for-network-standalone-legacy.js",
         "SimpleApp.js",
         "ExecutionContextSelector.js",
         "MainImpl.js"

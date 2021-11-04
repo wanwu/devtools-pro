@@ -178,6 +178,11 @@ require('yargs')
 
                     const home = server.getUrl();
                     argv.open && require('opener')(home);
+
+                    process.on('exit', async () => {
+                        await server.close();
+                        process.exit();
+                    });
                 });
             }
         }

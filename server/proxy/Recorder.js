@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const fse = require('fs-extra');
 const LRU = require('lru-cache');
 // const EventEmitter = require('events').EventEmitter;
 const iconv = require('iconv-lite');
@@ -112,6 +113,16 @@ class Recorder {
     }
     getCacheFile(filename) {
         return path.join(this.cachePath, filename);
+    }
+    clean() {
+        logger.log();
+        logger.info('delete response recorder cache...');
+        try {
+            fse.removeSync(this.cachePath);
+            logger.success('success!');
+        } catch (e) {
+            logger.error(e);
+        }
     }
 }
 

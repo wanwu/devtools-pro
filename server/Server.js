@@ -195,6 +195,7 @@ class Server extends EventEmitter {
         this._wsServer.destory();
         this._server.kill();
         this._proxyServer && this._proxyServer.close();
+        CDPMessager && CDPMessager.close();
     }
 }
 
