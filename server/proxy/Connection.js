@@ -71,13 +71,16 @@ module.exports = class Connection {
         return interceptorFilter;
     }
     destroy() {
-        this.request = null;
-        this.response = null;
-        this.timing = null;
+        this.request = {};
+        this.response = {};
+        this.timing = {};
         this._chunks.length = 0;
         this._chunks = null;
     }
     dataReceived(chunk) {
+        if (!this._chunks) {
+            return;
+        }
         if (this._chunks.length === 0) {
             this.markTiming('dataReceived');
         }

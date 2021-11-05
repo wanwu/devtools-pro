@@ -289,6 +289,8 @@ class ProxyServer extends EventEmitter {
                 }
 
                 clientRes.writeHead(response.statusCode, headers);
+                self.emit('loadingFinished', conn);
+
                 clientRes.end(response.body);
             } else {
                 debug('body is big stream', originalUrl);
@@ -298,9 +300,9 @@ class ProxyServer extends EventEmitter {
                 await self._runInterceptor('response', {request, response}, conn);
 
                 clientRes.writeHead(response.statusCode, response.headers);
+                self.emit('loadingFinished', conn);
                 response.body.pipe(clientRes);
             }
-            self.emit('loadingFinished', conn);
             self._removeConnection(conn);
         }
         serverRes.on('data', async chunk => {

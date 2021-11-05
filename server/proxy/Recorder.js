@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const Stream = require('stream').Stream;
 const fse = require('fs-extra');
 const LRU = require('lru-cache');
 // const EventEmitter = require('events').EventEmitter;
@@ -24,10 +25,12 @@ class Recorder {
         const filepath = this.updateResponseBody(conn);
         const contentType = response.getHeader('content-type');
         const isBinary = response.type === 'bin';
+        const isStream = response.body instanceof Stream;
         this.lru.set(conn.getId() + '', {
             id: conn.getId(),
             url: request.url,
             isBinary,
+            isStream,
             type: getResourceType(contentType, request.url),
             contentType,
             filepath
@@ -40,6 +43,11 @@ class Recorder {
             return;
         }
         const filename = this.getCacheFile(BODY_FILE_PRFIX + id);
+        // 视频类的stream
+        if (response.body instanceof Stream) {
+            response.body.pipe(fs.createWriteStream(filename));
+            return filename;
+        }
         fs.writeFile(filename, response.body, err => {
             err && console.error(err);
         });
@@ -56,6 +64,15 @@ class Recorder {
             return {
                 body: '',
                 base64Encoded: false
+            };
+        }
+        if (record.isStream) {
+            // 太大 惹不起
+            return {
+                body: '',
+                base64Encoded: false,
+                code: -32000,
+                message: 'Stream is too large, ' + record.url
             };
         }
         return new Promise((resolve, reject) => {

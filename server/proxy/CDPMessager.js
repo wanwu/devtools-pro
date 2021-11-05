@@ -49,10 +49,17 @@ const messageHandler = {
     'Network.getResponseBody': async (message, client) => {
         const {id, params} = message;
         const record = await recorder.getRecord(params.requestId).catch(() => {});
-        client.sendResult(id, {
-            body: record.body,
-            base64Encoded: record.base64Encoded
-        });
+        if (record.code && record.message) {
+            client.sendResult(id, {
+                code: record.code,
+                message: record.message
+            });
+        } else {
+            client.sendResult(id, {
+                body: record.body,
+                base64Encoded: record.base64Encoded
+            });
+        }
     },
     'Network.getRequestPostData': async (message, client) => {
         // TODO
