@@ -9,7 +9,6 @@ module.exports = function test(tester, testee) {
     }
     // single glob path
     if (isGlobPath(tester)) {
-        console.log(121212);
         return matchSingleGlobPath(tester, testee);
     }
 

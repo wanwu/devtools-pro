@@ -63,14 +63,16 @@ class ProxyServer extends EventEmitter {
             plugins.push(...this.plugins);
         }
         // 绑定plugins
-        plugins.forEach(plugin => {
-            plugin(interceptors, this);
-        });
+        this.addPlugin(plugins);
+        // ERROR 测试用，删除我
+        this.addPlugin(require('./proxy/plugins/injectBackend'));
     }
-    // TODO 主动注入backend.js
-    setAutoInjectBackendjs(autoInject) {
-        // 添加responst inspectors，修改response body
-        console.log('请完成setAutoInjectBackendjs！', autoInject);
+    addPlugin(plugin) {
+        if (Array.isArray(plugin)) {
+            // 返回intercepor remove方法，用于删除
+            return plugin.map(p => this.addPlugin(p));
+        }
+        return plugin(this.interceptors, this);
     }
     async _runInterceptor(name, params, conn) {
         const filter = conn.getInterceptorFilter();
@@ -202,6 +204,10 @@ class ProxyServer extends EventEmitter {
         Object.keys(ctx.proxyToServerRequestOptions).forEach(k => {
             ctx.proxyToServerRequestOptions[k] = request[k] || ctx.proxyToServerRequestOptions[k];
         });
+        if (request.headers && request.headers.host && request.headers.host !== ctx.proxyToServerRequestOptions.host) {
+            request.headers.host = ctx.proxyToServerRequestOptions.host;
+        }
+
         this.emit('requestWillBeSent', conn);
 
         // 处理 res.end 提前触发的情况

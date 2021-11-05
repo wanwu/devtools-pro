@@ -5,6 +5,7 @@ const Recorder = require('./Recorder');
 const debug = require('../utils/createDebug')('CDPMessager');
 const getTime = require('../utils/getTime');
 const {BLOCKING_IGNORE_STRING} = require('../constants');
+const injectBackend = require('./plugins/injectBackend');
 // let client;
 const recorder = new Recorder();
 const proxyEventHandler = {
@@ -14,6 +15,7 @@ const proxyEventHandler = {
     }
 };
 let proxyServerInstance;
+let removeInjectBackendFn = null;
 // 来自backend的消息处理
 const messageHandler = {
     // 私建的消息通道
@@ -21,13 +23,18 @@ const messageHandler = {
         const {id, params} = message;
         messageHandler[params.event](params.payload, client);
     },
+    // TODO 第一次需要发过来到底是什么状态
     // 主动在html/htm页面注入backend.js
     'Networks.setAutoInjectBackend': async (message, client) => {
         if (!proxyServerInstance && !proxyServerInstance.stopBlocking) {
             return;
         }
         const {autoInject} = message;
-        proxyServerInstance.setAutoInjectBackendjs(autoInject);
+        if (autoInject) {
+            removeInjectBackendFn = proxyServerInstance.addPlugin(injectBackend);
+        } else if (removeInjectBackendFn && typeof removeInjectBackendFn === 'function') {
+            removeInjectBackendFn();
+        }
     },
     'Networks.toggleRecord': async (message, client) => {
         if (!proxyServerInstance && !proxyServerInstance.stopBlocking) {

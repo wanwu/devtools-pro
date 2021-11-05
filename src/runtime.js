@@ -5,7 +5,19 @@ import WebSocket from './lib/WebSocket';
 import getCurrentScript from './utils/getCurrentScript';
 // 1. 获取getCurrentScript，得到host
 const curScriptUrl = getCurrentScript();
-const {protocol, hostname, port} = new URL(curScriptUrl);
+let {protocol, hostname, port, search, searchParams} = new URL(curScriptUrl);
+const clonedUrl = {
+    protocol,
+    hostname,
+    port
+};
+if (search) {
+    ['port', 'hostname', 'protocol'].forEach(key => {
+        if (searchParams.has(key) && searchParams.get(key)) {
+            clonedUrl[key] = searchParams.get(key);
+        }
+    });
+}
 
 class Runtime {
     constructor(chobitsu) {
@@ -17,9 +29,8 @@ class Runtime {
                 const result = handler(payload);
                 // 返回result
                 return result ? {result} : {};
-            } else {
-                throw Error(`${event} unimplemented`);
             }
+            throw Error(`${event} unimplemented`);
         });
     }
     /**
@@ -79,8 +90,17 @@ class Runtime {
         // if (!pathname) {
         //     pathname = `/backend/${nanoid()}`;
         // }
+        let {hostname, protocol, port} = clonedUrl;
+        switch (protocol) {
+            case 'http:':
+                protocol = 'ws:';
+                break;
+            case 'https:':
+                protocol = 'wss:';
+                break;
+        }
         return url.format({
-            protocol: protocol === 'https:' ? 'wss:' : 'ws:',
+            protocol: protocol,
             hostname,
             port: process.env.NODE_ENV === 'production' ? port : 8899,
             pathname,

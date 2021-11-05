@@ -61,8 +61,8 @@ function injectAssetsIntoHtml(html, assets, assetTags, xhtml = false) {
     const htmlRegExp = /(<html[^>]*>)/i;
     const headRegExp = /(<\/head\s*>)/i;
     const bodyRegExp = /(<\/body\s*>)/i;
-    const body = assetTags.bodyTags.map(assetTagObject => htmlTagObjectToString(assetTagObject, xhtml));
-    const head = assetTags.headTags.map(assetTagObject => htmlTagObjectToString(assetTagObject, xhtml));
+    const body = (assetTags.bodyTags || []).map(assetTagObject => htmlTagObjectToString(assetTagObject, xhtml));
+    const head = (assetTags.headTags || []).map(assetTagObject => htmlTagObjectToString(assetTagObject, xhtml));
 
     if (body.length) {
         if (bodyRegExp.test(html)) {

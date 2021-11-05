@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 module.exports = ({request, response}, proxyInstance) => {
-    request.add(
+    const id = request.add(
         ({request: req, response: res}) => {
             res.setHeader('Access-Control-Allow-Origin', '*');
             const caFilePath = path.join(proxyInstance.sslCaDir, 'certs/ca.pem');
@@ -17,4 +17,7 @@ module.exports = ({request, response}, proxyInstance) => {
         },
         {host: 'devtools.pro', path: '/ssl'}
     );
+    return () => {
+        request.remove(id);
+    };
 };

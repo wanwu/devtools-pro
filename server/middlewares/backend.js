@@ -20,6 +20,7 @@ module.exports = (router, logger, serverInstance) => {
         // });
         // console.log(mergedStream.toString());
         // ctx.body = mergedStream;
+        ctx.res.setHeader('Access-Control-Allow-Origin', '*');
         ctx.res.setHeader('Content-Type', 'application/javascript');
         ctx.body = s;
     });
