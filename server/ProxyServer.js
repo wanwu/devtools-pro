@@ -39,7 +39,7 @@ class ProxyServer extends EventEmitter {
         // TODO forward配置
         this.forward = options.forward;
 
-        this.port = options.port || 8001;
+        this.port = options.port || 8002;
         this.sslCaDir = options.sslCaDir || findCacheDir('ssl');
         this.plugins = options.plugins || [];
         this._connectionMap = new Map();

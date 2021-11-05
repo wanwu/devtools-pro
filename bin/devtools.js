@@ -25,7 +25,8 @@ const {
     version: pkgVersion
 } = require('../package.json');
 
-const DEFAULT_PORT = 8899;
+const DEFAULT_PORT = 8001;
+const DEFAULT_PROXY_PORT = 8002;
 
 // set process
 process.title = scriptName;
@@ -46,6 +47,16 @@ require('yargs')
             plugins: {
                 type: 'array',
                 describe: 'Add plugins'
+            },
+            proxy: {
+                type: 'bollen',
+                default: true,
+                describe: 'Proxy server enabled'
+            },
+            proxyPort: {
+                type: 'number',
+                default: 8002,
+                describe: `Proxy server port to use [${DEFAULT_PROXY_PORT}]`
             },
             config: {
                 default: 'devtools.config',
@@ -115,28 +126,38 @@ require('yargs')
             let port = argv.port || config.options.port || DEFAULT_PORT;
             const hostname = argv.hostname || config.options.hostname || '0.0.0.0';
             const https = argv.https || config.options.https || false;
+            let proxyPort = argv.proxyPort || config.options.proxyPort || DEFAULT_PROXY_PORT;
 
-            if (!port) {
-                portfinder.basePort = DEFAULT_PORT;
-                portfinder.getPort((err, p) => {
-                    if (err) {
-                        throw err;
-                    }
-                    port = p;
-                    startServer();
+            port = await portfinder.getPortPromise({
+                port, // minimum port
+                stopPort: port + 10 // maximum port
+            });
+            if (argv.proxy) {
+                proxyPort = await portfinder.getPortPromise({
+                    port: proxyPort, // minimum port
+                    stopPort: proxyPort + 10 // maximum port
                 });
-            } else {
-                startServer();
             }
+            // 添加proxy
+            const configFileOptions = config.options || {};
+            if (argv.proxy && !configFileOptions.proxy) {
+                configFileOptions.proxy = {
+                    port: proxyPort
+                };
+            } else if (argv.proxy && configFileOptions.proxy) {
+                configFileOptions.proxy.port = proxyPort;
+            }
+            startServer();
             function startServer() {
                 const ifaces = os.networkInterfaces();
                 const options = {
-                    ...config.options,
+                    ...configFileOptions,
                     https: https ? {} : null,
                     plugins,
                     port,
                     hostname
                 };
+
                 const server = new Server(options);
 
                 server.listen(port, hostname, err => {
@@ -174,6 +195,14 @@ require('yargs')
                         console.log(u + colorette.green(BACKENDJS_PATH));
                     });
                     console.log('');
+                    if (server.getProxyServer()) {
+                        console.log(
+                            `${colorette.yellow('Proxy port:')} ${colorette.green(
+                                server.getProxyServer().port.toString()
+                            )}`
+                        );
+                        console.log('');
+                    }
                     console.log('Hit CTRL-C to stop the server');
 
                     const home = server.getUrl();

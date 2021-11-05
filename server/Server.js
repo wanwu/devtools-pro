@@ -25,6 +25,8 @@ class Server extends EventEmitter {
         this.options = options;
         this.hostname = options.hostname;
         this.port = options.port;
+        this._proxyServer = null;
+        this._wsServer = null;
         // 插件处理
         this._middlewares = [];
         this._frontends = [];
@@ -125,8 +127,11 @@ class Server extends EventEmitter {
             this._proxyServer.listen();
             setTimeout(() => {
                 CDPMessager(this.getWsUrl(), proxyServer);
-            }, 3e3);
+            }, 1e3);
         }
+    }
+    getProxyServer() {
+        return this._proxyServer;
     }
     _createWebSocketServer() {
         if (this._wsServer) {
@@ -136,7 +141,7 @@ class Server extends EventEmitter {
         this._wsServer = wss;
         wss.init(this._server);
     }
-    listen(port = 8899, hostname = '0.0.0.0', fn) {
+    listen(port = 8001, hostname = '0.0.0.0', fn) {
         this.hostname = hostname;
         this.port = port;
 
