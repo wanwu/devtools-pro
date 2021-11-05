@@ -7,6 +7,8 @@ const createDebug = require('./utils/createDebug');
 const InterceptorFactory = require('./proxy/InterceptorFactory');
 const Connection = require('./proxy/Connection');
 const findCacheDir = require('./utils/findCacheDir');
+const copyHeaders = require('./utils/copyHeaders');
+const buildInPlugins = [require('./proxy/plugins/crtfile')];
 
 const logger = require('./utils/logger');
 const {truncate} = require('./utils');
@@ -45,7 +47,10 @@ class ProxyServer extends EventEmitter {
         this._connectionMap = new Map();
         // 是否阻塞
         this._blocking = true;
-        const proxy = new MITMProxy();
+        const proxy = new MITMProxy({
+            sslCaDir: this.sslCaDir,
+            port: this.port
+        });
         this.proxy = proxy;
 
         this._addBuiltInMiddleware();
@@ -55,8 +60,13 @@ class ProxyServer extends EventEmitter {
             interceptors[name] = new InterceptorFactory();
         });
         this.interceptors = interceptors;
-        this.plugins.forEach(plugin => {
-            plugin(interceptors);
+        const plugins = [...buildInPlugins];
+        if (Array.isArray(this.plugins)) {
+            plugins.push(...this.plugins);
+        }
+        // 绑定plugins
+        plugins.forEach(plugin => {
+            plugin(interceptors, this);
         });
     }
     // TODO 主动注入backend.js
@@ -173,8 +183,8 @@ class ProxyServer extends EventEmitter {
     }
     async _onRequest(ctx, callback) {
         const req = ctx.clientToProxyRequest;
-        const userRes = ctx.proxyToClientResponse;
-        const conn = new Connection(req, userRes, ctx.isSSL);
+        const clientRes = ctx.proxyToClientResponse;
+        const conn = new Connection(req, clientRes, ctx.isSSL);
         ctx.id = conn.getId();
         this._addConnection(conn);
         debug('onrequest', `${ctx.id},${req.url}`);
@@ -240,7 +250,7 @@ class ProxyServer extends EventEmitter {
         debug('onrequest', `${ctx.id},${originalUrl}`);
 
         const serverRes = ctx.serverToProxyResponse;
-        const userRes = ctx.proxyToClientResponse;
+        const clientRes = ctx.proxyToClientResponse;
 
         let resChunks = [];
         let resDataStream = null;
@@ -259,7 +269,7 @@ class ProxyServer extends EventEmitter {
                 });
                 if (!body) {
                     debug('response body is empty');
-                    return userRes.end('response is empty');
+                    return clientRes.end('response is empty');
                 }
 
                 // rewrite
@@ -278,8 +288,8 @@ class ProxyServer extends EventEmitter {
                     delete headers['content-length'];
                 }
 
-                userRes.writeHead(response.statusCode, headers);
-                userRes.end(response.body);
+                clientRes.writeHead(response.statusCode, headers);
+                clientRes.end(response.body);
             } else {
                 debug('body is big stream', originalUrl);
                 conn.response.body = resDataStream;
@@ -287,8 +297,8 @@ class ProxyServer extends EventEmitter {
 
                 await self._runInterceptor('response', {request, response}, conn);
 
-                userRes.writeHead(response.statusCode, response.headers);
-                response.body.pipe(userRes);
+                clientRes.writeHead(response.statusCode, response.headers);
+                response.body.pipe(clientRes);
             }
             self.emit('loadingFinished', conn);
             self._removeConnection(conn);
@@ -420,31 +430,4 @@ class ProxyServer extends EventEmitter {
     }
 }
 
-function copyHeaders(originalHeaders) {
-    const headers = {};
-
-    let keys = Object.keys(originalHeaders);
-    // ignore chunked, gzip...
-    keys = keys.filter(key => !['content-encoding', 'transfer-encoding'].includes(key.toLowerCase()));
-
-    keys.forEach(key => {
-        let value = originalHeaders[key];
-
-        if (key === 'set-cookie') {
-            // remove cookie domain
-            value = Array.isArray(value) ? value : [value];
-            value = value.map(x => x.replace(/Domain=[^;]+?/i, ''));
-        } else {
-            let canonizedKey = key.trim();
-            if (/^public\-key\-pins/i.test(canonizedKey)) {
-                // HPKP header => filter
-                return;
-            }
-        }
-
-        headers[key] = value;
-    });
-
-    return headers;
-}
 module.exports = ProxyServer;

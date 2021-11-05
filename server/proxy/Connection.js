@@ -13,6 +13,7 @@ const destroy = require('destroy');
 const getTime = require('../utils/getTime');
 const {BLOCKING_IGNORE_STRING} = require('../constants');
 const InterceptorFactory = require('./InterceptorFactory');
+const copyHeaders = require('../utils/copyHeaders');
 
 const stringify = url.format;
 let id = 1;
@@ -96,7 +97,7 @@ module.exports = class Connection {
 function createWebSocket(ws) {
     return Object.call(null);
 }
-function createResponse(userRes, req) {
+function createResponse(clientRes, req) {
     const cloneRes = Object.create(null);
     cloneRes.headers = {};
 
@@ -104,23 +105,23 @@ function createResponse(userRes, req) {
         // =========readonly==========
 
         get res() {
-            return userRes;
+            return clientRes;
         },
-        get headerSent() {
-            return userRes.headerSent;
+        get headersSent() {
+            return clientRes.headersSent;
         },
         get finished() {
-            if ('writableEnded' in userRes) {
-                return userRes.writableEnded;
+            if ('writableEnded' in clientRes) {
+                return clientRes.writableEnded;
             }
-            return userRes.finished;
+            return clientRes.finished;
         },
         // =========methods==========
         setHeader(name, value) {
             if (!name || !value) {
                 return;
             }
-            if (this.headerSent) {
+            if (this.headersSent) {
                 return;
             }
 
@@ -137,10 +138,14 @@ function createResponse(userRes, req) {
             return cloneRes.headers[name.toLowerCase()];
         },
         write(chunk) {
-            userRes.write(chunk);
+            clientRes.write(chunk);
         },
         end(str) {
-            userRes.end(str);
+            if (!this.headersSent && Object.keys(cloneRes.headers).length > 0) {
+                const headers = copyHeaders(cloneRes.headers);
+                clientRes.writeHead(this.statusCode ? this.statusCode : 200, headers);
+            }
+            clientRes.end(str);
         },
         toJSON() {
             return only(this, ['statusCode', 'statusMessage', 'headers', 'length', 'type']);
@@ -200,7 +205,7 @@ function createResponse(userRes, req) {
 
             // stream
             if (val instanceof Stream) {
-                onFinish(userRes, destroy.bind(null, val));
+                onFinish(clientRes, destroy.bind(null, val));
                 if (original != val) {
                     // overwriting
                     if (null != original) {
@@ -218,7 +223,7 @@ function createResponse(userRes, req) {
             return cloneRes.statusCode;
         },
         set statusCode(code) {
-            if (userRes.headerSent) {
+            if (clientRes.headerSent) {
                 return;
             }
 

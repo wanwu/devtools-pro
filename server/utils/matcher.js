@@ -6,7 +6,6 @@ module.exports = function match(options, context) {
     if (typeof options === 'function') {
         return options(context);
     }
-
     if (isObject(options)) {
         // const {path, url, headers, method, host, sourceType, userAgent, statusCode} = context;
 

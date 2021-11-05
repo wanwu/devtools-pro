@@ -65,7 +65,7 @@
         {
             "type": "setting",
             "category": "Network",
-            "title": "Auto inject Backend",
+            "title": "Inject Backend",
             "settingName": "network_log.auto-inject-backend",
             "settingType": "boolean",
             "defaultValue": false,

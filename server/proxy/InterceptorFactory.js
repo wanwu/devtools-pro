@@ -5,6 +5,7 @@ class InterceptorFactory {
         this._hanlders = [];
     }
     add(handler, filterDetail) {
+        console.log(handler, filterDetail);
         return (
             this._hanlders.push({
                 handler,

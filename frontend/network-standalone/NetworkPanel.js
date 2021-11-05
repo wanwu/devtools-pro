@@ -273,7 +273,7 @@ export class NetworkPanel extends UI.Panel {
         const autoInjectBackendCheckbox = new UI.ToolbarSettingCheckbox(
             Common.moduleSetting('network_log.auto-inject-backend'),
             Common.UIString('Inject devtools-pro backend.js (html/htm only).'),
-            Common.UIString('Auto inject Backend')
+            Common.UIString('Inject Backend')
         );
         this._panelToolbar.appendToolbarItem(autoInjectBackendCheckbox);
 
