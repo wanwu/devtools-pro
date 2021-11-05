@@ -26,8 +26,6 @@ class CommonReadableStream extends Readable {
 }
 
 // TODO 统一server ssl认证到node-forge
-// TODO 添加下载证书的链接
-// TODO CLI/home 增加proxy链接信息说明
 // TODO 增加精细化拦截配置项 blocking
 class ProxyServer extends EventEmitter {
     constructor(options = {}, serverInstance) {
