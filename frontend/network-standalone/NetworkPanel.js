@@ -124,7 +124,7 @@ export class NetworkPanel extends UI.Panel {
         const closeSidebar = new UI.ToolbarButton(Common.UIString('Close'), 'largeicon-delete');
         closeSidebar.addEventListener(UI.ToolbarButton.Events.Click, () => splitWidget.hideSidebar());
         tabbedPane.rightToolbar().appendToolbarItem(closeSidebar);
-        tabbedPane.hideHeader();
+        // tabbedPane.hideHeader();
         splitWidget.setSidebarWidget(tabbedPane);
         splitWidget.setMainWidget(panel);
         splitWidget.setDefaultFocusedChild(panel);

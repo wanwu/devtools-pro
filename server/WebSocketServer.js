@@ -28,6 +28,10 @@ module.exports = class WebSocketServer {
                     this.manager.createChannel(ws, id);
                     const backendData = this.getChannelManager().getBackends();
                     this.manager.send({payload: backendData, event: 'homeConnected'});
+                    const foxy = this.getChannelManager().getFoxy();
+                    if (foxy && foxy.length) {
+                        this.manager.send({payload: foxy, event: 'updateFoxyInfo'});
+                    }
                     break;
                 case 'heartbeat':
                     this.manager.createChannel(ws);

@@ -5,7 +5,7 @@ const Recorder = require('./Recorder');
 const debug = require('../utils/createDebug')('CDPMessager');
 const getTime = require('../utils/getTime');
 const {BLOCKING_IGNORE_STRING} = require('../constants');
-const client = new CDPClient();
+// let client;
 const recorder = new Recorder();
 const proxyEventHandler = {
     loadingFinished: conn => {
@@ -83,25 +83,29 @@ const messageHandler = {
 async function CDPMessager(wsUrl, proxyServer) {
     proxyServerInstance = proxyServer;
     const sid = nanoid();
+    const client = new CDPClient();
     cdpMessagerReceiver(client);
     const id = `${BLOCKING_IGNORE_STRING}-${sid}`;
 
     client.on('open', () => {
         client.sendRawMessage(
             JSON.stringify({
-                event: 'updateBackendInfo',
+                event: 'updateFoxyInfo',
                 payload: {
-                    // TODO 添加一个Cool favicon
-                    id,
-                    title: 'Devtools Foxy',
-                    url: 'https://github.com/ksky521'
+                    // 标识
+                    isFoxy: true,
+                    foxyInfo: {
+                        port: proxyServer.port,
+                        address: proxyServer.address
+                    },
+                    id
                 }
             })
         );
     });
 
     // warn @blocking_ignore@ 不捕捉这个请求
-    await client.connect(`${wsUrl}backend/${id}`);
+    await client.connect(`${wsUrl}backend/${id}?hidden=1`);
 
     // 发送一条测试信息
     [

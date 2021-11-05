@@ -65,13 +65,39 @@ function normalizeData(data) {
     }
 
     metaData.platform = platform;
-    data.devtoolsurl = createFrontendUrl(location.protocol, location.hostname, PORT, data.id);
+    if (data.isFoxy) {
+        data.devtoolsurl = createFrontendUrl(
+            location.protocol,
+            location.hostname,
+            PORT,
+            data.id,
+            'devtools/network.html'
+        );
+    } else {
+        data.devtoolsurl = createFrontendUrl(location.protocol, location.hostname, PORT, data.id);
+    }
     return data;
 }
 
 let app;
 const timerIdMap = new Map();
 const handlers = {
+    updateFoxyInfo(data) {
+        if (Array.isArray(data)) {
+            data.map(item => {
+                handlers.updateFoxyInfo(item);
+            });
+            return;
+        }
+        data = normalizeData(data);
+        if (!data) {
+            return;
+        }
+        if (data.isFoxy && data.foxyInfo) {
+            app.data.set('foxy', data);
+            return false;
+        }
+    },
     backendDisconnected(data) {
         if (!data.id) {
             return;
@@ -93,7 +119,13 @@ const handlers = {
     },
     backendConnected(source) {
         if (Array.isArray(source)) {
-            const data = source.map(normalizeData).filter(Boolean);
+            const data = source.map(normalizeData).filter(d => {
+                if (d.isFoxy && d.foxyInfo) {
+                    app.data.set('foxy', d);
+                    return false;
+                }
+                return !!d.hidden;
+            });
             app.data.set('backends', data);
             return;
         }
@@ -102,19 +134,21 @@ const handlers = {
         if (!data) {
             return;
         }
-
         // 插入数据
         const timerId = timerIdMap.get(data.id);
         if (timerId) {
             clearTimeout(timerId);
             timerIdMap.delete(data.id);
-        } else {
+        } else if (!data.isFoxy) {
+            // 不是foxy
             const index = app.data.get('backends').findIndex(val => val.id === data.id);
             if (index > -1) {
                 app.data.splice('backends', [index, 1, data]);
             } else {
                 app.data.unshift('backends', data);
             }
+        } else if (data.isFoxy && data.foxyInfo) {
+            app.data.set('foxy', data);
         }
     },
     backendUpdate(data) {
@@ -135,7 +169,7 @@ const handlers = {
                 hostname: location.hostname,
                 // 开发的时候是 webpack 特殊处理
                 port: PORT,
-                pathname: `/backend.js`
+                pathname: '/backend.js'
             })
         );
     },
@@ -156,7 +190,6 @@ const ws = new window.WebSocket(wsUrl);
 ws.onopen = () => {
     // 绿色
     app.data.set('status', 'connected');
-
     ws.onmessage = e => {
         let data = e.data;
         data = JSON.parse(data);

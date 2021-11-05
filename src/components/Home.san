@@ -40,6 +40,12 @@
                             <a target="_blank" href="{{demourl}}">{{demourl}}</a>
                         </div>
                     </div>
+                    <div class="description" s-if="foxy && foxy.isFoxy">
+                        <div class="term"><s-badge count="{{4}}" style="{{{'background-color': 'rgba(25, 104, 250, .6)'}}}"/>  代理Server已开启，端口号：<s-tag color="green" slot="tags">{{foxy.foxyInfo.port}}</s-tag></div>
+                        <div class="detail">
+                            <a target="_blank" href="{{foxy.devtoolsurl}}">打开UI面板</a> &nbsp;<a on-click="openSSLDownloadDialog" href="javascript:void(0);">查看证书</a>
+                        </div>
+                    </div>
                 </s-col>
             </s-row>
             <div s-if="backends.length===0" class="empty-info">没有检测到待调试的页面</div>
@@ -49,7 +55,7 @@
                 size="large"
                 dataSource="{{backends}}"
             >
-                <s-list-item slot="renderItem" actions="{{['open','platform', 'app']}}">
+                <s-list-item slot="renderItem" actions="{{['open','platform', 'app']}}" s-if="!item.hidden">
                     <s-list-item-meta>
                         <s-avatar size="large" slot="avatar" src="{{item.favicon || unknown}}"></s-avatar>
                         <a href="{{item.devtoolsurl}}" slot="title" title="start debugging" target="_blank">
@@ -89,67 +95,92 @@
                 </s-list-item>
                 <div slot="footer" class="footer">Powered by <s-button type="link" href="{{siteUrl}}"><b>{{pkgName}}</b></s-button> v{{version}}</div>
             </s-list>
+            <s-modal title="下载证书"
+                visible="{=downloadVisible=}"
+                on-ok="downloadDialogOk"
+                on-cancel="downloadDialogOk"
+                getContainer="{{getDialogContainer}}"
+            >
+                <p>手机扫码下载</p>
+                <div><img src="../assets/ssl.png" style="width:233px;height:233px;margin:0 auto;"/></div>
+                <p>地址：<a href="http://devtools.pro/ssl" target="_blank">devtools.pro/ssl</a></p>
+            </s-modal>
         </div>
     </div>
 </template>
 <script>
 import './home.less';
-import {Component} from 'san';
-import {Grid, Button, Tag, List, Avatar, Icon, Badge, Popover, message} from 'santd';
+import { Component } from 'san';
+import { Grid, Button, Tag, List, Avatar, Icon, Badge, Popover, message, Modal } from 'santd';
 import unknown from '../icons/unknown.svg?inline';
 /* global __config__ */
 import pkg from '../../package.json';
 
-export default class Home extends Component{
-    static components = {
-        's-badge': Badge,
-        's-icon': Icon,
-        's-list': List,
-        's-list-item': List.Item,
-        's-list-item-meta': List.Item.Meta,
-        's-avatar': Avatar,
-        's-tag': Tag,
-        's-button': Button,
-        's-row': Grid.Row,
-        's-col': Grid.Col,
-        's-popover': Popover
+export default class Home extends Component {
+  static components = {
+    's-modal': Modal,
+    's-badge': Badge,
+    's-icon': Icon,
+    's-list': List,
+    's-list-item': List.Item,
+    's-list-item-meta': List.Item.Meta,
+    's-avatar': Avatar,
+    's-tag': Tag,
+    's-button': Button,
+    's-row': Grid.Row,
+    's-col': Grid.Col,
+    's-popover': Popover
+  };
+  openDevtools(item) {
+    // e.g. http://localhost:8899/devtools/inspector.html?ws=localhost:8899/frontend/QE9cnBBpXf7jPS1hEP8-M
+    window.open(item.devtoolsurl, 'Chrome Devtools');
+  }
+  attached() {
+    // ws.send(JSON.stringify({event: 'homeReady'}));
+  }
+  copyText(text) {
+    this.copyIt(text);
+  }
+  openSSLDownloadDialog() {
+    this.data.set('downloadVisible', true);
+  }
+  downloadDialogOk() {
+    this.data.set('downloadVisible', false);
+  }
+  copyIt(value) {
+    const input = document.createElement('input');
+    input.setAttribute('readonly', 'readonly');
+    input.setAttribute('value', value);
+    document.body.appendChild(input);
+    input.select();
+    if (document.execCommand('copy')) {
+      document.execCommand('copy');
+      message.success('复制成功', 0.2);
+    } else {
+      message.warning('复制失败', 0.2);
+    }
+    document.body.removeChild(input);
+  }
+  initData() {
+    return {
+      foxy: {},
+      getDialogContainer: () => {
+        const div = document.createElement('div');
+        div.id = 'modal-container';
+        document.body.appendChild(div);
+        return div;
+      },
+      downloadVisible: false,
+      unknown,
+      demourl: `${location.protocol}//${location.host}/demo.html`,
+      pkgName: pkg.name,
+      version: pkg.version,
+      siteUrl: pkg.repository.url,
+      // 黄色
+      status: 'connecting',
+      backends: [],
+      platforms: ['android', 'apple', 'desktop', 'frown']
     };
-    openDevtools(item){
-        // e.g. http://localhost:8899/devtools/inspector.html?ws=localhost:8899/frontend/QE9cnBBpXf7jPS1hEP8-M
-        window.open(item.devtoolsurl, 'Chrome Devtools');
-    }
-    attached() {
-        // ws.send(JSON.stringify({event: 'homeReady'}));
-    }
-    copyText(text) {
-        this.copyIt(text);
-    }
-    copyIt(value) {
-        const input = document.createElement('input');
-        input.setAttribute('readonly', 'readonly');
-        input.setAttribute('value', value);
-        document.body.appendChild(input);
-        input.select();
-        if (document.execCommand('copy')) {
-            document.execCommand('copy');
-            message.success('复制成功', 0.2);
-        } else {
-            message.warning('复制失败', 0.2);
-        }
-        document.body.removeChild(input);
-    }
-    initData() {
-        return {
-            unknown,
-            demourl: `${location.protocol}//${location.host}/demo.html`,
-            pkgName: pkg.name,
-            version: pkg.version,
-            siteUrl: pkg.repository.url,
-            // 黄色
-            status: 'connecting',
-            backends: [],
-            platforms: ['android', 'apple', 'desktop', 'frown']
-        };
-    }
+  }
 }
 </script>

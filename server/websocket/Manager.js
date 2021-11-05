@@ -28,13 +28,16 @@ module.exports = class HomeChannel {
         const channelManager = this.wssInstance.getChannelManager();
         // TODO update
         channelManager.on('backendUpdate', data => {
-            this.send({payload: data, event: 'backendUpdate'});
+            this.send({event: 'backendUpdate', payload: data});
         });
         channelManager.on('backendConnected', data => {
-            this.send({payload: data, event: 'backendConnected'});
+            this.send({event: 'backendConnected', payload: data});
         });
         channelManager.on('backendDisconnected', data => {
-            this.send({payload: data, event: 'backendDisconnected'});
+            this.send({event: 'backendDisconnected', payload: data});
+        });
+        channelManager.on('updateFoxyInfo', data => {
+            this.send({event: 'updateFoxyInfo', payload: data});
         });
     }
     removeChannel(id) {

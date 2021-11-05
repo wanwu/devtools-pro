@@ -34,7 +34,7 @@ class ProxyServer extends EventEmitter {
         super();
         options = typeof options === 'object' ? options : {};
         this.serverInstance = serverInstance;
-
+        this.address = serverInstance.getAddress();
         this.options = options;
         // TODO 增加blocking实现
         this.blockingFilter = options.blockingFilter;
