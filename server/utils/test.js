@@ -7,12 +7,9 @@ module.exports = function test(tester, testee) {
     if (tester instanceof RegExp) {
         return tester.test(testee);
     }
-    if (isStringPath(tester)) {
-        return matchSingleStringPath(tester, testee);
-    }
-
     // single glob path
     if (isGlobPath(tester)) {
+        console.log(121212);
         return matchSingleGlobPath(tester, testee);
     }
 
@@ -34,11 +31,11 @@ module.exports = function test(tester, testee) {
     }
 
     // 最后相等
-    return tester == testee; // eslint-disable-line eqeqeq
+    return matchSingleStringPath(tester, testee); // eslint-disable-line eqeqeq
 };
 
 function matchSingleStringPath(tester, testee) {
-    return testee.indexOf(tester) !== -1;
+    return tester == testee;
 }
 
 function matchSingleGlobPath(pattern, testee) {
