@@ -324,15 +324,15 @@ function createRequest(req, isSSL, isWS) {
             return clonedReq.port;
         },
         set port(port) {
-            clonedReq.fullUrl = getFullUrl(clonedReq);
             clonedReq.port = port;
+            clonedReq.fullUrl = getFullUrl(clonedReq);
         },
         get host() {
             return clonedReq.host;
         },
         set host(value) {
-            clonedReq.fullUrl = getFullUrl(clonedReq);
             clonedReq.host = value;
+            clonedReq.fullUrl = getFullUrl(clonedReq);
         },
         get headers() {
             return clonedReq.headers;
@@ -350,9 +350,8 @@ function createRequest(req, isSSL, isWS) {
             return clonedReq.url;
         },
         set url(val) {
-            clonedReq.fullUrl = getFullUrl(clonedReq);
-
             clonedReq.url = val;
+            clonedReq.fullUrl = getFullUrl(clonedReq);
         },
         get body() {
             return clonedReq.body;

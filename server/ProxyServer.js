@@ -51,7 +51,7 @@ class ProxyServer extends EventEmitter {
         this._addBuiltInMiddleware();
 
         const interceptors = {};
-        ['request', 'response', 'websocket'].forEach(name => {
+        ['request', 'response', 'websocketFrame', 'websocketConnect'].forEach(name => {
             interceptors[name] = new InterceptorFactory();
         });
         this.interceptors = interceptors;
@@ -105,7 +105,7 @@ class ProxyServer extends EventEmitter {
         }
         return this._blocking === true;
     }
-    _onWebSocketConnection(ctx, callback) {
+    async _onWebSocketConnection(ctx, callback) {
         const conn = new Connection(
             ctx.clientToProxyWebSocket.upgradeReq,
             ctx.clientToProxyWebSocket,
@@ -119,6 +119,10 @@ class ProxyServer extends EventEmitter {
         if (!this.isBlockable(conn)) {
             return callback();
         }
+        await this._runInterceptor('websocketConnect', {request: conn.request}, conn);
+        // 生成请求地址
+        createRequestOptions(ctx, conn.request, 'proxyToServerWebSocketOptions');
+
         this.emit('webSocketCreated', conn);
         callback();
     }
@@ -147,7 +151,7 @@ class ProxyServer extends EventEmitter {
         };
         if (ctx.clientToProxyWebSocket.readyState === WebSocket.OPEN) {
             debug('websocket is ready');
-            await this._runInterceptor('websocket', {request: conn.request, websocket: r}, conn);
+            await this._runInterceptor('websocketFrame', {request: conn.request, websocket: r}, conn);
         }
         if (type === 'message') {
             fromServer ? this.emit('webSocketFrameReceived', conn, r) : this.emit('webSocketFrameSent', conn, r);
@@ -197,17 +201,8 @@ class ProxyServer extends EventEmitter {
         const {request, response} = conn;
         // 拦截器：用于修改发送server的请求参数
         await this._runInterceptor('request', {request, response}, conn);
-
-        // 处理proxyToServerRequestOptions
-        Object.keys(ctx.proxyToServerRequestOptions).forEach(k => {
-            ctx.proxyToServerRequestOptions[k] = request[k] || ctx.proxyToServerRequestOptions[k];
-        });
-        if ('rejectUnauthorized' in request) {
-            ctx.proxyToServerRequestOptions.rejectUnauthorized = request.rejectUnauthorized;
-        }
-        if (request.headers && request.headers.host && request.headers.host !== ctx.proxyToServerRequestOptions.host) {
-            request.headers.host = ctx.proxyToServerRequestOptions.host;
-        }
+        // 生成请求地址
+        createRequestOptions(ctx, request);
 
         this.emit('requestWillBeSent', conn);
 
@@ -438,3 +433,23 @@ class ProxyServer extends EventEmitter {
 }
 
 module.exports = ProxyServer;
+
+function createRequestOptions(ctx, request, optionKey = 'proxyToServerRequestOptions') {
+    // 处理proxyToServerRequestOptions
+    if (!ctx[optionKey]) {
+        return;
+    }
+    Object.keys(ctx[optionKey]).forEach(k => {
+        ctx[optionKey][k] = request[k] || ctx[optionKey][k];
+    });
+    if ('rejectUnauthorized' in request) {
+        ctx[optionKey].rejectUnauthorized = request.rejectUnauthorized;
+    }
+    if (request.headers && request.headers.host && request.headers.host !== ctx[optionKey].host) {
+        request.headers.host = ctx[optionKey].host;
+    }
+    if (optionKey === 'proxyToServerWebSocketOptions') {
+        ctx[optionKey].url = request.fullUrl;
+        ctx[optionKey].headers.host = request.host;
+    }
+}
