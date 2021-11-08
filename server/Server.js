@@ -9,11 +9,13 @@ const Koa = require('koa');
 const Router = require('@koa/router');
 const killable = require('killable');
 const EventEmitter = require('events').EventEmitter;
+const findCacheDir = require('./utils/findCacheDir');
+const CA = require('./CA');
+
 const middlewares = ['alive', 'backend', 'frontend', 'dist'].map(file => {
     return require(path.join(__dirname, './middlewares', file));
 });
 
-const getCertificate = require('./utils/getCertificate');
 const logger = require('./utils/logger');
 const WebSocketServer = require('./WebSocketServer');
 const ProxyServer = require('./ProxyServer');
@@ -37,8 +39,10 @@ class Server extends EventEmitter {
             middleware && this._middlewares.push(middleware);
         });
 
-        this._setupHttps();
-        this._start();
+        this.options.proxy = this.options.proxy || process.env.PROXY || false;
+        // 统一ca地址
+        this.ca = new CA(options.sslCaDir || findCacheDir('ssl'));
+        this.sslCaDir = this.ca.baseCAFolder;
     }
     _addRouters() {
         const router = (this.router = new Router());
@@ -56,35 +60,12 @@ class Server extends EventEmitter {
     isSSL() {
         return !!this.options.https;
     }
-    _setupHttps() {
-        // TODO 统一到http-mitm-proxy的方式，使用一个ca证书？
+    async _setupHttps() {
+        // 创建ca
+        await this.ca.create();
         if (this.options.https) {
-            for (const property of ['ca', 'pfx', 'key', 'cert']) {
-                const value = this.options.https[property];
-                const isBuffer = value instanceof Buffer;
-
-                if (value && !isBuffer) {
-                    let stats = null;
-
-                    try {
-                        stats = fs.lstatSync(fs.realpathSync(value)).isFile();
-                    } catch (error) {
-                        // ignore error
-                    }
-
-                    // It is file
-                    this.options.https[property] = stats ? fs.readFileSync(path.resolve(value)) : value;
-                }
-            }
-
-            let fakeCert;
-
-            if (!this.options.https.key || !this.options.https.cert) {
-                fakeCert = getCertificate();
-            }
-
-            this.options.https.key = this.options.https.key || fakeCert;
-            this.options.https.cert = this.options.https.cert || fakeCert;
+            this.options.https.key = fs.readFileSync(this.ca.caPrivateFilepath, 'utf8');
+            this.options.https.cert = fs.readFileSync(this.ca.caFilepath, 'utf8');
         }
     }
     _start() {
@@ -121,8 +102,10 @@ class Server extends EventEmitter {
             return;
         }
 
-        const proxy = this.options.proxy || process.env.PROXY || false;
+        let proxy = this.options.proxy;
+
         if (proxy) {
+            proxy = typeof proxy === 'boolean' ? {} : proxy;
             const proxyServer = (this._proxyServer = new ProxyServer(proxy, this));
             this._proxyServer.listen();
             setTimeout(() => {
@@ -141,9 +124,11 @@ class Server extends EventEmitter {
         this._wsServer = wss;
         wss.init(this._server);
     }
-    listen(port = 8001, hostname = '0.0.0.0', fn) {
+    async listen(port = 8001, hostname = '0.0.0.0', fn) {
         this.hostname = hostname;
         this.port = port;
+        await this._setupHttps();
+        this._start();
 
         return this._server.listen(port, hostname, err => {
             this._createWebSocketServer();

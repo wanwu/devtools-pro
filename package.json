@@ -51,6 +51,8 @@
         "http-mitm-proxy": "^0.9.0",
         "is-glob": "^4.0.3",
         "is-plain-obj": "^4.0.0",
+        "mkdirp": "^1.0.4",
+        "node-forge": "^0.10.0",
         "statuses": "^2.0.1",
         "on-finished": "^2.3.0",
         "cache-content-type": "^1.0.1",
@@ -70,7 +72,6 @@
         "opener": "^1.5.2",
         "portfinder": "^1.0.28",
         "resolve-pkg": "^2.0.0",
-        "selfsigned": "^1.10.8",
         "update-notifier": "^5.1.0",
         "ws": "~7.4.5",
         "yargs": "^16.2.0"

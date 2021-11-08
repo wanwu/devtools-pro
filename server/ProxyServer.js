@@ -6,7 +6,6 @@ const decompress = require('./utils/decompress');
 const createDebug = require('./utils/createDebug');
 const InterceptorFactory = require('./proxy/InterceptorFactory');
 const Connection = require('./proxy/Connection');
-const findCacheDir = require('./utils/findCacheDir');
 const copyHeaders = require('./utils/copyHeaders');
 const buildInPlugins = [require('./proxy/plugins/crtfile')];
 
@@ -25,7 +24,6 @@ class CommonReadableStream extends Readable {
     _read(size) {}
 }
 
-// TODO 统一server ssl认证到node-forge
 // TODO 增加精细化拦截配置项 blocking
 class ProxyServer extends EventEmitter {
     constructor(options = {}, serverInstance) {
@@ -40,15 +38,15 @@ class ProxyServer extends EventEmitter {
         this.forward = options.forward;
 
         this.port = options.port || 8002;
-        this.sslCaDir = options.sslCaDir || findCacheDir('ssl');
+        // 统一sslCaDir
+        this.sslCaDir = serverInstance.ca.baseCAFolder;
+        this.caFilePath = serverInstance.ca.caFilePath;
+
         this.plugins = options.plugins || [];
         this._connectionMap = new Map();
         // 是否阻塞
         this._blocking = true;
-        const proxy = new MITMProxy({
-            sslCaDir: this.sslCaDir,
-            port: this.port
-        });
+        const proxy = new MITMProxy();
         this.proxy = proxy;
 
         this._addBuiltInMiddleware();
@@ -403,7 +401,7 @@ class ProxyServer extends EventEmitter {
     }
     listen(port) {
         port = port || this.port;
-        this.proxy.listen({port});
+        this.proxy.listen({port, sslCaDir: this.sslCaDir});
         // logger.info(`Proxy Server Available On Port: ${port}`);
     }
     _addBuiltInMiddleware() {

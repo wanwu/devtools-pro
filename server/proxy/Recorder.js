@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const Stream = require('stream').Stream;
-const fse = require('fs-extra');
+const del = require('del');
 const LRU = require('lru-cache');
 // const EventEmitter = require('events').EventEmitter;
 const iconv = require('iconv-lite');
@@ -135,7 +135,7 @@ class Recorder {
         logger.log();
         logger.info('delete response recorder cache...');
         try {
-            fse.removeSync(this.cachePath);
+            del.sync(this.cachePath, {force: true});
             // 清理lru cache
             this.lru.reset();
             // 重建cache dir

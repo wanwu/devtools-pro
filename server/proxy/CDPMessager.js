@@ -110,7 +110,6 @@ async function CDPMessager(wsUrl, proxyServer) {
             })
         );
     });
-
     // warn @blocking_ignore@ 不捕捉这个请求
     await client.connect(`${wsUrl}backend/${id}?hidden=1`);
 

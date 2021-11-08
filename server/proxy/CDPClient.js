@@ -3,6 +3,7 @@ const WebSocket = require('ws');
 const createDebug = require('../utils/createDebug');
 const debugMsgReceived = createDebug('CDP:Received');
 const debugMsgSent = createDebug('CDP:sent');
+const logger = require('../utils/logger');
 
 class ProtocolError extends Error {
     constructor(request, response) {
@@ -27,7 +28,9 @@ module.exports = class CDPClient extends EventEmitter {
         this._connected = false;
     }
     async connect(url) {
-        const ws = new WebSocket(url);
+        const ws = new WebSocket(url, {
+            rejectUnauthorized: false
+        });
         this._ws = ws;
         return new Promise((resolve, reject) => {
             ws.on('open', this._onOpen.bind(this));
@@ -48,6 +51,8 @@ module.exports = class CDPClient extends EventEmitter {
         this._connected = false;
         // 强制关闭
         this.close();
+        this.emit('error', e);
+        logger.error(e);
     }
     _onOpen() {
         this._connected = true;
