@@ -97,6 +97,10 @@ const CA_EXTENSIONS = [
             },
             {
                 type: 2,
+                value: 'devtools.baidu.com'
+            },
+            {
+                type: 2,
                 value: '*.baidu.com'
             },
             {

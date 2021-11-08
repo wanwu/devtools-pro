@@ -39,9 +39,8 @@ class ProxyServer extends EventEmitter {
 
         this.port = options.port || 8002;
         // 统一sslCaDir
-        this.sslCaDir = serverInstance.ca.baseCAFolder;
-        this.caFilePath = serverInstance.ca.caFilePath;
-
+        this.sslCaDir = serverInstance.ca.getRootPath();
+        this.caFilePath = serverInstance.ca.getRootCAPath();
         this.plugins = options.plugins || [];
         this._connectionMap = new Map();
         // 是否阻塞
@@ -63,7 +62,7 @@ class ProxyServer extends EventEmitter {
         // 绑定plugins
         this.addPlugin(plugins);
         // ERROR 测试用，删除我
-        // this.addPlugin(require('./proxy/plugins/injectBackend'));
+        this.addPlugin(require('./proxy/plugins/injectBackend'));
     }
     addPlugin(plugin) {
         if (Array.isArray(plugin)) {

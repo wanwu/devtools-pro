@@ -43,6 +43,11 @@ class Server extends EventEmitter {
         // 统一ca地址
         this.ca = new CA(options.sslCaDir || findCacheDir('ssl'));
         this.sslCaDir = this.ca.baseCAFolder;
+
+        this.distPath = path.join(__dirname, '../dist');
+    }
+    getDistPath() {
+        return this.distPath;
     }
     _addRouters() {
         const router = (this.router = new Router());
@@ -137,6 +142,9 @@ class Server extends EventEmitter {
                 fn.call(this._server, err);
             }
         });
+    }
+    getPort() {
+        return this.port;
     }
     getUrl(pathname = '/', query = '') {
         return url.format({
