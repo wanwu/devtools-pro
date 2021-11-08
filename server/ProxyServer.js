@@ -400,7 +400,7 @@ class ProxyServer extends EventEmitter {
     }
     listen(port) {
         port = port || this.port;
-        this.proxy.listen({port, sslCaDir: this.sslCaDir});
+        this.proxy.listen({port, sslCaDir: this.sslCaDir, host: '0.0.0.0'});
         // logger.info(`Proxy Server Available On Port: ${port}`);
     }
     _addBuiltInMiddleware() {
