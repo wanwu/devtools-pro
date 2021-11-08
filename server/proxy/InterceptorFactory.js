@@ -13,7 +13,7 @@ class InterceptorFactory {
         );
     }
     remove(id) {
-        if (this._handlers[id]) {
+        if (this._handlers && this._handlers[id]) {
             this._handlers[id] = null;
         }
     }

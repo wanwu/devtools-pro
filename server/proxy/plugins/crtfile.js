@@ -6,6 +6,7 @@ module.exports = ({request, response}, proxyInstance) => {
             res.setHeader('Access-Control-Allow-Origin', '*');
             const caFilePath = proxyInstance.caFilePath;
             // path.join(proxyInstance.sslCaDir, 'certs/ca.pem');
+            // console.log(caFilePath);
             if (fs.existsSync(caFilePath)) {
                 const extname = path.extname(caFilePath);
                 res.setHeader('Content-Type', 'application/x-x509-ca-cert');

@@ -135,6 +135,12 @@ class CA {
         this.cert = null;
         this.keys = null;
     }
+    getRootPath() {
+        return this.baseCAFolder;
+    }
+    getRootCAPath() {
+        return this.caFilepath;
+    }
     async create() {
         await mkdirp(this.baseCAFolder);
         await mkdirp(this.certsFolder);

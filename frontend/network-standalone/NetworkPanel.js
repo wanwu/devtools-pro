@@ -262,14 +262,19 @@ export class NetworkPanel extends UI.Panel {
 
         // warn 去掉 preserve log，换成主动注入backend
         this._autoInjectBackendSetting = Common.settings.moduleSetting('network_log.auto-inject-backend');
-        this._autoInjectBackendSetting.addChangeListener(({data}) => {
+        function setAutoInjectBackend({data}) {
             runtime
                 .getBridge()
                 .then(bridge => {
                     bridge.sendCommand('Networks.setAutoInjectBackend', {autoInject: data});
                 })
                 .catch(e => {});
-        });
+        }
+        // warn 如果是true，提前发送数据
+        if (this._autoInjectBackendSetting.get()) {
+            setAutoInjectBackend(true);
+        }
+        this._autoInjectBackendSetting.addChangeListener(setAutoInjectBackend);
         const autoInjectBackendCheckbox = new UI.ToolbarSettingCheckbox(
             Common.moduleSetting('network_log.auto-inject-backend'),
             Common.UIString('Inject devtools-pro backend.js (html/htm only).'),
