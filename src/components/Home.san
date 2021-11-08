@@ -62,14 +62,14 @@
                             <span class="meta-text" style="max-width:280px" title="{{item.title}}">{{item.title}}</span>
                             <em style="font-size:10px;color:#afafaf"> (id: {{item.id}})</em>
                         </a>
-                        <a href="{{item.devtoolsurl}}" slot="description" title="start debugging" target="_blank">
+                        <div slot="description" class="meta-description">
                             <s-icon
                                 on-click="copyText(item.url)"
                                 type="copy"
-                                style="margin-right: 8px;color: grey"
+                                class="meta-description-icon-copy"
                             />
                             <span class="meta-text">{{item.url}}</span>
-                        </a>
+                        </div>
                     </s-list-item-meta>
                     <span slot="platform">
                         <s-popover title="设备信息" s-for="plat in platforms">
