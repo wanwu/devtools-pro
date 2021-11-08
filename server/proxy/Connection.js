@@ -439,15 +439,17 @@ function getFullUrl(req) {
     let parsedUrl = url.parse(req.url);
     parsedUrl.protocol = req.protocol;
     parsedUrl.host = req.host;
-    parsedUrl.port = req.port;
+    let port = req.port;
     if (req.isSSL && parsedUrl.port === 443) {
-        parsedUrl.port = undefined;
+        port = undefined;
         delete parsedUrl.port;
     }
     if (req.isSSL && parsedUrl.port === 80) {
-        parsedUrl.port = undefined;
+        port = undefined;
         delete parsedUrl.port;
     }
-
+    if (port && !isNaN(parseInt(port, 10))) {
+        parsedUrl.host = parsedUrl.host + ':' + port;
+    }
     return url.format(parsedUrl);
 }
