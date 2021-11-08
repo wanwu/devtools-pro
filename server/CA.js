@@ -17,15 +17,15 @@ const CA_ATTRS = [
     },
     {
         name: 'countryName',
-        value: 'Internet'
+        value: 'CN'
     },
     {
         shortName: 'ST',
-        value: 'Internet'
+        value: 'Beijing'
     },
     {
         name: 'localityName',
-        value: 'Internet'
+        value: 'Bidu'
     },
     {
         name: 'organizationName',
@@ -33,7 +33,7 @@ const CA_ATTRS = [
     },
     {
         shortName: 'OU',
-        value: 'CA'
+        value: 'https://github.com/wanwu/devtools-pro'
     }
 ];
 
@@ -149,7 +149,6 @@ class CA {
         await mkdirp(this.baseCAFolder);
         await mkdirp(this.certsFolder);
         await mkdirp(this.keysFolder);
-
         if (fs.existsSync(this.caFilepath)) {
             await this.load();
         } else {

@@ -202,6 +202,9 @@ class ProxyServer extends EventEmitter {
         Object.keys(ctx.proxyToServerRequestOptions).forEach(k => {
             ctx.proxyToServerRequestOptions[k] = request[k] || ctx.proxyToServerRequestOptions[k];
         });
+        if ('rejectUnauthorized' in request) {
+            ctx.proxyToServerRequestOptions.rejectUnauthorized = request.rejectUnauthorized;
+        }
         if (request.headers && request.headers.host && request.headers.host !== ctx.proxyToServerRequestOptions.host) {
             request.headers.host = ctx.proxyToServerRequestOptions.host;
         }
