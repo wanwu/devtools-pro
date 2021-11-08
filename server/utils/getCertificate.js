@@ -11,7 +11,7 @@ function getCertificate() {
     // Use a self-signed certificate if no certificate was configured.
     // Cycle certs every 24 hours
     const certificateDir = findCacheDir('ssl');
-    const certificatePath = path.join(certificateDir, 'ca.pem');
+    const certificatePath = path.join(certificateDir, 'devtools-pro.pem');
 
     let certificateExists = fs.existsSync(certificatePath);
 
@@ -54,10 +54,10 @@ function createCertificate(attributes) {
         days: 30,
         keySize: 2048,
         extensions: [
-            // {
-            //   name: 'basicConstraints',
-            //   cA: true,
-            // },
+            {
+                name: 'basicConstraints',
+                cA: true
+            },
             {
                 name: 'keyUsage',
                 keyCertSign: true,

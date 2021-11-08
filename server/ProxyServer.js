@@ -113,7 +113,8 @@ class ProxyServer extends EventEmitter {
             ctx.clientToProxyWebSocket.upgradeReq,
             ctx.clientToProxyWebSocket,
             ctx.isSSL,
-            ctx.connectRequest
+            true,
+            this
         );
         ctx.id = conn.getId();
         debug('websocket:connect', `${ctx.id},${ctx.clientToProxyWebSocket.upgradeReq.url}`);
@@ -184,7 +185,7 @@ class ProxyServer extends EventEmitter {
     async _onRequest(ctx, callback) {
         const req = ctx.clientToProxyRequest;
         const clientRes = ctx.proxyToClientResponse;
-        const conn = new Connection(req, clientRes, ctx.isSSL);
+        const conn = new Connection(req, clientRes, ctx.isSSL, false, this);
         ctx.id = conn.getId();
         this._addConnection(conn);
         debug('onrequest', `${ctx.id},${req.url}`);
@@ -403,7 +404,7 @@ class ProxyServer extends EventEmitter {
     listen(port) {
         port = port || this.port;
         this.proxy.listen({port});
-        logger.info(`Proxy Server Available On Port: ${port}`);
+        // logger.info(`Proxy Server Available On Port: ${port}`);
     }
     _addBuiltInMiddleware() {
         const lifeCycle = {};

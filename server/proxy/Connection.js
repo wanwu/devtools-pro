@@ -20,7 +20,7 @@ let id = 1;
 const genId = () => id++;
 
 module.exports = class Connection {
-    constructor(req, res, isSSL = false, websocketConnect) {
+    constructor(req, res, isSSL = false, isWebSocket, proxyServerInstance) {
         this._isSSL = isSSL;
 
         this._id = genId();
@@ -28,7 +28,7 @@ module.exports = class Connection {
         this._protocol = isSSL ? 'https' : 'http';
         this._chunks = [];
 
-        this.isWebSocket = !!websocketConnect;
+        this.isWebSocket = !!isWebSocket;
         const request = createRequest(req, isSSL, this.isWebSocket);
         this.request = request;
 
@@ -43,7 +43,9 @@ module.exports = class Connection {
                 this._blocking = false;
             }
         } else {
-            this.response = createResponse(res, req);
+            this.response = createResponse(res, req, () => {
+                proxyServerInstance.emit('loadingFinished', this);
+            });
         }
     }
     isBlockable() {
@@ -100,7 +102,7 @@ module.exports = class Connection {
 function createWebSocket(ws) {
     return Object.call(null);
 }
-function createResponse(clientRes, req) {
+function createResponse(clientRes, req, endCallback) {
     const cloneRes = Object.create(null);
     cloneRes.headers = {};
 
@@ -147,6 +149,9 @@ function createResponse(clientRes, req) {
             if (!this.headersSent && Object.keys(cloneRes.headers).length > 0) {
                 const headers = copyHeaders(cloneRes.headers);
                 clientRes.writeHead(this.statusCode ? this.statusCode : 200, headers);
+            }
+            if (typeof endCallback === 'function') {
+                endCallback();
             }
             clientRes.end(str);
         },
