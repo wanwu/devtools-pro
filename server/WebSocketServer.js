@@ -64,7 +64,7 @@ module.exports = class WebSocketServer {
         // const isSSL = this.isSSL;
         const socketPaths = ['backend', 'frontend', 'home', 'heartbeat'];
         server.on('upgrade', function(request, socket, head) {
-            console.log(request.url);
+            // console.log(request.url);
             const urlObj = url.parse(request.url);
             const [_, role, id = ''] = urlObj.pathname.split('/');
             const q = querystring.parse(urlObj.query) || {};

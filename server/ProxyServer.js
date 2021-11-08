@@ -382,7 +382,7 @@ class ProxyServer extends EventEmitter {
                 }
             }
             const msg =
-                `Error occured while trying to proxy: ${req.url}` + errorKind ? `, error message: ${errorKind}` : '';
+                `Error occured while trying to proxy: ${req.url}` + (errorKind ? `, error message: ${errorKind}` : '');
             res.end(msg);
         } else {
             // TODO 未知错误处理
