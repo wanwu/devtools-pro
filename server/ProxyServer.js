@@ -11,6 +11,7 @@ const buildInPlugins = [require('./proxy/plugins/crtfile')];
 
 const logger = require('./utils/logger');
 const {truncate} = require('./utils');
+const test = require('./utils/test');
 
 const debug = createDebug('proxyserver');
 
@@ -24,7 +25,6 @@ class CommonReadableStream extends Readable {
     _read(size) {}
 }
 
-// TODO 增加精细化拦截配置项 blocking
 class ProxyServer extends EventEmitter {
     constructor(options = {}, serverInstance) {
         super();
@@ -32,8 +32,7 @@ class ProxyServer extends EventEmitter {
         this.serverInstance = serverInstance;
         this.address = serverInstance.getAddress();
         this.options = options;
-        // TODO 增加blocking实现
-        this.blockingFilter = options.blockingFilter;
+        this.blockingFilter = options.blockingFilter || {};
         // TODO forward配置
         this.forward = options.forward;
 
@@ -104,6 +103,37 @@ class ProxyServer extends EventEmitter {
             return conn.isBlockable();
         }
         return this._blocking === true;
+    }
+    _isBlockingFilterHit(req) {
+        const filters = [
+            {
+                key: 'method',
+                path: 'method'
+            },
+            {
+                key: 'url',
+                path: 'url'
+            },
+            {
+                key: 'user-agent',
+                path: 'headers.user-agent'
+            },
+            {
+                key: 'host',
+                path: 'headers.host'
+            }
+        ];
+        for (const item of filters) {
+            const optionTester = this.blockingFilter[item.key];
+            const reqTestee =  item.path.split('.').reduce((req, cur) => {
+                return !req[cur] ? {} : req[cur];
+            }, req);
+
+            if (typeof reqTestee === 'string' && !test(optionTester, reqTestee)) {
+                return false;
+            }
+        }
+        return true;
     }
     async _onWebSocketConnection(ctx, callback) {
         const conn = new Connection(
@@ -204,7 +234,7 @@ class ProxyServer extends EventEmitter {
         // 生成请求地址
         createRequestOptions(ctx, request);
 
-        this.emit('requestWillBeSent', conn);
+        this._isBlockingFilterHit(req) && this.emit('requestWillBeSent', conn);
 
         // 处理 res.end 提前触发的情况
         if (response.finished) {
