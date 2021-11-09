@@ -1,6 +1,7 @@
 const EventEmitter = require('events').EventEmitter;
 const {getColorfulName, truncate} = require('../utils');
 const logger = require('../utils/logger');
+const normalizeWebSocketPayload = require('../utils/normalizeWebSocketPayload');
 
 const CircularJSON = require('circular-json');
 
@@ -41,7 +42,10 @@ module.exports = class Channel extends EventEmitter {
         return this.status === STATUS_OPENING;
     }
     send(message) {
-        message = typeof message === 'object' ? CircularJSON.stringify(message) : message;
+        if (typeof message === 'object') {
+            message = normalizeWebSocketPayload(message);
+            message = CircularJSON.stringify(message);
+        }
         logger.debug(`${getColorfulName(this._ws.role)} ${this._ws.id} Send Message`, truncate(message, 50));
         this._ws.send(message);
     }

@@ -4,7 +4,7 @@ const colorette = require('colorette');
 const logger = require('../utils/logger');
 const {truncate, getColorfulName} = require('../utils');
 const Channel = require('./Channel');
-
+const normalizeWebSocketPayload = require('../utils/normalizeWebSocketPayload');
 module.exports = class ChannelMultiplex extends EventEmitter {
     constructor() {
         super();
@@ -49,7 +49,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
                                 }
                                 this._backendMap.set(payload.id, data);
                             }
-                            this.emit('updateFoxyInfo', this._normalizeWebSocketPayload(data));
+                            this.emit('updateFoxyInfo', normalizeWebSocketPayload(data));
                             this._foxy.push(data);
                         }
                         break;
@@ -63,7 +63,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
                                 }
                                 this._backendMap.set(payload.id, data);
                             }
-                            !hidden && this.emit('backendUpdate', this._normalizeWebSocketPayload(data));
+                            !hidden && this.emit('backendUpdate', normalizeWebSocketPayload(data));
                         }
                         break;
                 }
@@ -75,26 +75,10 @@ module.exports = class ChannelMultiplex extends EventEmitter {
             channel.off('message', onMessage);
             this.removeBackendChannel(id);
         });
-        !hidden && this.emit('backendConnected', this._normalizeWebSocketPayload(backendData));
+        !hidden && this.emit('backendConnected', normalizeWebSocketPayload(backendData));
         return channel;
     }
-    // 过滤私有的数据
-    _normalizeWebSocketPayload(data) {
-        if (Array.isArray(data)) {
-            return data.map(d => this._normalizeWebSocketPayload(d));
-        }
-        const r = {};
-        Object.keys(data).map(key => {
-            if (/^_/.test(key)) {
-                return;
-            }
-            if (typeof data[key] === 'object' || Array.isArray(data[key])) {
-                return (r[key] = this._normalizeWebSocketPayload(data[key]));
-            }
-            r[key] = data[key];
-        });
-        return r;
-    }
+
     createFrontendChannel(id, ws) {
         const backendChannel = this._backendMap.get(id);
         if (!backendChannel || !backendChannel.channel) {
@@ -126,7 +110,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         channel.on('close', () => this.removeFrontendChannel(mapId));
         backendChannel.channel.on('close', () => channel.destroy());
 
-        this.emit('frontendAppend', this._normalizeWebSocketPayload(frontendData));
+        this.emit('frontendAppend', normalizeWebSocketPayload(frontendData));
         return channel;
     }
     removeBackendChannel(id) {
