@@ -1,7 +1,6 @@
 const {nanoid} = require('nanoid');
 const colorette = require('colorette');
-const logger = require('../utils/logger');
-
+const debug = require('../utils/createDebug')('websocket');
 const Channel = require('./Channel');
 const {getColorfulName} = require('../utils');
 
@@ -14,7 +13,7 @@ module.exports = class HomeChannel {
     }
     createChannel(ws, id = nanoid()) {
         const channel = new Channel(ws);
-        logger.debug(`${getColorfulName('manager')} ${id} ${colorette.green('connected')}`);
+        debug(`${getColorfulName('manager')} ${id} ${colorette.green('connected')}`);
         const channelData = {
             id,
             channel
@@ -41,7 +40,7 @@ module.exports = class HomeChannel {
         });
     }
     removeChannel(id) {
-        logger.debug(`${getColorfulName('manager')} ${id} ${colorette.red('disconnected')}`);
+        debug(`${getColorfulName('manager')} ${id} ${colorette.red('disconnected')}`);
         const idx = this._channels.findIndex(c => c.id === id);
         this._channels.splice(idx, 1);
     }

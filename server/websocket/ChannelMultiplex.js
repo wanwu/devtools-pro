@@ -1,7 +1,6 @@
 const EventEmitter = require('events').EventEmitter;
 const colorette = require('colorette');
-
-const logger = require('../utils/logger');
+const debug = require('../utils/createDebug')('websocket');
 const {truncate, getColorfulName} = require('../utils');
 const Channel = require('./Channel');
 const normalizeWebSocketPayload = require('../utils/normalizeWebSocketPayload');
@@ -23,7 +22,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         // hidden是否通知到home
         const {hidden = false} = ws;
         const channel = new Channel(ws, 'backend');
-        logger.debug(`${getColorfulName('backend')} ${colorette.green('connected')} ${id}`);
+        debug(`${getColorfulName('backend')} ${colorette.green('connected')} ${id}`);
         const backendData = {
             hidden,
             id,
@@ -71,7 +70,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         };
         channel.on('message', onMessage);
         channel.on('close', () => {
-            logger.debug(`${getColorfulName('backend')} ${id} close`);
+            debug(`${getColorfulName('backend')} ${id} close`);
             channel.off('message', onMessage);
             this.removeBackendChannel(id);
         });
@@ -88,7 +87,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         }
 
         const channel = new Channel(ws, 'frontend');
-        logger.debug(
+        debug(
             // eslint-disable-next-line max-len
             `${getColorfulName('frontend')} ${colorette.green('connected')} ${id} to backend ${
                 backendChannel.id
@@ -114,12 +113,12 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         return channel;
     }
     removeBackendChannel(id) {
-        logger.debug(`${getColorfulName('backend')} ${colorette.red('disconnected')} ${id}`);
+        debug(`${getColorfulName('backend')} ${colorette.red('disconnected')} ${id}`);
         this._backendMap.delete(id);
         this.emit('backendDisconnected', {id});
     }
     removeFrontendChannel(id) {
-        logger.debug(`${getColorfulName('frontend')} ${colorette.red('disconnected')} ${id}`);
+        debug(`${getColorfulName('frontend')} ${colorette.red('disconnected')} ${id}`);
         this._frontendMap.delete(id);
         this.emit('frontendRemove', {id});
     }

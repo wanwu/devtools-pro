@@ -3,7 +3,7 @@ const querystring = require('querystring');
 
 const WebSocket = require('ws');
 const ChannelMultiplex = require('./websocket/ChannelMultiplex');
-const logger = require('./utils/logger');
+const debug = require('./utils/createDebug')('websocket');
 const Manager = require('./websocket/Manager');
 
 module.exports = class WebSocketServer {
@@ -64,12 +64,11 @@ module.exports = class WebSocketServer {
         // const isSSL = this.isSSL;
         const socketPaths = ['backend', 'frontend', 'home', 'heartbeat'];
         server.on('upgrade', function(request, socket, head) {
-            // console.log(request.url);
             const urlObj = url.parse(request.url);
             const [_, role, id = ''] = urlObj.pathname.split('/');
             const q = querystring.parse(urlObj.query) || {};
 
-            logger.debug('upgrade', role, id);
+            debug('upgrade', role, id);
 
             if (socketPaths.indexOf(role) !== -1) {
                 wss.handleUpgrade(request, socket, head, ws => {
