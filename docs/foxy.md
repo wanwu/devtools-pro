@@ -6,12 +6,6 @@
 
 ## devtools.config.js 相关配置
 
-## SSL 证书安装
-
-1. PC 安装
-2. macOS 安装
-3. iOS 安装
-
 ## 可编程支持
 
 > Foxy 支持使用拦截器功能来实现功能扩展。
