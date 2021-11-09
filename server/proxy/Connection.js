@@ -301,14 +301,14 @@ function createRequest(req, isSSL, isWS) {
     clonedReq.host = hostPort.host;
     clonedReq.port = hostPort.port;
     clonedReq.protocol = isWS ? (isSSL ? 'wss:' : 'ws:') : isSSL ? 'https:' : 'http:';
-    clonedReq.fullUrl = getFullUrl(clonedReq);
+    clonedReq.originalUrl = clonedReq.fullUrl = getFullUrl(clonedReq);
     return Object.create({
         // ========readonly========
         get req() {
             return req;
         },
         get originalUrl() {
-            return req.url;
+            return clonedReq.originalUrl;
         },
         get protocol() {
             return clonedReq.protocol;

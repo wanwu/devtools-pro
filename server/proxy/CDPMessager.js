@@ -30,6 +30,7 @@ const messageHandler = {
             return;
         }
         const {autoInject} = message;
+
         if (autoInject) {
             removeInjectBackendFn = proxyServerInstance.addPlugin(injectBackend);
         } else if (removeInjectBackendFn && typeof removeInjectBackendFn === 'function') {
@@ -175,7 +176,7 @@ function messagerFormatter(type, connection, extInfo) {
                 loaderId: '23.1',
                 documentURL: 'https://github.com/ksky521',
                 request: {
-                    url: request.fullUrl || request.url,
+                    url: request.originalUrl || request.fullUrl || request.url,
                     method: 'GET',
                     headers: request.headers,
                     initialPriority: 'High',
@@ -197,7 +198,7 @@ function messagerFormatter(type, connection, extInfo) {
                 timestamp: timing.responseReceived,
                 type: getResourceType(response.type, request.url),
                 response: {
-                    url: request.fullUrl || request.url,
+                    url: request.originalUrl || request.fullUrl || request.url,
                     status: response.statusCode,
                     statusText: response.statusMessage,
                     headers: response.headers,
@@ -236,7 +237,7 @@ function messagerFormatter(type, connection, extInfo) {
         case 'webSocketCreated':
             message = {
                 requestId: `${connection.getId()}`,
-                url: request.fullUrl || request.url
+                url: request.originalUrl || request.fullUrl || request.url
             };
             break;
         case 'webSocketFrameError':
