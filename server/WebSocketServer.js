@@ -3,7 +3,7 @@ const querystring = require('querystring');
 
 const WebSocket = require('ws');
 const ChannelMultiplex = require('./websocket/ChannelMultiplex');
-const logger = require('consola');
+const debug = require('./utils/createDebug')('websocket');
 const Manager = require('./websocket/Manager');
 
 module.exports = class WebSocketServer {
@@ -28,12 +28,28 @@ module.exports = class WebSocketServer {
                     this.manager.createChannel(ws, id);
                     const backendData = this.getChannelManager().getBackends();
                     this.manager.send({payload: backendData, event: 'homeConnected'});
+                    const foxy = this.getChannelManager().getFoxy();
+                    if (foxy && foxy.length) {
+                        this.manager.send({payload: foxy, event: 'updateFoxyInfo'});
+                    }
                     break;
                 case 'heartbeat':
                     this.manager.createChannel(ws);
                     break;
             }
         });
+    }
+    getFrontendById(id) {
+        return this.channelManager.getFrontendChannelById(id);
+    }
+    getBackendById(id) {
+        return this.channelManager.getBackendById(id);
+    }
+    getFrontends() {
+        return this.channelManager.getFrontends();
+    }
+    getBackends() {
+        return this.channelManager.getBackends();
     }
     destory() {
         this.channelManager.destory();
@@ -52,7 +68,7 @@ module.exports = class WebSocketServer {
             const [_, role, id = ''] = urlObj.pathname.split('/');
             const q = querystring.parse(urlObj.query) || {};
 
-            logger.debug('upgrade', role, id);
+            debug('upgrade', role, id);
 
             if (socketPaths.indexOf(role) !== -1) {
                 wss.handleUpgrade(request, socket, head, ws => {

@@ -1,7 +1,6 @@
 const {nanoid} = require('nanoid');
-const chalk = require('chalk');
-const logger = require('consola');
-
+const colorette = require('colorette');
+const debug = require('../utils/createDebug')('websocket');
 const Channel = require('./Channel');
 const {getColorfulName} = require('../utils');
 
@@ -14,7 +13,7 @@ module.exports = class HomeChannel {
     }
     createChannel(ws, id = nanoid()) {
         const channel = new Channel(ws);
-        logger.debug(`${getColorfulName('manager')} ${id} ${chalk.green('connected')}`);
+        debug(`${getColorfulName('manager')} ${id} ${colorette.green('connected')}`);
         const channelData = {
             id,
             channel
@@ -28,17 +27,20 @@ module.exports = class HomeChannel {
         const channelManager = this.wssInstance.getChannelManager();
         // TODO update
         channelManager.on('backendUpdate', data => {
-            this.send({payload: data, event: 'backendUpdate'});
+            this.send({event: 'backendUpdate', payload: data});
         });
         channelManager.on('backendConnected', data => {
-            this.send({payload: data, event: 'backendConnected'});
+            this.send({event: 'backendConnected', payload: data});
         });
         channelManager.on('backendDisconnected', data => {
-            this.send({payload: data, event: 'backendDisconnected'});
+            this.send({event: 'backendDisconnected', payload: data});
+        });
+        channelManager.on('updateFoxyInfo', data => {
+            this.send({event: 'updateFoxyInfo', payload: data});
         });
     }
     removeChannel(id) {
-        logger.debug(`${getColorfulName('manager')} ${id} ${chalk.red('disconnected')}`);
+        debug(`${getColorfulName('manager')} ${id} ${colorette.red('disconnected')}`);
         const idx = this._channels.findIndex(c => c.id === id);
         this._channels.splice(idx, 1);
     }

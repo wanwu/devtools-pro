@@ -143,6 +143,18 @@ module.exports = {
                         ]
                     },
                     {
+                        test: /\.(png|jpg|gif)$/,
+                        use: [
+                            {
+                                loader: 'url-loader',
+                                options: {
+                                    limit: 4000,
+                                    name: 'assets/[name]-[hash:8].[ext]'
+                                }
+                            }
+                        ]
+                    },
+                    {
                         test: /\.(eot|woff|woff2|ttf|svg)$/,
                         loader: 'file-loader',
                         options: {

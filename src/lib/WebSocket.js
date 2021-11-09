@@ -1,5 +1,4 @@
 import EventEmitter from './EventEmitter';
-
 class Channel extends EventEmitter {
     constructor(name, ws) {
         super();
@@ -118,6 +117,7 @@ export default class WebSocketMultiplex extends EventEmitter {
         this.emit('error', e);
         // 强制关闭
         this._close();
+        console.error(e);
     }
     _onOpen() {
         this._connected = true;

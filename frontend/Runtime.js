@@ -18,7 +18,9 @@ class Runtime {
         if (typeof fn === 'function') {
             if (this._readyStatus) {
                 fn();
-            } else this._readyFns.push(fn);
+            } else {
+                this._readyFns.push(fn);
+            }
         }
     }
     setReady() {
@@ -290,7 +292,7 @@ class Runtime {
         const allDescriptorsByName = {};
         for (let i = 0; i < Root.allDescriptors.length; ++i) {
             const d = Root.allDescriptors[i];
-            allDescriptorsByName[d['name']] = d;
+            allDescriptorsByName[d.name] = d;
         }
 
         if (!Root.applicationDescriptor) {
@@ -309,14 +311,14 @@ class Runtime {
         const coreModuleNames = [];
         for (let i = 0; i < configuration.length; ++i) {
             const descriptor = configuration[i];
-            const name = descriptor['name'];
+            const name = descriptor.name;
             const moduleJSON = allDescriptorsByName[name];
             if (moduleJSON) {
                 moduleJSONPromises.push(Promise.resolve(moduleJSON));
             } else {
                 moduleJSONPromises.push(Runtime.loadResourcePromise(name + '/module.json').then(JSON.parse.bind(JSON)));
             }
-            if (descriptor['type'] === 'autostart') {
+            if (descriptor.type === 'autostart') {
                 coreModuleNames.push(name);
             }
         }
@@ -324,9 +326,9 @@ class Runtime {
         const moduleDescriptors = await Promise.all(moduleJSONPromises);
 
         for (let i = 0; i < moduleDescriptors.length; ++i) {
-            moduleDescriptors[i].name = configuration[i]['name'];
-            moduleDescriptors[i].condition = configuration[i]['condition'];
-            moduleDescriptors[i].remote = configuration[i]['type'] === 'remote';
+            moduleDescriptors[i].name = configuration[i].name;
+            moduleDescriptors[i].condition = configuration[i].condition;
+            moduleDescriptors[i].remote = configuration[i].type === 'remote';
         }
         self.runtime = new Runtime(moduleDescriptors);
         if (coreModuleNames) {
@@ -368,7 +370,7 @@ class Runtime {
     static _experimentsSetting() {
         try {
             return /** @type {!Object} */ (JSON.parse(
-                self.localStorage && self.localStorage['experiments'] ? self.localStorage['experiments'] : '{}'
+                self.localStorage && self.localStorage.experiments ? self.localStorage.experiments : '{}'
             ));
         } catch (e) {
             console.error("Failed to parse localStorage['experiments']");
@@ -395,7 +397,7 @@ class Runtime {
      * @return {boolean}
      */
     static _isDescriptorEnabled(descriptor) {
-        const activatorExperiment = descriptor['experiment'];
+        const activatorExperiment = descriptor.experiment;
         if (activatorExperiment === '*') {
             return Runtime.experiments.supportEnabled();
         }
@@ -413,7 +415,7 @@ class Runtime {
         ) {
             return false;
         }
-        const condition = descriptor['condition'];
+        const condition = descriptor.condition;
         if (condition && !condition.startsWith('!') && !Runtime.queryParam(condition)) {
             return false;
         }
@@ -464,7 +466,7 @@ class Runtime {
     _registerModule(descriptor) {
         const module = new Runtime.Module(this, descriptor);
         this._modules.push(module);
-        this._modulesMap[descriptor['name']] = module;
+        this._modulesMap[descriptor.name] = module;
     }
 
     /**
@@ -580,8 +582,8 @@ class Runtime {
          * @return {number}
          */
         function orderComparator(extension1, extension2) {
-            const order1 = extension1.descriptor()['order'] || 0;
-            const order2 = extension2.descriptor()['order'] || 0;
+            const order1 = extension1.descriptor().order || 0;
+            const order2 = extension2.descriptor().order || 0;
             return order1 - order2;
         }
 
@@ -839,7 +841,7 @@ class Module {
      * @this {Runtime.Module}
      */
     _loadResources() {
-        const resources = this._descriptor['resources'];
+        const resources = this._descriptor.resources;
         if (!resources || !resources.length) {
             return Promise.resolve();
         }
@@ -1033,7 +1035,7 @@ class Extension {
      * @return {string}
      */
     title() {
-        const title = this._descriptor['title-' + Runtime._platform] || this._descriptor['title'];
+        const title = this._descriptor['title-' + Runtime._platform] || this._descriptor.title;
         if (title && Runtime._l10nCallback) {
             return Runtime._l10nCallback(title);
         }
@@ -1099,7 +1101,7 @@ class ExperimentsSupport {
         if (!self.localStorage) {
             return;
         }
-        self.localStorage['experiments'] = JSON.stringify(value);
+        self.localStorage.experiments = JSON.stringify(value);
     }
 
     /**

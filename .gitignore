@@ -1,5 +1,6 @@
 # Referenced from https://github.com/github/gitignore/blob/master/Node.gitignore
 temp
+.http-mitm-proxy
 output
 dist
 devtools.config.js

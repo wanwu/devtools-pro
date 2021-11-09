@@ -4,7 +4,6 @@ const path = require('path');
 
 const distPath = path.join(__dirname, '../../dist');
 module.exports = (router, logger, serverInstance) => {
-    const log = logger.withTag('middle:backend');
     const beFilepath = path.join(distPath, 'backend.js');
     router.get('/backend.js', async (ctx, next) => {
         let s = fs.readFileSync(beFilepath).toString();
@@ -21,6 +20,7 @@ module.exports = (router, logger, serverInstance) => {
         // });
         // console.log(mergedStream.toString());
         // ctx.body = mergedStream;
+        ctx.res.setHeader('Access-Control-Allow-Origin', '*');
         ctx.res.setHeader('Content-Type', 'application/javascript');
         ctx.body = s;
     });

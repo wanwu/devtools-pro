@@ -1,13 +1,13 @@
 const EventEmitter = require('events').EventEmitter;
-const chalk = require('chalk');
-const logger = require('consola');
-
+const colorette = require('colorette');
+const debug = require('../utils/createDebug')('websocket');
 const {truncate, getColorfulName} = require('../utils');
 const Channel = require('./Channel');
-
+const normalizeWebSocketPayload = require('../utils/normalizeWebSocketPayload');
 module.exports = class ChannelMultiplex extends EventEmitter {
     constructor() {
         super();
+        this._foxy = [];
         this._backendMap = new Map();
         this._frontendMap = new Map();
     }
@@ -22,7 +22,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         // hidden是否通知到home
         const {hidden = false} = ws;
         const channel = new Channel(ws, 'backend');
-        logger.debug(`${getColorfulName('backend')} ${chalk.green('connected')} ${id}`);
+        debug(`${getColorfulName('backend')} ${colorette.green('connected')} ${id}`);
         const backendData = {
             hidden,
             id,
@@ -31,12 +31,27 @@ module.exports = class ChannelMultiplex extends EventEmitter {
             },
             channel
         };
+
         this._backendMap.set(id, backendData);
         // 接收信息进行处理
         const onMessage = e => {
             try {
                 const {event, payload} = JSON.parse(e);
                 switch (event) {
+                    case 'updateFoxyInfo':
+                        // 更新title等信息
+                        if (payload && payload.id) {
+                            const data = this._backendMap.get(payload.id);
+                            if (data && payload) {
+                                for (let [key, value] of Object.entries(payload)) {
+                                    data[key] = value;
+                                }
+                                this._backendMap.set(payload.id, data);
+                            }
+                            this.emit('updateFoxyInfo', normalizeWebSocketPayload(data));
+                            this._foxy.push(data);
+                        }
+                        break;
                     case 'updateBackendInfo':
                         // 更新title等信息
                         if (payload && payload.id) {
@@ -47,7 +62,7 @@ module.exports = class ChannelMultiplex extends EventEmitter {
                                 }
                                 this._backendMap.set(payload.id, data);
                             }
-                            !hidden && this.emit('backendUpdate', data);
+                            !hidden && this.emit('backendUpdate', normalizeWebSocketPayload(data));
                         }
                         break;
                 }
@@ -55,12 +70,14 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         };
         channel.on('message', onMessage);
         channel.on('close', () => {
-            logger.debug(`${getColorfulName('backend')} ${id} close`);
+            debug(`${getColorfulName('backend')} ${id} close`);
             channel.off('message', onMessage);
             this.removeBackendChannel(id);
         });
-        !hidden && this.emit('backendConnected', backendData);
+        !hidden && this.emit('backendConnected', normalizeWebSocketPayload(backendData));
+        return channel;
     }
+
     createFrontendChannel(id, ws) {
         const backendChannel = this._backendMap.get(id);
         if (!backendChannel || !backendChannel.channel) {
@@ -70,9 +87,9 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         }
 
         const channel = new Channel(ws, 'frontend');
-        logger.debug(
+        debug(
             // eslint-disable-next-line max-len
-            `${getColorfulName('frontend')} ${chalk.green('connected')} ${id} to backend ${
+            `${getColorfulName('frontend')} ${colorette.green('connected')} ${id} to backend ${
                 backendChannel.id
             }:${truncate(backendChannel.title, 10)}`
         );
@@ -92,23 +109,30 @@ module.exports = class ChannelMultiplex extends EventEmitter {
         channel.on('close', () => this.removeFrontendChannel(mapId));
         backendChannel.channel.on('close', () => channel.destroy());
 
-        this.emit('frontendAppend', frontendData);
+        this.emit('frontendAppend', normalizeWebSocketPayload(frontendData));
+        return channel;
     }
     removeBackendChannel(id) {
-        logger.debug(`${getColorfulName('backend')} ${chalk.red('disconnected')} ${id}`);
+        debug(`${getColorfulName('backend')} ${colorette.red('disconnected')} ${id}`);
         this._backendMap.delete(id);
         this.emit('backendDisconnected', {id});
     }
     removeFrontendChannel(id) {
-        logger.debug(`${getColorfulName('frontend')} ${chalk.red('disconnected')} ${id}`);
+        debug(`${getColorfulName('frontend')} ${colorette.red('disconnected')} ${id}`);
         this._frontendMap.delete(id);
         this.emit('frontendRemove', {id});
     }
     getBackendById(id) {
         return this._backendMap.get(id);
     }
+    getFrontendById(id) {
+        return this._frontendMap.get(id);
+    }
     getBackends() {
         return Array.from(this._backendMap.values()).filter(d => !d.hidden);
+    }
+    getFoxy() {
+        return this._foxy;
     }
     getFrontends() {
         return Array.from(this._frontendMap.values());

@@ -301,7 +301,7 @@ export class MainImpl {
 
         const extensions = self.runtime.extensions(Common.QueryParamHandler);
         for (const extension of extensions) {
-            const value = Root.Runtime.queryParam(extension.descriptor()['name']);
+            const value = Root.Runtime.queryParam(extension.descriptor().name);
             if (value !== null) {
                 extension.instance().then(handleQueryParam.bind(null, value));
             }
@@ -325,6 +325,7 @@ export class MainImpl {
         const instances = await Promise.all(
             self.runtime.extensions('early-initialization').map(extension => extension.instance())
         );
+
         for (const instance of instances) {
             await /** @type {!Common.Runnable} */ (instance).run();
         }
@@ -332,6 +333,7 @@ export class MainImpl {
         Host.InspectorFrontendHost.readyForTest();
         // Asynchronously run the extensions.
         setTimeout(this._lateInitialization.bind(this), 100);
+        // warn 修改，增加runtime ready
         self.runtime.setReady();
         MainImpl.timeEnd('Main._initializeTarget');
     }
@@ -343,7 +345,7 @@ export class MainImpl {
         const extensions = self.runtime.extensions('late-initialization');
         const promises = [];
         for (const extension of extensions) {
-            const setting = extension.descriptor()['setting'];
+            const setting = extension.descriptor().setting;
             if (!setting || Common.settings.moduleSetting(setting).get()) {
                 promises.push(extension.instance().then(instance => /** @type {!Common.Runnable} */ (instance).run()));
                 continue;
@@ -403,9 +405,9 @@ export class MainImpl {
      * @param {!Common.Event} event
      */
     _revealSourceLine(event) {
-        const url = /** @type {string} */ (event.data['url']);
-        const lineNumber = /** @type {number} */ (event.data['lineNumber']);
-        const columnNumber = /** @type {number} */ (event.data['columnNumber']);
+        const url = /** @type {string} */ (event.data.url);
+        const lineNumber = /** @type {number} */ (event.data.lineNumber);
+        const columnNumber = /** @type {number} */ (event.data.columnNumber);
 
         const uiSourceCode = Workspace.workspace.uiSourceCodeForURL(url);
         if (uiSourceCode) {
@@ -487,7 +489,7 @@ export class MainImpl {
      */
     _redispatchClipboardEvent(event) {
         const eventCopy = new CustomEvent('clipboard-' + event.type, {bubbles: true});
-        eventCopy['original'] = event;
+        eventCopy.original = event;
         const document = event.target && event.target.ownerDocument;
         const target = document ? document.deepActiveElement() : null;
         if (target) {
@@ -719,15 +721,15 @@ export class MainMenuItem {
         const extensions = self.runtime.extensions('view', undefined, true);
         for (const extension of extensions) {
             const descriptor = extension.descriptor();
-            if (descriptor['persistence'] !== 'closeable') {
+            if (descriptor.persistence !== 'closeable') {
                 continue;
             }
-            if (descriptor['location'] !== 'drawer-view' && descriptor['location'] !== 'panel') {
+            if (descriptor.location !== 'drawer-view' && descriptor.location !== 'panel') {
                 continue;
             }
             moreTools
                 .defaultSection()
-                .appendItem(extension.title(), UI.viewManager.showView.bind(UI.viewManager, descriptor['id']));
+                .appendItem(extension.title(), UI.viewManager.showView.bind(UI.viewManager, descriptor.id));
         }
 
         const helpSubMenu = contextMenu.footerSection().appendSubMenuItem(Common.UIString('Help'));
