@@ -272,7 +272,7 @@ export class NetworkPanel extends UI.Panel {
         }
         // warn 如果是true，提前发送数据
         if (this._autoInjectBackendSetting.get()) {
-            setAutoInjectBackend(true);
+            setAutoInjectBackend({data: true});
         }
         this._autoInjectBackendSetting.addChangeListener(setAutoInjectBackend);
         const autoInjectBackendCheckbox = new UI.ToolbarSettingCheckbox(
