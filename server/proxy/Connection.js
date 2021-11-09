@@ -443,11 +443,10 @@ function getFullUrl(req) {
     parsedUrl.protocol = req.protocol;
     parsedUrl.host = req.host;
     let port = req.port;
-    if (req.isSSL && parsedUrl.port === 443) {
+    if (req.isSSL && parseInt(port, 10) === 443) {
         port = undefined;
         delete parsedUrl.port;
-    }
-    if (req.isSSL && parsedUrl.port === 80) {
+    } else if (!req.isSSL && parseInt(port, 10) === 80) {
         port = undefined;
         delete parsedUrl.port;
     }

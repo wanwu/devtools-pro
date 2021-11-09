@@ -291,7 +291,7 @@ class ProxyServer extends EventEmitter {
                 let body = Buffer.concat(resChunks);
                 body = await decompress(body, serverRes).catch(err => {
                     // TODO 错误处理
-                    logger.error(err);
+                    // logger.error(conn.request.url, err);
                 });
                 if (!body) {
                     debug('response body is empty');

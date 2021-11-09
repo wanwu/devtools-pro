@@ -1,6 +1,6 @@
 {
     "name": "devtools-pro",
-    "version": "0.2.0",
+    "version": "0.2.0-alpha",
     "license": "MIT",
     "scriptName": "devtools-pro",
     "bin": {
