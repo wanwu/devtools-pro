@@ -311,7 +311,6 @@ class ProxyServer extends EventEmitter {
                 // 处理chunked 情况
                 if (transferEncoding !== 'chunked') {
                     headers['content-length'] = Buffer.byteLength(body);
-                    delete headers['content-length'];
                 }
 
                 clientRes.writeHead(response.statusCode, headers);
