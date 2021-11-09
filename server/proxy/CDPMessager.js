@@ -26,19 +26,19 @@ const messageHandler = {
     // TODO 第一次需要发过来到底是什么状态
     // 主动在html/htm页面注入backend.js
     'Networks.setAutoInjectBackend': async (message, client) => {
-        if (!proxyServerInstance && !proxyServerInstance.stopBlocking) {
+        if (!proxyServerInstance || !proxyServerInstance.getBlocking()) {
             return;
         }
         const {autoInject} = message;
 
         if (autoInject) {
             removeInjectBackendFn = proxyServerInstance.addPlugin(injectBackend);
-        } else if (removeInjectBackendFn && typeof removeInjectBackendFn === 'function') {
+        } else if (typeof removeInjectBackendFn === 'function') {
             removeInjectBackendFn();
         }
     },
     'Networks.toggleRecord': async (message, client) => {
-        if (!proxyServerInstance && !proxyServerInstance.stopBlocking) {
+        if (!proxyServerInstance || !proxyServerInstance.getBlocking()) {
             return;
         }
         const {toggled} = message;
