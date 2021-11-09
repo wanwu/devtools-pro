@@ -33,8 +33,6 @@ class ProxyServer extends EventEmitter {
         this.address = serverInstance.getAddress();
         this.options = options;
         this.blockingFilter = options.blockingFilter || {};
-        // TODO forward配置
-        this.forward = options.forward;
 
         this.port = options.port || 8002;
         // 统一sslCaDir
@@ -60,8 +58,6 @@ class ProxyServer extends EventEmitter {
         }
         // 绑定plugins
         this.addPlugin(plugins);
-        // ERROR 测试用，删除我
-        this.addPlugin(require('./proxy/plugins/injectBackend'));
     }
     addPlugin(plugin) {
         if (Array.isArray(plugin)) {
