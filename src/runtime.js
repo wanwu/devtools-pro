@@ -102,7 +102,7 @@ class Runtime {
         return url.format({
             protocol: protocol,
             hostname,
-            port: process.env.NODE_ENV === 'production' ? port : 8899,
+            port: process.env.NODE_ENV === 'production' ? port : 8001,
             pathname,
             query
         });
@@ -111,7 +111,7 @@ class Runtime {
         return url.format({
             protocol: protocol === 'https:' ? 'wss:' : 'ws:',
             hostname,
-            port: process.env.NODE_ENV === 'production' ? port : 8899,
+            port: process.env.NODE_ENV === 'production' ? port : 8001,
             pathname,
             query
         });

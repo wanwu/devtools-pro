@@ -24,7 +24,7 @@ class CommonReadableStream extends Readable {
     }
     _read(size) {}
 }
-
+// TODO response.body 编码问题，需要decode之前再encode或者用iconv-lite处理？还是修改content-encoding？
 class ProxyServer extends EventEmitter {
     constructor(options = {}, serverInstance) {
         super();
@@ -125,7 +125,7 @@ class ProxyServer extends EventEmitter {
         ];
         for (const item of filters) {
             const optionTester = this.blockingFilter[item.key];
-            const reqTestee =  item.path.split('.').reduce((req, cur) => {
+            const reqTestee = item.path.split('.').reduce((req, cur) => {
                 return !req[cur] ? {} : req[cur];
             }, req);
 
@@ -480,6 +480,16 @@ function createRequestOptions(ctx, request, optionKey = 'proxyToServerRequestOpt
     }
     if (optionKey === 'proxyToServerWebSocketOptions') {
         ctx[optionKey].url = request.fullUrl;
+
+        const ptosHeaders = {};
+        const ctopHeaders = request.headers;
+
+        for (let key in ctopHeaders) {
+            if (key.indexOf('sec-websocket') !== 0) {
+                ptosHeaders[key] = ctopHeaders[key];
+            }
+        }
+        ctx[optionKey].headers = ptosHeaders;
         ctx[optionKey].headers.host = request.host;
     }
 }

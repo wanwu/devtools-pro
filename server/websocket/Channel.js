@@ -29,11 +29,11 @@ module.exports = class Channel extends EventEmitter {
         };
         const onClose = (...args) => {
             this.status = STATUS_CLOSED;
-
             this.emit('close', ...args);
             this.destroy();
             ws.off('close', onClose);
             ws.off('message', onMessage);
+            debug(`${getColorfulName(this._ws.role)} ${this._ws.id} Closed, errno:${args[0]}`);
         };
         ws.on('close', onClose);
         ws.on('message', onMessage);

@@ -1,5 +1,4 @@
 import EventEmitter from './EventEmitter';
-
 class Channel extends EventEmitter {
     constructor(name, ws) {
         super();
