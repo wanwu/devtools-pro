@@ -385,17 +385,21 @@ function createRequest(req, isSSL, isWS) {
             this.url = stringify(url);
         },
         // ========methods=======
-        setHeader(key, value) {
-            if (!value || !key) {
+        setHeader(name, value) {
+            if (!value || !name) {
                 return;
             }
             if (typeof value !== 'string') {
                 value = String(value);
             }
-            clonedReq.headers[key.toLowerCase()] = value;
+            clonedReq.headers[name.toLowerCase()] = value;
         },
-        getHeader(key) {
-            return clonedReq.headers[key.toLowerCase()];
+        getHeader(name) {
+            return clonedReq.headers[name.toLowerCase()];
+        },
+        removeHeader(name) {
+            clonedReq.headers[name] = null;
+            delete clonedReq.headers[name];
         },
         toJSON() {
             return only(this, ['method', 'url', 'headers', 'host', 'port']);

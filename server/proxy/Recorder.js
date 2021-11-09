@@ -133,7 +133,7 @@ class Recorder {
     }
     clean() {
         logger.log();
-        logger.info('delete response recorder cache...');
+        logger.info('Delete Recorder cache...');
         try {
             del.sync(this.cachePath, {force: true});
             // 清理lru cache

@@ -11,7 +11,7 @@ A web remote debugging tools, based on Chrome DevTools.
 -   基于 Chrome DevTools
 -   基于 WebSocket 远程调试
 -   可扩展，支持[自定义插件](./docs/advanced.md)
--   可编程的[代理功能](./docs/foxy.md)，抛弃 Fiddler/Charles 🌟
+-   可编程的[代理功能](./docs/foxy.md)，抛弃 Fiddler/Charles 🌟（我们叫它 Foxy）
 
 ## 📦 Installation
 
@@ -49,13 +49,15 @@ Options:
 为了方便项目统一配置，DevTools-pro 支持配置文件，可以在项目中创建一个名为`devtools.config.js`的文件，支持的配置项如下：
 
 -   logLevel：日志级别，支持`silent` `verbose`
--   port：server 端口号，默认 `8899`
+-   sslCaDir：ca 证书目录，默认在`findcachedir('ssl')`中生成
+-   port：server 端口号，默认 `8001`
 -   hostname：默认 `0.0.0.0`
 -   plugins：配置插件，[介绍](./docs/advanced.md)
 -   https：如果要启用 https，可以设置`https=true`，DevTools-pro 会[自动生成 CA 证书供使用](./docs/rootCA.md)
 -   proxy：
-    -   `proxy.plugins`：
-    -   `proxy.blockingFilter`：
+    -   `proxy.port`：代理服务器的端口号，默认 8002
+    -   `proxy.plugins`：Foxy 插件
+    -   `proxy.blockingFilter`：拦截过滤器，详见[Foxy 文档](./docs/foxy.md)
 
 ## 开发
 
@@ -82,8 +84,8 @@ yarn dev
 
 访问：
 
--   1. 打开 home 页面：localhost:8080
--   2. 打开 demo 测试页面：点击 home 页面上测试页面链接 localhost:8080/demo.html
+-   1. 打开 home 页面：127.0.0.1:8001
+-   2. 打开 demo 测试页面：点击 home 页面上测试页面链接 127.0.0.1:8001/demo.html
 -   3. 打开 inspector：点击 home 页面上的【Open Chrome DevTools】
 
 ## 深入阅读

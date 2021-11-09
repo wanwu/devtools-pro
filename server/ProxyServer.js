@@ -111,7 +111,7 @@ class ProxyServer extends EventEmitter {
                 path: 'url'
             },
             {
-                key: 'user-agent',
+                key: 'useragent',
                 path: 'headers.user-agent'
             },
             {

@@ -216,6 +216,11 @@ require('yargs')
             }
         }
     )
+    .command('clean-ca', 'Clean RootCA', {}, async argv => {
+        const CA = require('../server/CA');
+        const ca = new CA();
+        ca.clean();
+    })
     .help('h')
     .alias('h', 'help')
     .alias('v', 'version').argv;

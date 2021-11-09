@@ -1,6 +1,7 @@
 const path = require('path');
 const utils = require('util');
 const fs = require('fs');
+const del = require('del');
 const mkdirp = require('mkdirp');
 const NodeForge = require('node-forge');
 const findCacheDir = require('./utils/findCacheDir');
@@ -144,6 +145,16 @@ class CA {
     }
     getRootCAPath() {
         return this.caFilepath;
+    }
+    clean() {
+        logger.log();
+        logger.info('Delete RootCA...');
+        try {
+            del.sync(this.getRootPath(), {force: true});
+            logger.success('success');
+        } catch (e) {
+            logger.error(e);
+        }
     }
     async create() {
         await mkdirp(this.baseCAFolder);
