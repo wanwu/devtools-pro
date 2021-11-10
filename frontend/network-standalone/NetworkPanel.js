@@ -289,30 +289,35 @@ export class NetworkPanel extends UI.Panel {
         );
         this._panelToolbar.appendToolbarItem(disableCacheCheckbox);
 
-        this._panelToolbar.appendSeparator();
-        this._panelToolbar.appendToolbarItem(this._throttlingSelect);
-
-        this._rightToolbar.appendToolbarItem(new UI.ToolbarItem(this._progressBarContainer));
-        this._rightToolbar.appendSeparator();
-        this._rightToolbar.appendToolbarItem(
-            new UI.ToolbarSettingToggle(this._showSettingsPaneSetting, 'largeicon-settings-gear', ls`Network settings`)
-        );
-
-        const settingsToolbarLeft = new UI.Toolbar('', this._settingsPane.element);
-        settingsToolbarLeft.makeVertical();
-        settingsToolbarLeft.appendToolbarItem(
+        // warn 去掉节流器
+        // this._panelToolbar.appendSeparator();
+        // this._panelToolbar.appendToolbarItem(this._throttlingSelect);
+        this._panelToolbar.appendToolbarItem(
             new UI.ToolbarSettingCheckbox(this._networkLogLargeRowsSetting, '', ls`Use large request rows`)
         );
+
+        this._rightToolbar.appendToolbarItem(new UI.ToolbarItem(this._progressBarContainer));
+        // this._rightToolbar.appendSeparator();
+        // this._rightToolbar.appendToolbarItem(
+        //     new UI.ToolbarSettingToggle(this._showSettingsPaneSetting, 'largeicon-settings-gear', ls`Network settings`)
+        // );
+
+        // const settingsToolbarLeft = new UI.Toolbar('', this._settingsPane.element);
+        // settingsToolbarLeft.makeVertical();
+        // settingsToolbarLeft.appendToolbarItem(
+        //     new UI.ToolbarSettingCheckbox(this._networkLogLargeRowsSetting, '', ls`Use large request rows`)
+        // );
         // warn show overview
         // settingsToolbarLeft.appendToolbarItem(
         //     new UI.ToolbarSettingCheckbox(this._networkLogShowOverviewSetting, '', ls`Show overview`)
         // );
 
-        const settingsToolbarRight = new UI.Toolbar('', this._settingsPane.element);
-        settingsToolbarRight.makeVertical();
-        settingsToolbarRight.appendToolbarItem(
-            new UI.ToolbarSettingCheckbox(Common.moduleSetting('network.group-by-frame'), '', ls`Group by frame`)
-        );
+        // const settingsToolbarRight = new UI.Toolbar('', this._settingsPane.element);
+        // settingsToolbarRight.makeVertical();
+        // warn 去掉group by frame
+        // settingsToolbarRight.appendToolbarItem(
+        //     new UI.ToolbarSettingCheckbox(Common.moduleSetting('network.group-by-frame'), '', ls`Group by frame`)
+        // );
         // warn Capture screenshots
         // settingsToolbarRight.appendToolbarItem(
         //     new UI.ToolbarSettingCheckbox(this._networkRecordFilmStripSetting, '', ls`Capture screenshots`)

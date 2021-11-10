@@ -2,7 +2,6 @@
  * 兜住错误，重写部分方法
  */
 const HTTPMITMProxy = require('http-mitm-proxy');
-const logger = require('../utils/logger');
 
 module.exports = class MITMProxy extends HTTPMITMProxy {
     onCertificateMissing(ctx, files, callback) {
@@ -17,11 +16,11 @@ module.exports = class MITMProxy extends HTTPMITMProxy {
             });
         } catch (e) {
             // 这里出现一些非必要的错误
-            logger.error(e);
+            this._onError.bind(self, 'CERTIFICATE_MISSING_ERROR', ctx);
         }
         return this;
     }
-    _onErrorF(kind, ctx, err) {
+    _onError(kind, ctx, err) {
         this.onErrorHandlers.forEach(function(handler) {
             return handler(ctx, err, kind);
         });
@@ -29,12 +28,13 @@ module.exports = class MITMProxy extends HTTPMITMProxy {
             ctx.onErrorHandlers.forEach(function(handler) {
                 return handler(ctx, err, kind);
             });
-
-            if (ctx.proxyToClientResponse && !ctx.proxyToClientResponse.headersSent) {
-                ctx.proxyToClientResponse.writeHead(504, 'Proxy Error');
+            // 最后兜一下
+            const res = ctx.proxyToClientResponse;
+            if (res && !res.headersSent) {
+                res.writeHead(504, 'Proxy Error');
             }
-            if (ctx.proxyToClientResponse && !ctx.proxyToClientResponse.finished) {
-                ctx.proxyToClientResponse.end('' + kind + ': ' + err, 'utf8');
+            if (res && !res.finished) {
+                res.end('' + kind + ': ' + err, 'utf8');
             }
         }
     }

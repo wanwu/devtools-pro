@@ -7,6 +7,7 @@ const createDebug = require('./utils/createDebug');
 const InterceptorFactory = require('./proxy/InterceptorFactory');
 const Connection = require('./proxy/Connection');
 const copyHeaders = require('./utils/copyHeaders');
+const logger = require('./utils/logger');
 const buildInPlugins = [require('./proxy/plugins/crtfile')];
 // in order to handle self-signed certificates we need to turn off the validation
 // process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -200,19 +201,19 @@ class ProxyServer extends EventEmitter {
 
         return callback(null, data, flags);
     }
-    async _onWebSocketError(ctx, error) {
-        const conn = this._connectionMap.get(ctx.id);
-        if (!this.isBlockable(conn)) {
-            return;
-        }
-        // TODO 错误处理
-        // this.emit('error', {
-        //     id: ctx.id,
-        //     conn,
-        //     who: 'websocket',
-        //     error
-        // });
-    }
+    // async _onWebSocketError(ctx, error) {
+    //     const conn = this._connectionMap.get(ctx.id);
+    //     if (!this.isBlockable(conn)) {
+    //         return;
+    //     }
+    //     // TODO 错误处理
+    //     // this.emit('error', {
+    //     //     id: ctx.id,
+    //     //     conn,
+    //     //     who: 'websocket',
+    //     //     error
+    //     // });
+    // }
     _onWebSocketClose(ctx, code, message, callback) {
         const conn = this._connectionMap.get(ctx.id);
         debug('websocket:close', `${ctx.id},${ctx.clientToProxyWebSocket.upgradeReq.url}`);
@@ -275,7 +276,6 @@ class ProxyServer extends EventEmitter {
         conn.response.statusCode = serverRes.statusCode;
         conn.response.statusMessage = serverRes.statusMessage;
 
-        conn.markTiming('responseReceived');
         this.emit('responseReceived', conn);
         callback();
     }
@@ -367,7 +367,6 @@ class ProxyServer extends EventEmitter {
         });
 
         serverRes.on('end', async () => {
-            conn.markTiming('responseFinished');
             debug('responseEnd', `${ctx.id},${originalUrl}`);
 
             if (resDataStream) {
@@ -395,7 +394,8 @@ class ProxyServer extends EventEmitter {
             const req = ctx.clientToProxyRequest;
             const res = ctx.proxyToClientResponse;
             if (!req && !res) {
-                throw err; // "Error: Must provide a proper URL as target"
+                this.emit('loadingFailed', conn);
+                return logger.error(`${ctx.id} error`, err);
             }
             const code = err.code;
 
@@ -415,11 +415,16 @@ class ProxyServer extends EventEmitter {
                     }
                 }
             }
-            const msg =
-                `Error occured while trying to proxy: ${req.url}` + (errorKind ? `, error message: ${errorKind}` : '');
-            res.end(msg);
+
+            if (res && !res.finished) {
+                res.end(
+                    `Error occured while trying to proxy: ${req.url}` +
+                        (errorKind ? `, error message: ${errorKind}` : '')
+                );
+            }
+            this.emit('loadingFailed', conn);
         } else {
-            // TODO 未知错误处理
+            logger.error(err);
         }
     }
 

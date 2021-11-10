@@ -195,7 +195,7 @@ function messagerFormatter(type, connection, extInfo) {
             message = {
                 requestId: `${connection.getId()}`,
                 loaderId: '23.1',
-                timestamp: timing.responseReceived,
+                timestamp: getTime(),
                 type: getResourceType(response.type, request.url),
                 response: {
                     url: request.originalUrl || request.fullUrl || request.url,
@@ -224,8 +224,17 @@ function messagerFormatter(type, connection, extInfo) {
         case 'loadingFinished':
             message = {
                 requestId: `${connection.getId()}`,
-                timestamp: timing.responseFinished,
+                timestamp: getTime(),
                 encodedDataLength: parseInt(response.getHeader('content-length'), 10)
+            };
+            break;
+        case 'loadingFailed':
+            // TODO 错误的时候，抛出这个事件触发
+            message = {
+                requestId: `${connection.getId()}`,
+                timestamp: getTime(),
+                type: response && request ? getResourceType(response.type, request.url) : 'Other',
+                errorText: ''
             };
             break;
         case 'webSocketClosed':
