@@ -57,7 +57,8 @@ Options:
 -   proxy：
     -   `proxy.port`：代理服务器的端口号，默认 8002
     -   `proxy.plugins`：Foxy 插件
-    -   `proxy.blockingFilter`：拦截过滤器，详见[Foxy 文档](./docs/foxy.md)
+    -   `proxy.blocking`：拦截配置，详见[Foxy 文档](./docs/foxy.md)
+    -   `proxy.nonBlocking`：拦截配置，详见[Foxy 文档](./docs/foxy.md)
 
 ## 开发
 

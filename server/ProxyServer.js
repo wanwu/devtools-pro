@@ -9,7 +9,7 @@ const Connection = require('./proxy/Connection');
 const copyHeaders = require('./utils/copyHeaders');
 const buildInPlugins = [require('./proxy/plugins/crtfile')];
 
-const logger = require('./utils/logger');
+// const logger = require('./utils/logger');
 const {truncate} = require('./utils');
 const test = require('./utils/test');
 
@@ -32,7 +32,10 @@ class ProxyServer extends EventEmitter {
         this.serverInstance = serverInstance;
         this.address = serverInstance.getAddress();
         this.options = options;
-        this.blockingFilter = options.blockingFilter || {};
+        // 遇见就拦截
+        this._blockingFilter = this._normailzeBlockingFilter(options.blocking, true);
+        // 遇见不拦截
+        this.nonBlockingFilter = this._normailzeBlockingFilter(options.nonBlocking, false);
 
         this.port = options.port || 8002;
         // 统一sslCaDir
@@ -96,40 +99,51 @@ class ProxyServer extends EventEmitter {
     }
     isBlockable(conn) {
         if (conn && this._blocking === false) {
-            return conn.isBlockable();
-        }
-        return this._blocking === true;
-    }
-    _isBlockingFilterHit(req) {
-        const filters = [
-            {
-                key: 'method',
-                path: 'method'
-            },
-            {
-                key: 'url',
-                path: 'url'
-            },
-            {
-                key: 'useragent',
-                path: 'headers.user-agent'
-            },
-            {
-                key: 'host',
-                path: 'headers.host'
-            }
-        ];
-        for (const item of filters) {
-            const optionTester = this.blockingFilter[item.key];
-            const reqTestee = item.path.split('.').reduce((req, cur) => {
-                return !req[cur] ? {} : req[cur];
-            }, req);
-
-            if (typeof reqTestee === 'string' && !test(optionTester, reqTestee)) {
+            const r = conn.isBlockable();
+            if (r === false) {
                 return false;
             }
+            // blocking/nonblocking 同时存在则取blocking的值
+            if (typeof this._blockingFilter === 'function') {
+                // 遇见就拦截
+                return this._blockingFilter(conn.request, test);
+            }
+            if (typeof this.nonBlockingFilter === 'function') {
+                // 遇见不拦截
+                return this.nonBlockingFilter(conn.request, test);
+            }
         }
-        return true;
+
+        return this._blocking === true;
+    }
+    // 默认只过滤host这种常见的blocking
+    _normailzeBlockingFilter(blockingOptions, defaultValue = true) {
+        let blockingFilter = () => {
+            return defaultValue;
+        };
+        if (blockingOptions) {
+            const type = typeof blockingOptions;
+            if (type === 'function') {
+                blockingFilter = blockingOptions;
+            } else if (Array.isArray(blockingOptions)) {
+                const filters = blockingOptions.map(item => {
+                    return this._normailzeBlockingFilter(item);
+                });
+                blockingFilter = req => {
+                    for (const filter of filters) {
+                        if (filter(req)) {
+                            return defaultValue;
+                        }
+                    }
+                    return !defaultValue;
+                };
+            } else {
+                blockingFilter = req => {
+                    return test(blockingOptions, req.host);
+                };
+            }
+        }
+        return blockingFilter;
     }
     async _onWebSocketConnection(ctx, callback) {
         const conn = new Connection(
@@ -230,7 +244,7 @@ class ProxyServer extends EventEmitter {
         // 生成请求地址
         createRequestOptions(ctx, request);
 
-        this._isBlockingFilterHit(req) && this.emit('requestWillBeSent', conn);
+        this.emit('requestWillBeSent', conn);
 
         // 处理 res.end 提前触发的情况
         if (response.finished) {

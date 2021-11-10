@@ -13,10 +13,12 @@ Foxy 的相关配置可以在`devtools.config.js`的`proxy`中进行配置，配
 -   proxy：
     -   `proxy.port`：代理服务器的端口号，默认 8002
     -   `proxy.plugins`：Foxy 插件
-    -   `proxy.blockingFilter`：拦截过滤器
+    -   `proxy.blocking`：拦截 host 配置，匹配正确则拦截，其他放行
+    -   `proxy.nonBlocking`：不拦截（忽略）host 配置，匹配正确（`return true`）则忽略
 
-> blockingFilter 为一个包含 url/method/host/useragent 为 key 的对象，value 为字符串/正则或者 glob string。当匹配正确的时候，则进行拦截，否则放行。
-> 举例：如果我们让 Foxy 代理服务器只拦截百度域名，可以使用`blockingFilter:{host:'*.baidu.com'}`
+> 1. `blocking`/`nonBlocking` 取值为`function|array<string|function>|string`，为需要拦截或者不需要拦截的 host 配置，`string`支持 glob 语法，如果是`function`则传入`request`对象和`test`函数用于自己实现匹配逻辑。
+> 2. `blocking`/`nonBlocking`两个都存在，则取`blocking`
+>    举例：如果我们让 Foxy 代理服务器只拦截百度域名，可以使用`blocking:'*.baidu.com'`
 
 ## 可编程支持
 

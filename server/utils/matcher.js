@@ -30,8 +30,6 @@ module.exports = function match(options, context) {
 
         return true;
     }
-    // 默认是string path路径匹配
-    // - [x] 可以支持多个路径，比如：['/api', '/ajax'] √
-    // - [x] 可以支持多个路径，比如：['/api/**', '!**.html']
-    return test(options, context.path);
+    // 默认是string host匹配
+    return test(options, context.host);
 };
