@@ -26,11 +26,11 @@ const CA_ATTRS = [
     },
     {
         name: 'localityName',
-        value: 'Bidu'
+        value: 'Bidu Up Up Up'
     },
     {
         name: 'organizationName',
-        value: 'Devtools-pro Foxy CA'
+        value: 'Bidu KFive Foxy'
     },
     {
         shortName: 'OU',

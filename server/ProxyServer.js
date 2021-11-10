@@ -8,7 +8,8 @@ const InterceptorFactory = require('./proxy/InterceptorFactory');
 const Connection = require('./proxy/Connection');
 const copyHeaders = require('./utils/copyHeaders');
 const buildInPlugins = [require('./proxy/plugins/crtfile')];
-
+// in order to handle self-signed certificates we need to turn off the validation
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 // const logger = require('./utils/logger');
 const {truncate} = require('./utils');
 const test = require('./utils/test');
@@ -24,7 +25,6 @@ class CommonReadableStream extends Readable {
     }
     _read(size) {}
 }
-// TODO response.body 编码问题，需要decode之前再encode或者用iconv-lite处理？还是修改content-encoding？
 class ProxyServer extends EventEmitter {
     constructor(options = {}, serverInstance) {
         super();
@@ -61,6 +61,7 @@ class ProxyServer extends EventEmitter {
         }
         // 绑定plugins
         this.addPlugin(plugins);
+        // this.addPlugin(require('./proxy/plugins/injectBackend'));
     }
     addPlugin(plugin) {
         if (Array.isArray(plugin)) {
@@ -127,7 +128,7 @@ class ProxyServer extends EventEmitter {
                 blockingFilter = blockingOptions;
             } else if (Array.isArray(blockingOptions)) {
                 const filters = blockingOptions.map(item => {
-                    return this._normailzeBlockingFilter(item);
+                    return this._normailzeBlockingFilter(item, defaultValue);
                 });
                 blockingFilter = req => {
                     for (const filter of filters) {
