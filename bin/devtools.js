@@ -167,14 +167,14 @@ require('yargs')
                     const canonicalHost = hostname === '0.0.0.0' ? '127.0.0.1' : hostname;
                     const protocol = https ? 'https://' : 'http://';
 
-                    console.log(
-                        [colorette.yellow('Starting up Devtools Server.'), colorette.yellow('\nAvailable on:')].join('')
+                    logger.log(
+                        [colorette.yellow('Starting up Devtools Server.'), colorette.yellow('\nWeb GUI on:')].join('')
                     );
                     const urls = [];
                     if (argv.address && hostname !== '0.0.0.0') {
                         const url = '    ' + protocol + canonicalHost + ':' + colorette.green(port.toString());
                         urls.push(url);
-                        console.log(url);
+                        logger.log(url);
                     } else {
                         Object.keys(ifaces).forEach(dev => {
                             /* eslint-disable max-nested-callbacks */
@@ -183,27 +183,28 @@ require('yargs')
                                     const url =
                                         '  ' + protocol + details.address + ':' + colorette.green(port.toString());
                                     urls.push(url);
-                                    console.log(url);
+                                    logger.log(url);
                                 }
                             });
                         });
                     }
-                    console.log('');
+                    logger.log('');
                     // TODO 文案
-                    console.log(`${colorette.yellow('Backend url:')}`);
+                    logger.log(`${colorette.yellow('Backend url:')}`);
                     urls.forEach(u => {
-                        console.log(u + colorette.green(BACKENDJS_PATH));
+                        logger.log(u + colorette.green(BACKENDJS_PATH));
                     });
-                    console.log('');
-                    if (server.getProxyServer()) {
-                        console.log(
-                            `${colorette.yellow('Proxy port:')} ${colorette.green(
+                    logger.log('');
+                    const s = server.getProxyServer();
+                    if (s) {
+                        logger.log(
+                            `${colorette.yellow('Proxy server port:')} ${colorette.green(
                                 server.getProxyServer().port.toString()
                             )}`
                         );
-                        console.log('');
                     }
-                    console.log('Hit CTRL-C to stop the server');
+                    logger.log('');
+                    logger.log('Hit CTRL-C to stop the server');
 
                     const home = server.getUrl();
                     argv.open && require('opener')(home);
@@ -227,7 +228,7 @@ require('yargs')
 
 function checkNodeVersion(wanted, id) {
     if (!semver.satisfies(process.version, wanted)) {
-        console.log(
+        logger.log(
             // prettier-ignore
             // eslint-disable-next-line
             'You are using Node ' + process.version + ', but this version of ' + id +
@@ -290,12 +291,12 @@ async function loadConfig(configPath) {
 }
 
 process.on('SIGINT', () => {
-    console.log(colorette.red('San-Devtool server stopped.'));
+    logger.log(colorette.red('San-Devtool server stopped.'));
     process.exit();
 });
 
 process.on('SIGTERM', () => {
-    console.log(colorette.red('San-Devtool server stopped.'));
+    logger.log(colorette.red('San-Devtool server stopped.'));
     process.exit();
 });
 process.on('uncaughtException', error => {
