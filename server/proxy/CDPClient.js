@@ -51,7 +51,7 @@ module.exports = class CDPClient extends EventEmitter {
         this._connected = false;
         // 强制关闭
         this.close();
-        this.emit('error', e);
+        // this.emit('error', e);
         logger.error(e);
     }
     _onOpen() {

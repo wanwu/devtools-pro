@@ -76,7 +76,6 @@ module.exports = class Connection {
         this.request = {};
         this.response = {};
         this.timing = {};
-        this._chunks.length = 0;
         this._chunks = null;
     }
     dataReceived(chunk) {
@@ -171,7 +170,6 @@ function createResponse(clientRes, req, endCallback) {
         set body(val) {
             const original = cloneRes._body;
             cloneRes._body = val;
-
             // no content
             if (null == val) {
                 if (!statuses.empty[this.statusCode]) {

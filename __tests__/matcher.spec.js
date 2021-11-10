@@ -1,4 +1,5 @@
-const matcher = require('../../server/utils/matcher');
+/* global test,describe, it,beforeAll,afterAll,expect */
+const matcher = require('../server/utils/matcher');
 
 const reqLocal = {
     host: '127.0.0.1',
@@ -46,10 +47,10 @@ describe('matcher', () => {
         path: '/',
         url: '/backend.js?ab=1'
     };
-    // path === path
-    it('simple path', () => {
-        expect(matcher('/ssl', req)).toBe(true);
-        expect(matcher(/^\/s/, req)).toBe(true);
+    // host === host
+    it('simple host', () => {
+        expect(matcher('devtools.pro', req)).toBe(true);
+        expect(matcher(/pro$/, req)).toBe(true);
     });
 
     it('string', () => {

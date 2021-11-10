@@ -16,7 +16,6 @@ lerna-debug.log
 .vscode
 package-lock.json
 dist
-test
 docs/_book
 # Runtime data
 pids

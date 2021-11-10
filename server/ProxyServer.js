@@ -9,7 +9,7 @@ const Connection = require('./proxy/Connection');
 const copyHeaders = require('./utils/copyHeaders');
 const buildInPlugins = [require('./proxy/plugins/crtfile')];
 // in order to handle self-signed certificates we need to turn off the validation
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 // const logger = require('./utils/logger');
 const {truncate} = require('./utils');
 const test = require('./utils/test');
@@ -243,7 +243,7 @@ class ProxyServer extends EventEmitter {
         // 拦截器：用于修改发送server的请求参数
         await this._runInterceptor('request', {request, response}, conn);
         // 生成请求地址
-        createRequestOptions(ctx, request);
+        createRequestOptions(ctx, request, 'proxyToServerRequestOptions');
 
         this.emit('requestWillBeSent', conn);
 
@@ -313,10 +313,8 @@ class ProxyServer extends EventEmitter {
                     return clientRes.end('response is empty');
                 }
 
-                // rewrite
-                conn.response.body = body;
-
                 const {request, response} = conn;
+                response.body = body;
 
                 await self._runInterceptor('response', {request, response}, conn);
 
@@ -325,18 +323,16 @@ class ProxyServer extends EventEmitter {
 
                 // 处理chunked 情况
                 if (transferEncoding !== 'chunked') {
-                    headers['content-length'] = Buffer.byteLength(body);
+                    headers['content-length'] = response.length;
                 }
 
                 clientRes.writeHead(response.statusCode, headers);
                 self.emit('loadingFinished', conn);
-
                 clientRes.end(response.body);
             } else {
                 debug('body is big stream', originalUrl);
-                conn.response.body = resDataStream;
                 const {request, response} = conn;
-
+                response.body = resDataStream;
                 await self._runInterceptor('response', {request, response}, conn);
 
                 clientRes.writeHead(response.statusCode, response.headers);

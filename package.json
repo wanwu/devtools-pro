@@ -10,6 +10,7 @@
     "module": "src/backend.js",
     "main": "dist/backend.js",
     "scripts": {
+        "test": "jest __tests__/*.spec.js  --detectOpenHandles",
         "prepublishOnly": "sh init.sh && npm run build",
         "build": "npm-run-all build:**",
         "dev": "npm run dev:chrome-frontend && run-p dev:backend dev:server",
@@ -77,6 +78,10 @@
         "yargs": "^16.2.0"
     },
     "devDependencies": {
+        "jest": "^27.3.1",
+        "got": "^11.8.2",
+        "hpagent": "^0.1.2",
+        "node-static": "^0.7.11",
         "@babel/core": "^7.14.0",
         "@babel/plugin-proposal-class-properties": "^7.13.0",
         "@babel/plugin-syntax-import-meta": "^7.10.4",
