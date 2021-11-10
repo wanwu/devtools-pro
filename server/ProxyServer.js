@@ -1,5 +1,5 @@
 const EventEmitter = require('events').EventEmitter;
-const MITMProxy = require('http-mitm-proxy');
+const MITMProxy = require('./proxy/MITMProxy');
 const WebSocket = require('ws');
 const Readable = require('stream').Readable;
 const decompress = require('./utils/decompress');
