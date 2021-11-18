@@ -77,7 +77,9 @@ module.exports = {
         path: path.resolve('./dist/')
     },
     devServer: {
-        contentBase: './dist',
+        static: {
+            directory: './dist'
+        },
         hot: true
     },
     resolve: {
