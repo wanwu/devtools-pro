@@ -90,6 +90,8 @@
         "@babel/preset-env": "^7.14.0",
         "@commitlint/cli": "^15.0.0",
         "@commitlint/core": "^15.0.0",
+        "@babel/eslint-parser": "^7.10.1",
+        "@babel/eslint-plugin": "^7.10.1",
         "@ecomfe/eslint-config": "^7.3.0",
         "@ksky521/cz-emoji": "^1.2.1",
         "autoprefixer": "^10.2.5",
@@ -131,7 +133,7 @@
         "url-loader": "^4.1.1",
         "webpack": "^5.36.1",
         "webpack-cli": "^4.6.0",
-        "webpack-dev-server": "^3.11.2"
+        "webpack-dev-server": "^4.5.0"
     },
     "husky": {
         "hooks": {
