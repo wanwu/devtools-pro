@@ -12,6 +12,7 @@ const buildInPlugins = [require('./proxy/plugins/crtfile')];
 const logger = require('./utils/logger');
 const {truncate} = require('./utils');
 const test = require('./utils/test');
+const ErrorCodes = require('./utils/errorCodes');
 
 const debug = createDebug('proxyserver');
 
@@ -199,6 +200,10 @@ class ProxyServer extends EventEmitter {
         // });
     }
     _onWebSocketClose(ctx, code, message, callback) {
+        if (typeof code !== 'number' || !ErrorCodes.isValidStatusCode(code)) {
+            return;
+        }
+
         const conn = this._connectionMap.get(ctx.id);
         debug('websocket:close', `${ctx.id},${ctx.clientToProxyWebSocket.upgradeReq.url}`);
 
