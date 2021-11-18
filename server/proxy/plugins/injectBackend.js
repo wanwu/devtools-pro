@@ -1,7 +1,6 @@
 // const fs = require('fs');
 const getResourceType = require('../../utils/getResourceType');
 const {injectAssetsIntoHtml} = require('../../utils/htmlUtils');
-// const got = require('got');
 module.exports = ({request, response, websocketConnect}, proxyInstance) => {
     const rootInstance = proxyInstance.serverInstance;
     const port = rootInstance.getPort();
