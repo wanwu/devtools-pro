@@ -189,7 +189,6 @@ require('yargs')
                         });
                     }
                     logger.log('');
-                    // TODO 文案
                     logger.log(`${colorette.yellow('Backend url:')}`);
                     urls.forEach(u => {
                         logger.log(u + colorette.green(BACKENDJS_PATH));
