@@ -10,7 +10,7 @@
     "module": "src/backend.js",
     "main": "dist/backend.js",
     "scripts": {
-        "prepare": "husky install",
+        "prepare": "husky install && sh init.sh",
         "test": "jest __tests__/*.spec.js  --detectOpenHandles",
         "prepublishOnly": "sh init.sh && npm run build",
         "build": "npm-run-all build:**",
