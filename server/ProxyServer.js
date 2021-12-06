@@ -62,7 +62,7 @@ class ProxyServer extends EventEmitter {
         }
         // 绑定plugins
         this.addPlugin(plugins);
-        this.addPlugin(require('./proxy/plugins/injectBackend'));
+        // this.addPlugin(require('./proxy/plugins/injectBackend'));
     }
     addPlugin(plugin) {
         if (Array.isArray(plugin)) {
