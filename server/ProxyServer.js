@@ -62,7 +62,7 @@ class ProxyServer extends EventEmitter {
         }
         // 绑定plugins
         this.addPlugin(plugins);
-        // this.addPlugin(require('./proxy/plugins/injectBackend'));
+        this.addPlugin(require('./proxy/plugins/injectBackend'));
     }
     addPlugin(plugin) {
         if (Array.isArray(plugin)) {
@@ -201,19 +201,7 @@ class ProxyServer extends EventEmitter {
 
         return callback(null, data, flags);
     }
-    // async _onWebSocketError(ctx, error) {
-    //     const conn = this._connectionMap.get(ctx.id);
-    //     if (!this.isBlockable(conn)) {
-    //         return;
-    //     }
-    //     // TODO 错误处理
-    //     // this.emit('error', {
-    //     //     id: ctx.id,
-    //     //     conn,
-    //     //     who: 'websocket',
-    //     //     error
-    //     // });
-    // }
+
     _onWebSocketClose(ctx, code, message, callback) {
         const conn = this._connectionMap.get(ctx.id);
         debug('websocket:close', `${ctx.id},${ctx.clientToProxyWebSocket.upgradeReq.url}`);
@@ -496,7 +484,7 @@ function createRequestOptions(ctx, request, optionKey = 'proxyToServerRequestOpt
         const ctopHeaders = request.headers;
 
         for (let key in ctopHeaders) {
-            if (key.indexOf('sec-websocket') !== 0) {
+            if (key.indexOf('sec-websocket') !== -1) {
                 ptosHeaders[key] = ctopHeaders[key];
             }
         }
