@@ -1,5 +1,5 @@
 // inspired by html-webpack-plugin
-const {createHtmlTagObject, htmlTagObjectToString, HtmlTagArray} = require('./html-tags');
+const {createHtmlTagObject, htmlTagObjectToString, HtmlTagArray} = require('./htmlTags');
 
 /**
    * Html Post processing
