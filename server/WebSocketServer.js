@@ -14,7 +14,6 @@ module.exports = class WebSocketServer {
         this.manager = new Manager(this);
 
         const wss = (this._wss = new WebSocket.Server({noServer: true}));
-
         wss.on('connection', ws => {
             const {id, role} = ws;
             switch (role) {

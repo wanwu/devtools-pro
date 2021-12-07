@@ -3,14 +3,11 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 const url = require('url');
-const fs = require('fs');
 
 const Koa = require('koa');
 const Router = require('@koa/router');
 const killable = require('killable');
 const EventEmitter = require('events').EventEmitter;
-const findCacheDir = require('./utils/findCacheDir');
-const CA = require('./CA');
 
 const middlewares = ['alive', 'backend', 'frontend', 'dist'].map(file => {
     return require(path.join(__dirname, './middlewares', file));
@@ -41,8 +38,6 @@ class Server extends EventEmitter {
 
         this.options.proxy = this.options.proxy || process.env.PROXY || false;
         // 统一ca地址
-        this.ca = new CA(options.sslCaDir || findCacheDir('ssl'));
-        this.sslCaDir = this.ca.baseCAFolder;
 
         this.distPath = path.join(__dirname, '../dist');
     }
@@ -64,14 +59,6 @@ class Server extends EventEmitter {
     }
     isSSL() {
         return !!this.options.https;
-    }
-    async _setupHttps() {
-        // 创建ca
-        await this.ca.create();
-        if (this.options.https) {
-            this.options.https.key = fs.readFileSync(this.ca.caPrivateFilepath, 'utf8');
-            this.options.https.cert = fs.readFileSync(this.ca.caFilepath, 'utf8');
-        }
     }
     _start() {
         if (this.app) {
@@ -132,7 +119,6 @@ class Server extends EventEmitter {
     async listen(port = 8001, hostname = '0.0.0.0', fn) {
         this.hostname = hostname;
         this.port = port;
-        await this._setupHttps();
         this._start();
 
         return this._server.listen(port, hostname, err => {
@@ -142,6 +128,9 @@ class Server extends EventEmitter {
                 fn.call(this._server, err);
             }
         });
+    }
+    getHostname() {
+        return this.hostname;
     }
     getPort() {
         return this.port;

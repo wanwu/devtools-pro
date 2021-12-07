@@ -4,10 +4,14 @@ const {injectAssetsIntoHtml} = require('../../utils/htmlUtils');
 module.exports = ({request, response, websocketConnect}, proxyInstance) => {
     const rootInstance = proxyInstance.serverInstance;
     const port = rootInstance.getPort();
+    let hostname = rootInstance.getHostname();
+    if (hostname === '0.0.0.0' || hostname === '127.0.0.1') {
+        hostname = 'devtools.pro';
+    }
     const protocol = rootInstance.isSSL() ? 'wss:' : 'ws:';
     const backendjsUrl = `${
         rootInstance.isSSL() ? 'https' : 'http'
-    }://devtools.pro:${port}/backend.js?hostname=devtools.pro&port=${port}&protocol=${protocol}`;
+    }://${hostname}:${port}/backend.js?hostname=devtools.pro&port=${port}&protocol=${protocol}`;
     const id = response.add(({request: req, response: res}) => {
         const type = res.type;
         const resourceType = getResourceType(type);

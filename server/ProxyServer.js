@@ -2,13 +2,14 @@ const EventEmitter = require('events').EventEmitter;
 const MITMProxy = require('./proxy/MITMProxy');
 const WebSocket = require('ws');
 const Readable = require('stream').Readable;
+const CA = require('./CA');
 const decompress = require('./utils/decompress');
 const createDebug = require('./utils/createDebug');
 const InterceptorFactory = require('./proxy/InterceptorFactory');
 const Connection = require('./proxy/Connection');
 const copyHeaders = require('./utils/copyHeaders');
 const logger = require('./utils/logger');
-const buildInPlugins = [require('./proxy/plugins/crtfile')];
+const buildInPlugins = [require('./proxy/plugins/certfile')];
 // in order to handle self-signed certificates we need to turn off the validation
 // process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 // const logger = require('./utils/logger');
@@ -39,15 +40,12 @@ class ProxyServer extends EventEmitter {
         this.nonBlockingFilter = this._normailzeBlockingFilter(options.nonBlocking, false);
 
         this.port = options.port || 8002;
-        // 统一sslCaDir
-        this.sslCaDir = serverInstance.ca.getRootPath();
-        this.caFilePath = serverInstance.ca.getRootCAPath();
+        this.proxy = new MITMProxy();
+
         this.plugins = options.plugins || [];
         this._connectionMap = new Map();
         // 是否阻塞
         this._blocking = true;
-        const proxy = new MITMProxy();
-        this.proxy = proxy;
 
         this._addBuiltInMiddleware();
 
@@ -62,7 +60,7 @@ class ProxyServer extends EventEmitter {
         }
         // 绑定plugins
         this.addPlugin(plugins);
-        // this.addPlugin(require('./proxy/plugins/injectBackend'));
+        this.addPlugin(require('./proxy/plugins/injectBackend'));
     }
     addPlugin(plugin) {
         if (Array.isArray(plugin)) {
@@ -405,10 +403,8 @@ class ProxyServer extends EventEmitter {
             }
 
             if (res && !res.finished) {
-                res.end(
-                    `Error occured while trying to proxy: ${req.url}` +
-                        (errorKind ? `, error message: ${errorKind}` : '')
-                );
+                const msg = errorKind ? `, error message: ${errorKind}` : '';
+                res.end(`Error occured while trying to proxy: ${req.url}${msg}`);
             }
             this.emit('loadingFailed', conn);
         } else {
@@ -425,10 +421,16 @@ class ProxyServer extends EventEmitter {
         this._connectionMap.clear();
         this.removeAllListeners();
     }
-    listen(port) {
+    listen(port, hostname = '0.0.0.0') {
         port = port || this.port;
-        this.proxy.listen({port, sslCaDir: this.sslCaDir, host: '0.0.0.0'});
-        // logger.info(`Proxy Server Available On Port: ${port}`);
+        const ca = new CA();
+        ca.create(e => {
+            if (e) {
+                return logger.error(e);
+            }
+            this.ca = ca;
+            this.proxy.listen({port, ca, host: hostname});
+        });
     }
     _addBuiltInMiddleware() {
         const lifeCycle = {};
@@ -484,7 +486,7 @@ function createRequestOptions(ctx, request, optionKey = 'proxyToServerRequestOpt
         const ctopHeaders = request.headers;
 
         for (let key in ctopHeaders) {
-            if (key.indexOf('sec-websocket') !== -1) {
+            if (key.indexOf('sec-websocket') === -1) {
                 ptosHeaders[key] = ctopHeaders[key];
             }
         }

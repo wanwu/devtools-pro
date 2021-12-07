@@ -4,7 +4,7 @@ module.exports = ({request, response}, proxyInstance) => {
     const id = request.add(
         ({request: req, response: res}) => {
             res.setHeader('Access-Control-Allow-Origin', '*');
-            const caFilePath = proxyInstance.caFilePath;
+            const caFilePath = proxyInstance.ca.caFilepath;
             // path.join(proxyInstance.sslCaDir, 'certs/ca.pem');
             // console.log(caFilePath);
             if (fs.existsSync(caFilePath)) {
