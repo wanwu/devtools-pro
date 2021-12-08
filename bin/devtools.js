@@ -17,6 +17,7 @@ const updateNotifier = require('update-notifier');
 const semver = require('semver');
 const colorette = require('colorette');
 const logger = require('../server/utils/logger');
+const inernalIPSync = require('../server/utils/internalIPSync');
 
 const {
     scriptName,
@@ -175,35 +176,19 @@ require('yargs')
                     if (err) {
                         throw err;
                     }
-                    const canonicalHost = hostname === '0.0.0.0' ? '127.0.0.1' : hostname;
+                    const canonicalHost = hostname === '0.0.0.0' ? inernalIPSync() : hostname;
                     const protocol = https ? 'https://' : 'http://';
 
                     logger.log(
                         [colorette.yellow('Starting up Devtools Server.'), colorette.yellow('\nWeb GUI on:')].join('')
                     );
-                    const urls = [];
-                    if (argv.address && hostname !== '0.0.0.0') {
-                        const url = '    ' + protocol + canonicalHost + ':' + colorette.green(port.toString());
-                        urls.push(url);
-                        logger.log(url);
-                    } else {
-                        Object.keys(ifaces).forEach(dev => {
-                            /* eslint-disable max-nested-callbacks */
-                            ifaces[dev].forEach(details => {
-                                if (details.family === 'IPv4') {
-                                    const url =
-                                        '  ' + protocol + details.address + ':' + colorette.green(port.toString());
-                                    urls.push(url);
-                                    logger.log(url);
-                                }
-                            });
-                        });
-                    }
+                    const urls = ['127.0.0.1', canonicalHost].map(
+                        address => `    ${protocol}${address}:${colorette.green(port.toString())}`
+                    );
+                    urls.forEach(url => logger.log(url));
                     logger.log('');
                     logger.log(`${colorette.yellow('Backend url:')}`);
-                    urls.forEach(u => {
-                        logger.log(u + colorette.green(BACKENDJS_PATH));
-                    });
+                    urls.forEach(url => logger.log(url + colorette.green(BACKENDJS_PATH)));
                     logger.log('');
                     const s = server.getProxyServer();
                     if (s) {
@@ -212,8 +197,8 @@ require('yargs')
                                 server.getProxyServer().port.toString()
                             )}`
                         );
+                        logger.log('');
                     }
-                    logger.log('');
                     logger.log('Hit CTRL-C to stop the server');
 
                     const home = server.getUrl();
@@ -221,7 +206,7 @@ require('yargs')
 
                     process.on('exit', async () => {
                         await server.close();
-                        process.exit();
+                        process.exit(1);
                     });
                 });
             }

@@ -1,4 +1,3 @@
-const os = require('os');
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
@@ -16,6 +15,7 @@ const middlewares = ['alive', 'backend', 'frontend', 'dist'].map(file => {
 
 const CA = require('./CA');
 const findCacheDir = require('./utils/findCacheDir');
+const inernalIPSync = require('./utils/internalIPSync');
 const logger = require('./utils/logger');
 const WebSocketServer = require('./WebSocketServer');
 const ProxyServer = require('./ProxyServer');
@@ -207,17 +207,9 @@ class Server extends EventEmitter {
             this._realHost = this.hostname;
             return this._realHost;
         }
-        const ifaces = os.networkInterfaces();
-        const keys = Object.keys(ifaces);
-        for (let i = 0; i < keys.length; i++) {
-            const dev = ifaces[keys[i]];
-            for (let j = 0; j < dev.length; j++) {
-                const details = dev[j];
-                if (details.family === 'IPv4' && details.address !== '0.0.0.0' && details.address !== '127.0.0.1') {
-                    this._realHost = details.address;
-                    return this._realHost;
-                }
-            }
+        this._realHost = inernalIPSync();
+        if (this._realHost) {
+            return this._realHost;
         }
         return this.hostname;
     }
