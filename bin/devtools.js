@@ -221,6 +221,11 @@ require('yargs')
         const ca = new CA();
         ca.clean();
     })
+    .command('open-ca-dir', 'Open CA folder', {}, async a => {
+        const CA = require('../server/CA');
+        const ca = new CA();
+        require('opener')(ca.baseCAFolder);
+    })
     .help('h')
     .alias('h', 'help')
     .alias('v', 'version').argv;

@@ -1,4 +1,5 @@
 const os = require('os');
+const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const path = require('path');
@@ -13,6 +14,8 @@ const middlewares = ['alive', 'backend', 'frontend', 'dist'].map(file => {
     return require(path.join(__dirname, './middlewares', file));
 });
 
+const CA = require('./CA');
+const findCacheDir = require('./utils/findCacheDir');
 const logger = require('./utils/logger');
 const WebSocketServer = require('./WebSocketServer');
 const ProxyServer = require('./ProxyServer');
@@ -67,6 +70,48 @@ class Server extends EventEmitter {
         }
         this._createServer();
     }
+    async _setupHttps() {
+        if (!this.options.https) {
+            return;
+        }
+        const httpsOptions = this.options.https;
+        const readFile = item => {
+            if (Buffer.isBuffer(item) || (typeof item === 'object' && item !== null && !Array.isArray(item))) {
+                return item;
+            }
+
+            if (item) {
+                let stats = null;
+
+                try {
+                    stats = fs.lstatSync(fs.realpathSync(item)).isFile();
+                } catch (error) {
+                    // Ignore
+                }
+
+                return stats ? fs.readFileSync(item) : item;
+            }
+        };
+        for (const property of ['ca', 'cert', 'crl', 'key', 'pfx']) {
+            if (typeof httpsOptions[property] === 'undefined') {
+                // eslint-disable-next-line no-continue
+                continue;
+            }
+            const value = httpsOptions[property];
+            httpsOptions[property] = Array.isArray(value) ? value.map(item => readFile(item)) : readFile(value);
+        }
+
+        let fakeCert;
+
+        if (!httpsOptions.key || !httpsOptions.cert) {
+            const dir = findCacheDir('ssl');
+            fakeCert = await CA.getServerCA(dir);
+        }
+
+        httpsOptions.key = httpsOptions.key || fakeCert;
+        httpsOptions.cert = httpsOptions.cert || fakeCert;
+        this.options.https = httpsOptions;
+    }
     async _wrapContext(ctx, next) {
         ctx.getWebSocketServer = () => {
             return this._wsServer;
@@ -119,6 +164,7 @@ class Server extends EventEmitter {
     async listen(port = 8001, hostname = '0.0.0.0', fn) {
         this.hostname = hostname;
         this.port = port;
+        await this._setupHttps();
         this._start();
 
         return this._server.listen(port, hostname, err => {

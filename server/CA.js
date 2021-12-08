@@ -11,12 +11,75 @@ const cache = new LRUCache({
     max: 100,
     maxAge: 1000 * 60 * 60 * 12 // 1 hour
 });
+// 30 days
+const SERVER_CERT_TIMEOUT = 30;
 
 const pki = NodeForge.pki;
 const readFile = utils.promisify(fs.readFile);
 const writeFile = utils.promisify(fs.writeFile);
+const fsstat = utils.promisify(fs.stat);
 
+const SERVER_EXTENSIONS = [
+    {
+        name: 'basicConstraints',
+        cA: true
+    },
+    {
+        name: 'keyUsage',
+        keyCertSign: true,
+        digitalSignature: true,
+        nonRepudiation: true,
+        keyEncipherment: true,
+        dataEncipherment: true
+    },
+    {
+        name: 'extKeyUsage',
+        serverAuth: true,
+        clientAuth: true,
+        codeSigning: true,
+        timeStamping: true
+    },
+    {
+        name: 'subjectAltName',
+        altNames: [
+            {
+                // type 2 is DNS
+                type: 2,
+                value: 'localhost'
+            },
+            {
+                type: 2,
+                value: 'localhost.localdomain'
+            },
+            {
+                type: 2,
+                value: 'devtools.pro'
+            },
+            {
+                type: 2,
+                value: '*.devtools.pro'
+            },
+            {
+                type: 2,
+                value: '[::1]'
+            },
+            {
+                // type 7 is IP
+                type: 7,
+                ip: '127.0.0.1'
+            },
+            {
+                type: 7,
+                ip: 'fe80::1'
+            }
+        ]
+    }
+];
 const DEFAULT_ATTRS = [
+    {
+        name: 'commonName',
+        value: 'DevtoolsProFoxy'
+    },
     {
         name: 'countryName',
         value: 'Internet'
@@ -55,6 +118,57 @@ class CA {
         this.caPublicFilepath = path.join(this.keysFolder, 'ca.public.key');
         this.CAcert = null;
         this.CAkeys = null;
+    }
+    static async getServerCA(dir) {
+        const certificatePath = path.join(dir, 'server.pem');
+        let certificateExists;
+
+        try {
+            const certificate = await fsstat(certificatePath);
+            certificateExists = certificate.isFile();
+        } catch {
+            certificateExists = false;
+        }
+        if (certificateExists) {
+            const certificateStat = await fsstat(certificatePath);
+
+            const now = new Date();
+
+            // 如果超过30天，则删除，重新生成
+            if ((now - certificateStat.ctime) / (1000 * 60 * 60 * 24) > SERVER_CERT_TIMEOUT - 1) {
+                logger.info('SSL certificate is more than 30 days old. Removing...');
+
+                await del([certificatePath], {force: true});
+
+                certificateExists = false;
+            }
+        }
+        if (!certificateExists) {
+            const infoText = 'Generating Server CA...';
+            logger.info(infoText);
+
+            const {cert, keys} = getKeysAndCert(SERVER_CERT_TIMEOUT);
+
+            let attrs = [{name: 'commonName', value: 'DevtoolsProServer'}];
+
+            cert.setSubject(attrs);
+            cert.setIssuer(attrs);
+            cert.setExtensions(SERVER_EXTENSIONS);
+            cert.sign(keys.privateKey, NodeForge.md.sha256.create());
+            const certPem = pki.certificateToPem(cert);
+            const keyPem = pki.privateKeyToPem(keys.privateKey);
+            // 创建
+            await mkdirp(dir);
+            // 双写
+            const content = keyPem + certPem;
+            await writeFile(certificatePath, content, {
+                encoding: 'utf8'
+            });
+            logger.success(infoText);
+            logger.info('Server PEM: ' + certificatePath);
+            return content;
+        }
+        return await readFile(certificatePath);
     }
     getRootPath() {
         return this.baseCAFolder;
@@ -106,10 +220,7 @@ class CA {
         const {cert, keys} = getKeysAndCert();
 
         let attrs = DEFAULT_ATTRS.slice(0);
-        attrs.unshift({
-            name: 'commonName',
-            value: 'DevtoolsProFoxy'
-        });
+
         cert.setSubject(attrs);
         cert.setIssuer(attrs);
         cert.setExtensions([
@@ -166,7 +277,7 @@ class CA {
 
         cert.setIssuer(caCert.issuer.attributes);
 
-        let attrs = DEFAULT_ATTRS.slice(0);
+        let attrs = DEFAULT_ATTRS.slice(1);
         attrs.unshift({
             name: 'commonName',
             value: mainHost
@@ -220,7 +331,7 @@ function randomSerialNumber() {
     }
     return sn;
 }
-function getKeysAndCert() {
+function getKeysAndCert(days = 824) {
     const keys = pki.rsa.generateKeyPair(2048);
     const cert = pki.createCertificate();
     cert.publicKey = keys.publicKey;
@@ -228,7 +339,7 @@ function getKeysAndCert() {
     let now = Date.now();
     // compatible with apple's updated cert policy: https://support.apple.com/en-us/HT210176
     cert.validity.notBefore = new Date(now - 24 * 60 * 60 * 1000); // 1 day before
-    cert.validity.notAfter = new Date(now + 824 * 24 * 60 * 60 * 1000); // 824 days after
+    cert.validity.notAfter = new Date(now + days * 24 * 60 * 60 * 1000); // 824 days after
     return {
         keys,
         cert
