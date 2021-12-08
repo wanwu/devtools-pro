@@ -408,6 +408,8 @@ class ProxyServer extends EventEmitter {
             }
             this.emit('loadingFailed', conn);
         } else {
+            // HTTPS_CLIENT_ERROR
+            // console.log(errorKind);
             logger.error(err);
         }
     }

@@ -13,6 +13,7 @@ const cache = new LRUCache({
 });
 // 30 days
 const SERVER_CERT_TIMEOUT = 30;
+const ROOT_CERT_TIMEOUT = 824;
 
 const pki = NodeForge.pki;
 const readFile = utils.promisify(fs.readFile);
@@ -111,38 +112,19 @@ const ServerExtensions = [
 class CA {
     constructor(dir) {
         this.baseCAFolder = dir || findCacheDir('ssl');
+        // 存放网站
         this.certsFolder = path.join(this.baseCAFolder, 'certs');
-        this.keysFolder = path.join(this.baseCAFolder, 'keys');
-        this.caFilepath = path.join(this.certsFolder, 'ca.pem');
-        this.caPrivateFilepath = path.join(this.keysFolder, 'ca.private.key');
-        this.caPublicFilepath = path.join(this.keysFolder, 'ca.public.key');
+        // root CA 证书路径
+        this.caFilepath = path.join(this.baseCAFolder, 'ca.pem');
+        this.caPrivateFilepath = path.join(this.baseCAFolder, 'ca.private.key');
+        this.caPublicFilepath = path.join(this.baseCAFolder, 'ca.public.key');
         this.CAcert = null;
         this.CAkeys = null;
     }
     static async getServerCA(dir) {
         const certificatePath = path.join(dir, 'server.pem');
-        let certificateExists;
+        let certificateExists = await ifCertificateExpireDelete(certificatePath, SERVER_CERT_TIMEOUT);
 
-        try {
-            const certificate = await fsstat(certificatePath);
-            certificateExists = certificate.isFile();
-        } catch {
-            certificateExists = false;
-        }
-        if (certificateExists) {
-            const certificateStat = await fsstat(certificatePath);
-
-            const now = new Date();
-
-            // 如果超过30天，则删除，重新生成
-            if ((now - certificateStat.ctime) / (1000 * 60 * 60 * 24) > SERVER_CERT_TIMEOUT - 1) {
-                logger.info('SSL certificate is more than 30 days old. Removing...');
-
-                await del([certificatePath], {force: true});
-
-                certificateExists = false;
-            }
-        }
         if (!certificateExists) {
             const infoText = 'Generating Server CA...';
             logger.info(infoText);
@@ -190,7 +172,6 @@ class CA {
         try {
             await mkdirp(this.baseCAFolder);
             await mkdirp(this.certsFolder);
-            await mkdirp(this.keysFolder);
 
             if (fs.existsSync(this.caFilepath)) {
                 await this.loadCA();
@@ -203,6 +184,12 @@ class CA {
         }
     }
     async loadCA() {
+        // 过期删除
+        let certificateExists = await ifCertificateExpireDelete(this.caFilepath, ROOT_CERT_TIMEOUT);
+
+        if (!certificateExists) {
+            return await this.genCA();
+        }
         const certPEM = await readFile(this.caFilepath, 'utf-8');
         const keyPrivatePEM = await readFile(this.caPrivateFilepath, 'utf-8');
         const keyPublicPEM = await readFile(this.caPublicFilepath, 'utf-8');
@@ -217,7 +204,7 @@ class CA {
         const infoText = 'Generating CA...';
         logger.info(infoText);
 
-        const {cert, keys} = getKeysAndCert();
+        const {cert, keys} = getKeysAndCert(ROOT_CERT_TIMEOUT);
 
         let attrs = DEFAULT_ATTRS.slice(0);
 
@@ -249,12 +236,11 @@ class CA {
             return callback(null, cachedKeys);
         }
         const certFilepath = path.join(this.certsFolder, hostPath + '.pem');
-        const privateKeyFilepath = path.join(this.keysFolder, hostPath + '.key');
-        if (fs.existsSync(certFilepath) && fs.existsSync(privateKeyFilepath)) {
-            Promise.all([readFile(certFilepath), readFile(privateKeyFilepath)])
-                .then(([cert, key]) => {
+        if (fs.existsSync(certFilepath)) {
+            readFile(certFilepath)
+                .then(cert => {
                     const ckeys = {
-                        privateKey: key,
+                        privateKey: cert,
                         // publicKey: pki.publicKeyToPem(keys.publicKey),
                         certificate: cert
                     };
@@ -266,9 +252,6 @@ class CA {
                 });
             return;
         }
-
-        const md = NodeForge.md.md5.create();
-        md.update(mainHost);
 
         const {keys, cert} = getKeysAndCert();
 
@@ -300,22 +283,18 @@ class CA {
         cert.sign(caKey, NodeForge.md.sha256.create());
         const certPem = pki.certificateToPem(cert);
         const keyPrivatePem = pki.privateKeyToPem(keys.privateKey);
+        const content = Buffer.from(keyPrivatePem + certPem);
         const ckeys = {
-            privateKey: keyPrivatePem,
+            privateKey: content,
             // publicKey: pki.publicKeyToPem(keys.publicKey),
-            certificate: certPem
+            certificate: content
         };
         cache.set(mainHost, ckeys);
         callback(null, ckeys);
 
-        fs.writeFile(certFilepath, certPem, error => {
+        fs.writeFile(certFilepath, content, error => {
             if (error) {
                 logger.error('Failed to save certificate to disk in ' + this.certsFolder, error);
-            }
-        });
-        fs.writeFile(privateKeyFilepath, keyPrivatePem, error => {
-            if (error) {
-                logger.error('Failed to save private key to disk in ' + this.keysFolder, error);
             }
         });
     }
@@ -331,7 +310,7 @@ function randomSerialNumber() {
     }
     return sn;
 }
-function getKeysAndCert(days = 824) {
+function getKeysAndCert(days = ROOT_CERT_TIMEOUT) {
     const keys = pki.rsa.generateKeyPair(2048);
     const cert = pki.createCertificate();
     cert.publicKey = keys.publicKey;
@@ -344,4 +323,28 @@ function getKeysAndCert(days = 824) {
         keys,
         cert
     };
+}
+async function ifCertificateExpireDelete(certificatePath, days = SERVER_CERT_TIMEOUT) {
+    let certificateExists = false;
+    try {
+        const certificate = await fsstat(certificatePath);
+        certificateExists = certificate.isFile();
+    } catch {
+        certificateExists = false;
+    }
+    if (certificateExists) {
+        const certificateStat = await fsstat(certificatePath);
+
+        const now = new Date();
+
+        // 如果超过30天，则删除，重新生成
+        if ((now - certificateStat.ctime) / (1000 * 60 * 60 * 24) > days - 1) {
+            logger.info(`SSL certificate is more than ${days} days old. Removing...`);
+
+            await del([certificatePath], {force: true});
+
+            certificateExists = false;
+        }
+    }
+    return certificateExists;
 }
