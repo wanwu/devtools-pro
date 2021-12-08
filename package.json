@@ -129,7 +129,7 @@
         "san-loader": "^0.2.1",
         "santd": "~1.0.6",
         "style-loader": "^2.0.0",
-        "svg-loader": "^0.0.2",
+        "svgo-loader": "^3.0.0",
         "terser-webpack-plugin": "^5.1.1",
         "url-loader": "^4.1.1",
         "webpack": "^5.36.1",
