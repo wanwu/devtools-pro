@@ -4,32 +4,9 @@ const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const SanLoaderPlugin = require('san-loader/lib/plugin');
 const TerserPlugin = require('terser-webpack-plugin');
-const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const MiniCssExportPlugin = require('mini-css-extract-plugin');
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
-
-const cssNanoOptions = {
-    assetNameRegExp: /\.css$/g,
-    cssProcessorOptions: {
-        mergeLonghand: false,
-        cssDeclarationSorter: false,
-        normalizeUrl: false,
-        discardUnused: false,
-        // 避免 cssnano 重新计算 z-index
-        zindex: false,
-        reduceIdents: false,
-        safe: true,
-        // cssnano 集成了autoprefixer的功能
-        // 会使用到autoprefixer进行无关前缀的清理
-        // 关闭autoprefixer功能
-        // 使用postcss的autoprefixer功能
-        autoprefixer: false,
-        discardComments: {
-            removeAll: true
-        }
-    },
-    canPrint: true
-};
 
 const resolve = p => path.resolve(__dirname, './src', p);
 
@@ -115,7 +92,17 @@ module.exports = {
                       }
                   }
               },
-              minimizer: [new TerserPlugin(), new OptimizeCSSAssetsPlugin(cssNanoOptions)]
+              minimizer: [
+                  new TerserPlugin({
+                      terserOptions: {
+                          format: {
+                              comments: false
+                          }
+                      },
+                      extractComments: false
+                  }),
+                  new CssMinimizerPlugin()
+              ]
           }
         : undefined,
     entry: {
