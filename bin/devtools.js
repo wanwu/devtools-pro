@@ -53,6 +53,16 @@ require('yargs')
                 default: true,
                 describe: 'Proxy server enabled'
             },
+            // proxyUA: {
+            //     type: 'string',
+            //     alias: 'proxy-user-agent',
+            //     describe: 'Set proxy config: client user-agent. [glob-string]'
+            // },
+            // proxyDomain: {
+            //     type: 'string',
+            //     alias: 'proxy-domain',
+            //     describe: 'Set proxy config: domain. [glob-string]'
+            // },
             proxyPort: {
                 type: 'number',
                 default: 8002,
@@ -132,6 +142,7 @@ require('yargs')
                 port, // minimum port
                 stopPort: port + 10 // maximum port
             });
+
             if (argv.proxy) {
                 proxyPort = await portfinder.getPortPromise({
                     port: proxyPort, // minimum port

@@ -14,7 +14,7 @@ const buildInPlugins = [require('./proxy/plugins/certfile')];
 // process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 // const logger = require('./utils/logger');
 const {truncate} = require('./utils');
-const test = require('./utils/test');
+const createFilterRule = require('./utils/filterRule');
 
 const debug = createDebug('proxyserver');
 
@@ -35,9 +35,9 @@ class ProxyServer extends EventEmitter {
         this.address = serverInstance.getAddress();
         this.options = options;
         // 遇见就拦截
-        this._blockingFilter = this._normailzeBlockingFilter(options.blocking, true);
+        this._blockingFilter = createFilterRule(options.blocking, true);
         // 遇见不拦截
-        this.nonBlockingFilter = this._normailzeBlockingFilter(options.nonBlocking, false);
+        this.nonBlockingFilter = createFilterRule(options.nonBlocking, false);
 
         this.port = options.port || 8002;
         this.proxy = new MITMProxy();
@@ -106,45 +106,17 @@ class ProxyServer extends EventEmitter {
             // blocking/nonblocking 同时存在则取blocking的值
             if (typeof this._blockingFilter === 'function') {
                 // 遇见就拦截
-                return this._blockingFilter(conn.request, test);
+                return this._blockingFilter(conn.request);
             }
             if (typeof this.nonBlockingFilter === 'function') {
                 // 遇见不拦截
-                return this.nonBlockingFilter(conn.request, test);
+                return this.nonBlockingFilter(conn.request);
             }
         }
 
         return this._blocking === true;
     }
-    // 默认只过滤host这种常见的blocking
-    _normailzeBlockingFilter(blockingOptions, defaultValue = true) {
-        let blockingFilter = () => {
-            return defaultValue;
-        };
-        if (blockingOptions) {
-            const type = typeof blockingOptions;
-            if (type === 'function') {
-                blockingFilter = blockingOptions;
-            } else if (Array.isArray(blockingOptions)) {
-                const filters = blockingOptions.map(item => {
-                    return this._normailzeBlockingFilter(item, defaultValue);
-                });
-                blockingFilter = req => {
-                    for (const filter of filters) {
-                        if (filter(req)) {
-                            return defaultValue;
-                        }
-                    }
-                    return !defaultValue;
-                };
-            } else {
-                blockingFilter = req => {
-                    return test(blockingOptions, req.host);
-                };
-            }
-        }
-        return blockingFilter;
-    }
+
     async _onWebSocketConnection(ctx, callback) {
         const conn = new Connection(
             ctx.clientToProxyWebSocket.upgradeReq,
@@ -410,7 +382,14 @@ class ProxyServer extends EventEmitter {
         } else {
             // HTTPS_CLIENT_ERROR
             // console.log(errorKind);
-            logger.error(err);
+            const code = err.code;
+            if (
+                !code &&
+                !/HPE_INVALID/.test(code) &&
+                !['ECONNRESET', 'ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT'].includes(code)
+            ) {
+                logger.error(err);
+            }
         }
     }
 
