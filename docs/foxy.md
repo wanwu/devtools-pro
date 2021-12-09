@@ -6,7 +6,10 @@
 
 在 devtools 的 bin 中使用`--proxy` flag 进行启动（默认启动），或者使用 `devtools.config`配置文件。
 
-> 注意 iOS15+ Safari 在使用 https 的 URL，如果要链接 WSS 协议的 Websocket，需要关闭「NSURLSession WebSocket」（iOS15-默认是关闭的），路径 「iOS 设置 -> Safari -> 高级 -> Experimental Features -> NSURLSession WebSocket」 设置为关闭。详细：https://developer.apple.com/forums/thread/685403
+> 注意：
+>
+> 1. 在现在新版本的浏览器中，HTTPS 页面如果访问 HTTP 的资源会报[Mixed Content 错误](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content)，所以 HTTPS 页面要进行调试需要建立 WSS 的 Websocket 连接，一般内核/Webview 可以在创建 Webview 的时候默认关闭该安全配置，用于线下包的开发调试。
+> 2. iOS15+ Safari 在使用 https 的 URL，如果要链接 WSS 协议的 Websocket，需要关闭「NSURLSession WebSocket」（iOS15-默认是关闭的），路径 「iOS 设置 -> Safari -> 高级 -> Experimental Features -> NSURLSession WebSocket」 设置为关闭。详细：https://developer.apple.com/forums/thread/685403
 
 ## devtools.config.js 相关配置
 
