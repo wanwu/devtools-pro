@@ -2,6 +2,7 @@ const path = require('path');
 const utils = require('util');
 const fs = require('fs');
 const del = require('del');
+const ora = require('ora');
 const mkdirp = require('mkdirp');
 const NodeForge = require('node-forge');
 const findCacheDir = require('./utils/findCacheDir');
@@ -126,8 +127,7 @@ class CA {
         let certificateExists = await ifCertificateExpireDelete(certificatePath, SERVER_CERT_TIMEOUT);
 
         if (!certificateExists) {
-            const infoText = 'Generating Server CA...';
-            logger.info(infoText);
+            const spinner = ora('Generating Server CA...').start();
 
             const {cert, keys} = getKeysAndCert(SERVER_CERT_TIMEOUT);
 
@@ -146,7 +146,7 @@ class CA {
             await writeFile(certificatePath, content, {
                 encoding: 'utf8'
             });
-            logger.success(infoText);
+            spinner.succeed();
             logger.info('Server PEM: ' + certificatePath);
             return content;
         }
@@ -159,12 +159,12 @@ class CA {
         return this.caFilepath;
     }
     clean() {
-        logger.log();
-        logger.info('Delete RootCA...');
+        const spinner = ora('Delete Certificate Folder...').start();
         try {
             del.sync(this.getRootPath(), {force: true});
-            logger.success('success');
+            spinner.succeed();
         } catch (e) {
+            spinner.fail();
             logger.error(e);
         }
     }
@@ -201,8 +201,7 @@ class CA {
         };
     }
     async genCA() {
-        const infoText = 'Generating CA...';
-        logger.info(infoText);
+        const spinner = ora('Generating Proxy RootCA...').start();
 
         const {cert, keys} = getKeysAndCert(ROOT_CERT_TIMEOUT);
 
@@ -222,7 +221,7 @@ class CA {
         await writeFile(this.caFilepath, pki.certificateToPem(cert));
         await writeFile(this.caPrivateFilepath, pki.privateKeyToPem(keys.privateKey));
         await writeFile(this.caPublicFilepath, pki.publicKeyToPem(keys.publicKey));
-        logger.success(infoText);
+        spinner.succeed();
     }
     getCertificateByHostname(hostname, callback) {
         if (!Array.isArray(hostname)) {

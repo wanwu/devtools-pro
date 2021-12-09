@@ -132,6 +132,7 @@
         "svgo-loader": "^3.0.0",
         "terser-webpack-plugin": "^5.1.1",
         "url-loader": "^4.1.1",
+        "ora": "^5.0.0",
         "webpack": "^5.36.1",
         "webpack-cli": "^4.6.0",
         "webpack-dev-server": "^4.5.0"
