@@ -44,7 +44,7 @@
         "@koa/router": "^10.0.0",
         "@ksky521/chobitsu": "^0.3.1",
         "cache-content-type": "^1.0.1",
-        "circular-json": "^0.5.9",
+        "flatted": "^3.2.4",
         "colorette": "^2.0.16",
         "debug": "^4.3.2",
         "del": "^6.0.0",
