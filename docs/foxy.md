@@ -6,6 +6,8 @@
 
 在 devtools 的 bin 中使用`--proxy` flag 进行启动（默认启动），或者使用 `devtools.config`配置文件。
 
+> 注意 iOS15+ Safari 在使用 https 的 URL，如果要链接 WSS 协议的 Websocket，需要关闭「NSURLSession WebSocket」（iOS15-默认是关闭的），路径 「iOS 设置 -> Safari -> 高级 -> Experimental Features -> NSURLSession WebSocket」 设置为关闭。详细：https://developer.apple.com/forums/thread/685403
+
 ## devtools.config.js 相关配置
 
 Foxy 的相关配置可以在`devtools.config.js`的`proxy`中进行配置，配置项如下
