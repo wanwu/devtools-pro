@@ -3,7 +3,7 @@ const {getColorfulName, truncate} = require('../utils');
 const debug = require('../utils/createDebug')('websocket');
 const normalizeWebSocketPayload = require('../utils/normalizeWebSocketPayload');
 
-const {stringify} = require('flatted');
+const {stringify} = require('circular-json');
 const STATUS_OPENING = 'opening';
 const STATUS_CLOSED = 'closed';
 const STATUS_DESTROYED = 'destroyed';
