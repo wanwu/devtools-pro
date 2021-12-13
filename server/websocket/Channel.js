@@ -3,7 +3,7 @@ const {getColorfulName, truncate} = require('../utils');
 const debug = require('../utils/createDebug')('websocket');
 const normalizeWebSocketPayload = require('../utils/normalizeWebSocketPayload');
 
-const {stringify} = require('flatted');
+const CircularJSON = require('circular-json');
 const STATUS_OPENING = 'opening';
 const STATUS_CLOSED = 'closed';
 const STATUS_DESTROYED = 'destroyed';
@@ -43,7 +43,7 @@ module.exports = class Channel extends EventEmitter {
     send(message) {
         if (typeof message === 'object') {
             message = normalizeWebSocketPayload(message);
-            message = stringify(message);
+            message = CircularJSON.stringify(message);
         }
         debug(`${getColorfulName(this._ws.role)} ${this._ws.id} Send Message`, truncate(message, 50));
         this._ws.send(message);
