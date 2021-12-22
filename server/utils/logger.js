@@ -4,7 +4,7 @@
  */
 
 const color = require('colorette');
-
+const flatten = require('lodash.flatten');
 const path = require('path');
 const figures = require('figures');
 const LogLevel = {};
@@ -36,10 +36,18 @@ const TYPE_COLOR_MAP = {
 };
 
 class Logger {
-    constructor(level = 3) {
-        this._level = level;
+    constructor(level) {
+        // this._level = level;
+        if (level) {
+            this.setLevel(level);
+        } else {
+            this._level = 3;
+        }
     }
     setLevel(level) {
+        if (typeof level === 'string') {
+            level = level.substr(0, 1).toUpperCase() + level.substr(1).toLowerCase();
+        }
         if ((typeof level === 'string' && LogLevel[level]) || typeof level === 'number') {
             this._level = typeof level === 'number' ? level : LogLevel[level];
         }
@@ -122,7 +130,7 @@ class Logger {
         return lines;
     }
     _logError(args, label = 'error') {
-        args.map(e => {
+        flatten(args).map(e => {
             if (typeof e === 'object' && e instanceof Error) {
                 this.log(this._formatType(label), e.message, this._formatStack(e.stack));
             } else {
@@ -131,6 +139,7 @@ class Logger {
         });
     }
 }
+
 module.exports = new Logger();
 module.exports.LogLevel = LogLevel;
 module.exports.Logger = Logger;

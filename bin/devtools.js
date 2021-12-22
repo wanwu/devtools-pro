@@ -11,7 +11,6 @@
  */
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 /* eslint-disable no-console */
 const updateNotifier = require('update-notifier');
 const semver = require('semver');
@@ -70,7 +69,7 @@ require('yargs')
                 describe: `Proxy server port to use [${DEFAULT_PROXY_PORT}]`
             },
             config: {
-                default: 'devtools.config',
+                default: 'devtools.config.js',
                 type: 'string',
                 describe: 'Provide path to a devtools configuration file e.g. ./devtools.config.js'
             },
@@ -161,10 +160,9 @@ require('yargs')
             }
             startServer();
             function startServer() {
-                const ifaces = os.networkInterfaces();
                 const options = {
                     ...configFileOptions,
-                    https: https ? {} : null,
+                    https: https ? https : null,
                     plugins,
                     port,
                     hostname
@@ -204,8 +202,8 @@ require('yargs')
                     const home = server.getUrl();
                     argv.open && require('opener')(home);
 
-                    process.on('exit', async () => {
-                        await server.close();
+                    process.on('exit', () => {
+                        server.close();
                         process.exit(1);
                     });
                 });

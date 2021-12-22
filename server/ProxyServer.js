@@ -35,9 +35,15 @@ class ProxyServer extends EventEmitter {
         this.address = serverInstance.getAddress();
         this.options = options;
         // 遇见就拦截
-        this._blockingFilter = createFilterRule(options.blocking, true);
+        if (options.blocking) {
+            this._blockingFilter = createFilterRule(options.blocking, true);
+        }
         // 遇见不拦截
-        this.nonBlockingFilter = createFilterRule(options.nonBlocking, false);
+        if (options.nonBlocking) {
+            this.nonBlockingFilter = createFilterRule(options.nonBlocking, false);
+        }
+        // root ca-dir
+        this.rootCADir = options.rootCADir;
 
         this.port = options.port || 8002;
         this.proxy = new MITMProxy();
@@ -103,15 +109,15 @@ class ProxyServer extends EventEmitter {
             if (r === false) {
                 return false;
             }
-            // blocking/nonblocking 同时存在则取blocking的值
-            if (typeof this._blockingFilter === 'function') {
-                // 遇见就拦截
-                return this._blockingFilter(conn.request);
-            }
-            if (typeof this.nonBlockingFilter === 'function') {
-                // 遇见不拦截
-                return this.nonBlockingFilter(conn.request);
-            }
+        }
+        // blocking/nonblocking 同时存在则取blocking的值
+        if (typeof this._blockingFilter === 'function') {
+            // 遇见就拦截
+            return this._blockingFilter(conn.request);
+        }
+        if (typeof this.nonBlockingFilter === 'function') {
+            // 遇见不拦截
+            return !this.nonBlockingFilter(conn.request);
         }
 
         return this._blocking === true;
@@ -404,7 +410,7 @@ class ProxyServer extends EventEmitter {
     }
     listen(port, hostname = '0.0.0.0') {
         port = port || this.port;
-        const ca = new CA();
+        const ca = new CA(this.rootCADir);
         ca.create(e => {
             if (e) {
                 return logger.error(e);
