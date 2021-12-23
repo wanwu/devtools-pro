@@ -5,6 +5,7 @@ import chobitsu from '@ksky521/chobitsu';
 import getFavicon from './utils/getFavicon';
 import getSessionId from './utils/getSessionId';
 import createRuntime from './runtime';
+import {debuggerHandler} from './debugger';
 
 // 初始化runtime
 const runtime = createRuntime(chobitsu);
@@ -46,3 +47,6 @@ function sendRegisterMessage() {
         }
     });
 }
+
+// 断点调试
+debuggerHandler(backendWSURL);

@@ -47,7 +47,7 @@ module.exports = class WebSocketServer {
         const wss = this._wss;
         // const isSSL = this.isSSL;
         const socketPaths = ['backend', 'frontend', 'home', 'heartbeat'];
-        server.on('upgrade', function(request, socket, head) {
+        server.on('upgrade', function (request, socket, head) {
             const urlObj = url.parse(request.url);
             const [_, role, id = ''] = urlObj.pathname.split('/');
             const q = querystring.parse(urlObj.query) || {};
@@ -61,6 +61,8 @@ module.exports = class WebSocketServer {
                     ws.port = socket.localPort;
                     ws.host = socket.remoteAddress;
                     ws.hidden = q.hidden;
+                    // todo 假设只有一个调试窗口
+                    ws.cururl = request.headers.origin;
 
                     wss.emit('connection', ws, request);
                 });

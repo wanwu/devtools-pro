@@ -1,12 +1,77 @@
 const EventEmitter = require('events').EventEmitter;
 const {getColorfulName, truncate} = require('../utils');
 const logger = require('consola');
-
+const {readDebuggerConfig, writeDebuggerConfig} = require('../utils/modifyDebuggerInfo.js');
 const CircularJSON = require('circular-json');
 
 const STATUS_OPENING = 'opening';
 const STATUS_CLOSED = 'closed';
 const STATUS_DESTROYED = 'destroyed';
+const DEBUGGERAPIARR = ['Debugger.stepOver', 'Debugger.stepInto', 'Debugger.resume', 'Debugger.setBreakpointByUrl', 'Debugger.removeBreakpoint', 'Debugger.evaluateOnCallFrame'];
+
+const packDebuggerUrl = (message, origin) => {
+    try {
+        const linePrefix = 'LINE';
+        const columnPrefix = 'COLUMN';
+        let tmp = JSON.parse(message);
+        origin = (tmp && tmp.params && tmp.params.origin) || origin;
+        let debuggerUrlMap = readDebuggerConfig() || {};
+        debuggerUrlMap[origin] = debuggerUrlMap[origin] || {};
+        let config = debuggerUrlMap[origin];
+        if (tmp.method && config) {
+            switch (tmp.method) {
+                case 'Debugger.resume':
+                case 'Debugger.stepOver':
+                case 'Debugger.stepInto':
+                    config.stepType = tmp.method.split('Debugger.')[1];
+                    break;
+                case 'Debugger.evaluateOnCallFrame':
+                    config.evaluateOnCallFrame = {
+                        id: tmp.id,
+                        params: tmp.params
+                    };
+                    break;
+                case 'Debugger.setBreakpointByUrl':
+                    if (!tmp.params || !tmp.params.url) {
+                        return tmp;
+                    }
+                    let {url, lineNumber, columnNumber} = tmp.params;
+                    !config[url] && (config[url] = []);
+                    if (config[url].indexOf(linePrefix + lineNumber + '__' + columnPrefix + columnNumber) < 0) {
+                        config[url].push(linePrefix + lineNumber + '__' + columnPrefix + columnNumber);
+                    }
+                    break;
+                case 'Debugger.removeBreakpoint':
+                    if (!tmp.params || !tmp.params.url) {
+                        return tmp;
+                    }
+                    let {url: filename, lineNumber: curLine, columnNumber: curColumn} = tmp.params;
+                    if (!config[filename] || !config[filename].length) {
+                        return tmp;
+                    }
+                    for (let i = 0; i < (config && config[filename] && config[filename] || []).length; i++) {
+                        if (config[filename][i] === (linePrefix + curLine + '__' + columnPrefix + curColumn)) {
+                            if (config[filename].length === 1) {
+                                delete config[filename];
+                            }
+                            else {
+                                config[filename].splice(i, 1);
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        debuggerUrlMap[origin] = config;
+        writeDebuggerConfig(debuggerUrlMap);
+        return tmp;
+    } catch (error) {
+        console.log('-------packDebuggerUrl---error', error);
+    }
+};
+
 module.exports = class Channel extends EventEmitter {
     constructor(ws, name = 'anonymous') {
         super();
@@ -43,6 +108,16 @@ module.exports = class Channel extends EventEmitter {
     send(message) {
         message = typeof message === 'object' ? CircularJSON.stringify(message) : message;
         logger.debug(`${getColorfulName(this._ws.role)} ${this._ws.id} Send Message`, truncate(message, 50));
+        try {
+            DEBUGGERAPIARR.map(item => {
+                if (message.indexOf(item) > -1) {
+                    let tmp = packDebuggerUrl(message, this._ws.cururl);
+                    message = typeof tmp === 'object' ? CircularJSON.stringify(tmp) : tmp;
+                }
+            });
+        } catch (error) {
+            console.log('----senderror', error);
+        }
         this._ws.send(message);
     }
     destroy() {

@@ -31,7 +31,7 @@ const PORT = process.env.NODE_ENV === 'production' ? location.port : 8899;
  * @returns
  */
 function normalizeData(data) {
-    if (!data || !data.id) {
+    if (!data || !data.id || !data.url) {
         return null;
     }
 
@@ -65,7 +65,7 @@ function normalizeData(data) {
     }
 
     metaData.platform = platform;
-    data.devtoolsurl = createFrontendUrl(location.protocol, location.hostname, PORT, data.id);
+    data.devtoolsurl = createFrontendUrl(location.protocol, location.hostname, PORT, data.id, data.url);
     return data;
 }
 
@@ -135,7 +135,7 @@ const handlers = {
                 hostname: location.hostname,
                 // 开发的时候是 webpack 特殊处理
                 port: PORT,
-                pathname: `/backend.js`
+                pathname: '/backend.js'
             })
         );
     },

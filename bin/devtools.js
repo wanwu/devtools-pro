@@ -133,9 +133,11 @@ require('yargs')
                         throw err;
                     }
                     port = p;
+                    startStaticServer();
                     startServer();
                 });
             } else {
+                startStaticServer();
                 startServer();
             }
             function startServer() {
@@ -188,6 +190,29 @@ require('yargs')
                     const home = server.getUrl();
                     argv.open && require('opener')(home);
                 });
+            }
+            function startStaticServer() {
+                // 单启动静态资源服务器
+                let staticPort = 8890;
+                const options = {
+                    ...config.options,
+                    https: https ? {} : null,
+                    plugins,
+                    port,
+                    hostname
+                };
+                let staticOptions = Object.assign({}, options, {port: staticPort})
+                const staticServer = new Server(staticOptions);
+
+                staticServer.listen(staticPort, hostname, err => {
+                    if (err) {
+                        console.log('----静态资源服务器启动err', err);
+                        throw err;
+                    }
+                    console.log('----静态资源服务器启动', staticOptions, staticPort);
+                });
+                return staticServer;
+
             }
         }
     )
