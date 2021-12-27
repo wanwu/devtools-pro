@@ -29,7 +29,10 @@ module.exports = class Channel extends EventEmitter {
         const onClose = (...args) => {
             this.status = STATUS_CLOSED;
             this.emit('close', ...args);
-            this.destroy();
+            // 当被调试页面 socket 断开时（而不是调试工具断开时），销毁相关连接
+            if (this._name === 'backend') {
+                this.destroy();
+            }
             ws.off('close', onClose);
             ws.off('message', onMessage);
             debug(`${getColorfulName(this._ws.role)} ${this._ws.id} Closed, errno:${args[0]}`);
