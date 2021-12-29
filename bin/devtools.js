@@ -206,10 +206,10 @@ require('yargs')
 
                 staticServer.listen(staticPort, hostname, err => {
                     if (err) {
-                        console.log('----静态资源服务器启动err', err);
+                        console.log('static server error', err);
                         throw err;
                     }
-                    console.log('----静态资源服务器启动', staticOptions, staticPort);
+                    console.log('static server info', staticOptions, staticPort);
                 });
                 return staticServer;
 
