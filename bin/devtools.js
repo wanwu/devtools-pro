@@ -11,12 +11,12 @@
  */
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 /* eslint-disable no-console */
 const updateNotifier = require('update-notifier');
 const semver = require('semver');
-const chalk = require('chalk');
-const logger = require('consola');
+const colorette = require('colorette');
+const logger = require('../server/utils/logger');
+const inernalIPSync = require('../server/utils/internalIPSync');
 
 const {
     scriptName,
@@ -25,7 +25,8 @@ const {
     version: pkgVersion
 } = require('../package.json');
 
-const DEFAULT_PORT = 8899;
+const DEFAULT_PORT = 8001;
+const DEFAULT_PROXY_PORT = 8002;
 
 // set process
 process.title = scriptName;
@@ -47,8 +48,28 @@ require('yargs')
                 type: 'array',
                 describe: 'Add plugins'
             },
+            proxy: {
+                type: 'bollen',
+                default: true,
+                describe: 'Proxy server enabled'
+            },
+            // proxyUA: {
+            //     type: 'string',
+            //     alias: 'proxy-user-agent',
+            //     describe: 'Set proxy config: client user-agent. [glob-string]'
+            // },
+            // proxyDomain: {
+            //     type: 'string',
+            //     alias: 'proxy-domain',
+            //     describe: 'Set proxy config: domain. [glob-string]'
+            // },
+            proxyPort: {
+                type: 'number',
+                default: 8002,
+                describe: `Proxy server port to use [${DEFAULT_PROXY_PORT}]`
+            },
             config: {
-                default: 'devtools.config',
+                default: 'devtools.config.js',
                 type: 'string',
                 describe: 'Provide path to a devtools configuration file e.g. ./devtools.config.js'
             },
@@ -95,7 +116,7 @@ require('yargs')
                 if (Array.isArray(config.plugins)) {
                     config.plugins.forEach(p => plugins.push(p));
                 } else {
-                    throw `config.plugins is must be an Array`;
+                    throw 'config.plugins is must be an Array';
                 }
             }
             if (plugins && plugins.length) {
@@ -104,104 +125,112 @@ require('yargs')
 
             argv.logLevel = config.options.logLevel || 'info';
             if (argv.verbose) {
-                /**
-                 Fatal: 0,
-                Error: 0,
-                Warn: 1,
-                Log: 2,
-                Info: 3,
-                Success: 3,
-                Debug: 4,
-                Trace: 5,
-                Silent: -Infinity,
-                Verbose: Infinity,
-                 */
-                logger.level = Infinity;
+                logger.setLevel(Infinity);
             } else if (argv.quiet) {
                 logger.level = 1;
+                logger.setLevel(1);
+            } else {
+                logger.setLevel(argv.logLevel);
             }
-            // logger.setLevel(argv.logLevel);
 
             let port = argv.port || config.options.port || DEFAULT_PORT;
             const hostname = argv.hostname || config.options.hostname || '0.0.0.0';
             const https = argv.https || config.options.https || false;
+            let proxyPort = argv.proxyPort || config.options.proxyPort || DEFAULT_PROXY_PORT;
 
-            if (!port) {
-                portfinder.basePort = DEFAULT_PORT;
-                portfinder.getPort((err, p) => {
-                    if (err) {
-                        throw err;
-                    }
-                    port = p;
-                    startServer();
+            port = await portfinder.getPortPromise({
+                port, // minimum port
+                stopPort: port + 10 // maximum port
+            });
+
+            if (argv.proxy) {
+                proxyPort = await portfinder.getPortPromise({
+                    port: proxyPort, // minimum port
+                    stopPort: proxyPort + 10 // maximum port
                 });
-            } else {
-                startServer();
             }
+            // 添加proxy
+            const configFileOptions = config.options || {};
+            if (argv.proxy && !configFileOptions.proxy) {
+                configFileOptions.proxy = {
+                    port: proxyPort
+                };
+            } else if (argv.proxy && configFileOptions.proxy) {
+                configFileOptions.proxy.port = proxyPort;
+            }
+            startServer();
             function startServer() {
-                const ifaces = os.networkInterfaces();
                 const options = {
-                    ...config.options,
-                    https: https ? {} : null,
+                    ...configFileOptions,
+                    https: https ? https : null,
                     plugins,
                     port,
                     hostname
                 };
+
                 const server = new Server(options);
 
                 server.listen(port, hostname, err => {
                     if (err) {
                         throw err;
                     }
-                    const canonicalHost = hostname === '0.0.0.0' ? '127.0.0.1' : hostname;
+                    const canonicalHost = hostname === '0.0.0.0' ? inernalIPSync() : hostname;
                     const protocol = https ? 'https://' : 'http://';
 
-                    console.log(
-                        [chalk.yellow('Starting up Devtools Server.'), chalk.yellow('\nAvailable on:')].join('')
+                    logger.log(
+                        [colorette.yellow('Starting up Devtools Server.'), colorette.yellow('\nWeb GUI on:')].join('')
                     );
-                    const urls = [];
-                    if (argv.address && hostname !== '0.0.0.0') {
-                        const url = '    ' + protocol + canonicalHost + ':' + chalk.green(port.toString());
-                        urls.push(url);
-                        console.log(url);
-                    } else {
-                        Object.keys(ifaces).forEach(dev => {
-                            /* eslint-disable max-nested-callbacks */
-                            ifaces[dev].forEach(details => {
-                                if (details.family === 'IPv4') {
-                                    const url = '  ' + protocol + details.address + ':' + chalk.green(port.toString());
-                                    urls.push(url);
-                                    console.log(url);
-                                }
-                            });
-                        });
+                    const urls = ['127.0.0.1', canonicalHost].map(
+                        address => `    ${protocol}${address}:${colorette.green(port.toString())}`
+                    );
+                    urls.forEach(url => logger.log(url));
+                    logger.log('');
+                    logger.log(`${colorette.yellow('Backend url:')}`);
+                    urls.forEach(url => logger.log(url + colorette.green(BACKENDJS_PATH)));
+                    logger.log('');
+                    const s = server.getProxyServer();
+                    if (s) {
+                        logger.log(
+                            `${colorette.yellow('Proxy server port:')} ${colorette.green(
+                                server.getProxyServer().port.toString()
+                            )}`
+                        );
+                        logger.log('');
                     }
-                    console.log('');
-                    // TODO 文案
-                    console.log(`${chalk.yellow('Backend url:')}`);
-                    urls.forEach(u => {
-                        console.log(u + chalk.green(BACKENDJS_PATH));
-                    });
-                    console.log('');
-                    console.log('Hit CTRL-C to stop the server');
+                    logger.log('Hit CTRL-C to stop the server');
 
                     const home = server.getUrl();
                     argv.open && require('opener')(home);
+
+                    process.on('exit', () => {
+                        server.close();
+                        process.exit(1);
+                    });
                 });
             }
         }
     )
+    .command('clean-ca', 'Clean RootCA', {}, async argv => {
+        const CA = require('../server/CA');
+        const ca = new CA();
+        ca.clean();
+    })
+    .command('open-ca-dir', 'Open CA folder', {}, async a => {
+        const CA = require('../server/CA');
+        const ca = new CA();
+        require('opener')(ca.baseCAFolder);
+    })
     .help('h')
     .alias('h', 'help')
     .alias('v', 'version').argv;
 
 function checkNodeVersion(wanted, id) {
     if (!semver.satisfies(process.version, wanted)) {
-        console.log(
+        logger.log(
             // prettier-ignore
             // eslint-disable-next-line
             'You are using Node ' + process.version + ', but this version of ' + id +
-             ' requires ' + chalk.yellow('Node ' + wanted) + '.\nPlease upgrade your Node version.'
+             ' requires ' + colorette.yellow('Node ' + wanted) + '.\nPlease upgrade your Node version.'
         );
         process.exit(1);
     }
@@ -260,12 +289,12 @@ async function loadConfig(configPath) {
 }
 
 process.on('SIGINT', () => {
-    console.log(chalk.red('San-Devtool server stopped.'));
+    logger.log(colorette.red('San-Devtool server stopped.'));
     process.exit();
 });
 
 process.on('SIGTERM', () => {
-    console.log(chalk.red('San-Devtool server stopped.'));
+    logger.log(colorette.red('San-Devtool server stopped.'));
     process.exit();
 });
 process.on('uncaughtException', error => {

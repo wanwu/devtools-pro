@@ -1,9 +1,9 @@
 const EventEmitter = require('events').EventEmitter;
 const {getColorfulName, truncate} = require('../utils');
-const logger = require('consola');
+const debug = require('../utils/createDebug')('websocket');
+const normalizeWebSocketPayload = require('../utils/normalizeWebSocketPayload');
 
 const CircularJSON = require('circular-json');
-
 const STATUS_OPENING = 'opening';
 const STATUS_CLOSED = 'closed';
 const STATUS_DESTROYED = 'destroyed';
@@ -16,7 +16,7 @@ module.exports = class Channel extends EventEmitter {
         this._connections = [];
 
         const onMessage = message => {
-            logger.debug(`${getColorfulName(this._ws.role)} ${this._ws.id} Get Message`, truncate(message, 50));
+            debug(`${getColorfulName(this._ws.role)} ${this._ws.id} Get Message`, truncate(message, 50));
             // 下面是frontend 发送给backend用的数据
             // const channelMessage = `@${this._name}\n${message}`;
             // backend connections为空
@@ -28,11 +28,11 @@ module.exports = class Channel extends EventEmitter {
         };
         const onClose = (...args) => {
             this.status = STATUS_CLOSED;
-
             this.emit('close', ...args);
             this.destroy();
             ws.off('close', onClose);
             ws.off('message', onMessage);
+            debug(`${getColorfulName(this._ws.role)} ${this._ws.id} Closed, errno:${args[0]}`);
         };
         ws.on('close', onClose);
         ws.on('message', onMessage);
@@ -41,8 +41,11 @@ module.exports = class Channel extends EventEmitter {
         return this.status === STATUS_OPENING;
     }
     send(message) {
-        message = typeof message === 'object' ? CircularJSON.stringify(message) : message;
-        logger.debug(`${getColorfulName(this._ws.role)} ${this._ws.id} Send Message`, truncate(message, 50));
+        if (typeof message === 'object') {
+            message = normalizeWebSocketPayload(message);
+            message = CircularJSON.stringify(message);
+        }
+        debug(`${getColorfulName(this._ws.role)} ${this._ws.id} Send Message`, truncate(message, 50));
         this._ws.send(message);
     }
     destroy() {

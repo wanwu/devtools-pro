@@ -1,0 +1,11 @@
+{
+    "extensions": [
+        {
+            "type": "early-initialization",
+            "className": "NetworkMain.NetworkMain"
+        }
+    ],
+    "dependencies": ["components"],
+    "scripts": [],
+    "modules": ["network-main.js", "network-main-legacy.js", "NetworkMain.js"]
+}

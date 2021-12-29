@@ -36,7 +36,7 @@ function getBase64Image(img, mimeType) {
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
+/* global Common, InspectorFrontendHost */
 import {Attributes, Cookie} from './Cookie.js'; // eslint-disable-line no-unused-vars
 import {CookieParser} from './CookieParser.js';
 import {NetworkManager} from './NetworkManager.js';
@@ -1044,9 +1044,8 @@ export class NetworkRequest extends Common.Object {
             const position = pair.indexOf('=');
             if (position === -1) {
                 return {name: pair, value: ''};
-            } else {
-                return {name: pair.substring(0, position), value: pair.substring(position + 1)};
             }
+            return {name: pair.substring(0, position), value: pair.substring(position + 1)};
         }
         return queryString.split('&').map(parseNameValue);
     }
@@ -1481,7 +1480,7 @@ export class NetworkRequest extends Common.Object {
                 if (this.parsedURL.queryParams) {
                     requestHeadersText += `?${this.parsedURL.queryParams}`;
                 }
-                requestHeadersText += ` HTTP/1.1\r\n`;
+                requestHeadersText += ' HTTP/1.1\r\n';
 
                 for (const {name, value} of this.requestHeaders()) {
                     requestHeadersText += `${name}: ${value}\r\n`;
