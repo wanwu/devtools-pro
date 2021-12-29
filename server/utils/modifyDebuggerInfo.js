@@ -6,7 +6,7 @@ let readDebuggerConfig = () => {
         let data = fs.readFileSync(configPath).toString() || '{}';
         return JSON.parse(data);
     } catch (error) {
-        console.log('----readDebuggerConfigerror', error);
+        console.log('read debug info error', error);
         throw error;
     }
 };
@@ -15,7 +15,7 @@ let writeDebuggerConfig = data => {
     try {
         fs.writeFileSync(configPath, JSON.stringify(data));
     } catch (error) {
-        console.log('----writeDebuggerConfigrror', error);
+        console.log('write debugger info error', error);
         throw error;
     }
 };

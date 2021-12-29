@@ -68,7 +68,7 @@ const packDebuggerUrl = (message, origin) => {
         writeDebuggerConfig(debuggerUrlMap);
         return tmp;
     } catch (error) {
-        console.log('-------packDebuggerUrl---error', error);
+        console.log('pack error', error);
     }
 };
 
@@ -116,7 +116,7 @@ module.exports = class Channel extends EventEmitter {
                 }
             });
         } catch (error) {
-            console.log('----senderror', error);
+            console.log('send message error', error);
         }
         this._ws.send(message);
     }

@@ -8,11 +8,6 @@ module.exports = class ParseSourceMap {
             http.get(filepath, response => {
                 const {statusCode, statusMessage} = response;
                 if (statusCode !== 200) {
-                    console.log('---statusCode statusMessage', statusCode, statusMessage);
-                    // reject(new Error(JSON.stringify({
-                    //     errno: statusCode,
-                    //     msg: statusMessage
-                    // })));
                     resolve({
                         errno: statusCode,
                         msg: statusMessage
@@ -75,7 +70,6 @@ module.exports = class ParseSourceMap {
     async parse(filename, line, column) {
         const raw = await this.rawSourceMap(filename);
         if (!raw.errno) {
-            console.log('---filename', filename);
             const consumer = await SourceMapConsumer.with(raw.data, null, consumer => consumer);
             return consumer.originalPositionFor({line, column});
 
