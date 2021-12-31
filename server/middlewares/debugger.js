@@ -35,7 +35,7 @@ module.exports = (router, logger, serverInstance) => {
         ctx.set('Access-Control-Allow-Origin', '*');
         ctx.set('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild');
         ctx.set('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
-        // await wait(200);
+        await wait(200);
         let debuggerUrlMap = readDebuggerConfig();
         ctx.body = debuggerUrlMap;
     });
@@ -90,6 +90,7 @@ module.exports = (router, logger, serverInstance) => {
     });
     // 修改断点信息
     router.post('/postmessage', async (ctx, next) => {
+        let serverManager = serverInstance._wsServer.channelManager;
         // 如何转发给frontend ws
         ctx.set('Access-Control-Allow-Origin', '*');
         ctx.set('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild');
@@ -186,8 +187,22 @@ module.exports = (router, logger, serverInstance) => {
             writeDebuggerConfig(debuggerUrlMap);
             delete pastData.modifyMessage;
         }
-        if (pastData.method !== 'Debugger.modifyStepType') {
-            serverInstance._wsServer.channelManager._frontendMap.forEach((item, key) => {
+        if (pastData.event === 'updateBackendInfo') {
+            const {payload} = pastData;
+            // 更新title等信息
+            if (payload && payload.id) {
+                const data = serverManager._backendMap.get(payload.id);
+                if (data && payload) {
+                    for (let [key, value] of Object.entries(payload)) {
+                        data[key] = value;
+                    }
+                    serverManager._backendMap.set(payload.id, data);
+                }
+                serverInstance._wsServer.manager.send({event: 'backendUpdate', payload: data});
+            }
+        }
+        else if (pastData.method !== 'Debugger.modifyStepType') {
+            serverManager._frontendMap.forEach((item, key) => {
                 item.channel.send({
                     ...pastData
                 });

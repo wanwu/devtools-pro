@@ -3,7 +3,6 @@
  * @file 断点调试相关
  */
 
-
 // 获取运行时js的URL
 let getCurrentScript = () => {
     let script;
@@ -318,52 +317,48 @@ window.__devtools_pro_tools_config__ = Object.assign({
 });
 
 export let debuggerHandler = () => {
-    let time = new Date().getTime();
-    while (true) {
-        // 强制延迟10秒钟，等frotend建立webscoekt连接
-        if ((new Date().getTime() - time) > 10000) {
-            // DOCUMENT 代码
-            window.__devtools_pro_tools_config__.sendSync('POST', window.__devtools_pro_tools_config__.postResourceApi, {
-                documentURL: location.href,
-                hasUserGesture: false,
-                requestId: new Date().getTime(),
-                timestamp: new Date().getTime(),
-                type: 'Document',
-                wallTime: new Date().getTime(),
-                request: {
-                    headers: {},
-                    initialPriority: 'High',
-                    method: 'GET',
-                    postData: '',
-                    referrerPolicy: 'no-referrer-when-downgrade',
-                    url: location.href
-                },
-                response: {
-                    encodedDataLength: 2222,
-                    headers: {
-                        'content-length': '0',
-                        'content-type': '',
-                        'x-powered-by': 'Devtools-Resource-Timing'
-                    },
-                    mimeType: 'text/html',
-                    status: 200,
-                    statusText: 'OK',
-                    originalCode: document.getElementsByTagName('html')[0].outerHTML
-                }
-            });
-            // 每次进入页面都要重新修改resume等
-            window.__devtools_pro_tools_config__.sendSync('POST', window.__devtools_pro_tools_config__.postRequsetInfoApi, {
-                method: 'Debugger.modifyStepType',
-                modifyMessage: {
-                    origin: location.origin,
-                    stepType: '',
-                    curUrl: '',
-                    curIndex: '',
-                    evaluateOnCallFrame: {}
-                }
-            });
-            break;
+    // DOCUMENT 代码
+    window.__devtools_pro_tools_config__.sendSync('POST', window.__devtools_pro_tools_config__.postResourceApi, {
+        documentURL: location.href,
+        hasUserGesture: false,
+        requestId: new Date().getTime(),
+        timestamp: new Date().getTime(),
+        type: 'Document',
+        wallTime: new Date().getTime(),
+        request: {
+            headers: {},
+            initialPriority: 'High',
+            method: 'GET',
+            postData: '',
+            referrerPolicy: 'no-referrer-when-downgrade',
+            url: location.href
+        },
+        response: {
+            encodedDataLength: 2222,
+            headers: {
+                'content-length': '0',
+                'content-type': '',
+                'x-powered-by': 'Devtools-Resource-Timing'
+            },
+            mimeType: 'text/html',
+            status: 200,
+            statusText: 'OK',
+            originalCode: document.getElementsByTagName('html')[0].outerHTML
         }
-        continue;
-    }
+    });
+    // 每次进入页面都要重新修改resume等
+    window.__devtools_pro_tools_config__.sendSync('POST', window.__devtools_pro_tools_config__.postRequsetInfoApi, {
+        method: 'Debugger.modifyStepType',
+        modifyMessage: {
+            origin: location.origin,
+            stepType: '',
+            curUrl: '',
+            curIndex: '',
+            evaluateOnCallFrame: {}
+        }
+    });
+};
+// 更新home页
+export let sendBackendChannelInfo = info => {
+    window.__devtools_pro_tools_config__.sendSync('POST', window.__devtools_pro_tools_config__.postRequsetInfoApi, info);
 };
