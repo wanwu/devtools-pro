@@ -1,5 +1,6 @@
 # Referenced from https://github.com/github/gitignore/blob/master/Node.gitignore
 temp
+.http-mitm-proxy
 output
 dist
 devtools.config.js
@@ -15,7 +16,6 @@ lerna-debug.log
 .vscode
 package-lock.json
 dist
-test
 docs/_book
 # Runtime data
 pids

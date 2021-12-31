@@ -3,35 +3,35 @@
  * @file 断点调试相关
  */
 
-let postHost = 'http://127.0.0.1:8899';
-let testOnline = false;
-if (testOnline) {
-    postHost = 'https://mbd.baidu.com';
-}
-window.__devtools_pro_tools_config__ = {
-    // 获取运行时js的URL
-    getCurrentScript: () => {
-        let script;
-        let scripts;
-        let url;
-        if (document.currentScript) {
-            script = document.currentScript;
-        }
-        else {
-            scripts = document.getElementsByTagName('script');
-            script = scripts[scripts.length - 1];
-        }
-        url = script.hasAttribute ? script.src : script.getAttribute('src', 4);
-        return url;
-    },
+
+// 获取运行时js的URL
+let getCurrentScript = () => {
+    let script;
+    let scripts;
+    let url;
+    if (document.currentScript) {
+        script = document.currentScript;
+    }
+    else {
+        scripts = document.getElementsByTagName('script');
+        script = scripts[scripts.length - 1];
+    }
+    url = script.hasAttribute ? script.src : script.getAttribute('src', 4);
+    return url;
+};
+let reg = /^http(s)?:\/\/(.*?)\//;
+let postHost = getCurrentScript().match(reg)[0];
+window.__devtools_pro_tools_config__ = Object.assign({
+    getCurrentScript
+}, {
     // 待执行的表达式
     evaluateExpression: '',
     // 获取断点信息接口
-    getBreakPointStateApi: `${postHost}/debuggerconfiglist`,
+    getBreakPointStateApi: `${postHost}debuggerconfiglist`,
     // 发送源码接口
-    postResourceApi: `${postHost}/postsources`,
+    postResourceApi: `${postHost}postsources`,
     // 发送请求、断点、修改信息
-    postRequsetInfoApi: `${postHost}/postmessage`,
+    postRequsetInfoApi: `${postHost}postmessage`,
     // 获取call stack 对应 class 名称
     getClassName: (object, defaultName) => {
         let nameFromToStringRegex = /^function\s?([^\s(]*)/;
@@ -315,12 +315,12 @@ window.__devtools_pro_tools_config__ = {
     handlerJsMap: {},
     jsSourceMap: {},
     pausedType: ''
-};
+});
 
-// 强制延迟10秒钟，等frotend建立webscoekt连接
 export let debuggerHandler = () => {
     let time = new Date().getTime();
     while (true) {
+        // 强制延迟10秒钟，等frotend建立webscoekt连接
         if ((new Date().getTime() - time) > 10000) {
             // DOCUMENT 代码
             window.__devtools_pro_tools_config__.sendSync('POST', window.__devtools_pro_tools_config__.postResourceApi, {

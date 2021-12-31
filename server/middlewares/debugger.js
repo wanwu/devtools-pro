@@ -30,7 +30,6 @@ function wait(ms) {
 }
 
 module.exports = (router, logger, serverInstance) => {
-    const log = logger.withTag('middle:backend');
     // 获取断点信息
     router.get('/debuggerconfiglist', async (ctx, next) => {
         ctx.set('Access-Control-Allow-Origin', '*');

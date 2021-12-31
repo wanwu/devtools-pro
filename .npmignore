@@ -5,3 +5,5 @@ src
 yarn-error.log
 webpack.config.js
 
+.http-mitm-proxy
+test

@@ -1,4 +1,4 @@
-const chalk = require('chalk');
+const color = require('colorette');
 const {BACKENDJS_PATH, FRONTEND_PATH} = require('../constants');
 
 exports.truncate = function truncate(txt, width = 10) {
@@ -20,15 +20,15 @@ function getColorfulName(role) {
     role = role.toUpperCase();
     switch (role) {
         case 'FRONTEND':
-            return chalk.blue(role);
+            return color.blue(role);
         case 'BACKEND':
             // 为了对齐
-            return chalk.yellow('BACK_END');
+            return color.yellow('BACK_END');
         case 'HOME':
-            return chalk.magenta(role);
+            return color.magenta(role);
         case 'GET':
-            return chalk.green(role);
+            return color.green(role);
     }
-    return chalk.cyan(role);
+    return color.cyan(role);
 }
 exports.getColorfulName = getColorfulName;

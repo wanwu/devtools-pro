@@ -31,9 +31,8 @@ class Bridge {
         const handler = this._listeners.get(event);
         if (handler && typeof handler === 'function') {
             return handler(data) || {};
-        } else {
-            throw Error(`${event} unimplemented`);
         }
+        throw Error(`${event} unimplemented`);
     }
 }
 

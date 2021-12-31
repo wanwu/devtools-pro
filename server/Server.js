@@ -1,9 +1,8 @@
-const os = require('os');
+const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const path = require('path');
 const url = require('url');
-const fs = require('fs');
 
 const Koa = require('koa');
 const Router = require('@koa/router');
@@ -13,9 +12,13 @@ const middlewares = ['alive', 'debugger', 'backend', 'frontend', 'dist'].map(fil
     return require(path.join(__dirname, './middlewares', file));
 });
 
-const getCertificate = require('./utils/getCertificate');
-const logger = require('consola');
+const CA = require('./CA');
+const findCacheDir = require('./utils/findCacheDir');
+const inernalIPSync = require('./utils/internalIPSync');
+const logger = require('./utils/logger');
 const WebSocketServer = require('./WebSocketServer');
+const ProxyServer = require('./ProxyServer');
+const CDPMessager = require('./proxy/CDPMessager');
 
 class Server extends EventEmitter {
     constructor(options) {
@@ -23,6 +26,8 @@ class Server extends EventEmitter {
         this.options = options;
         this.hostname = options.hostname;
         this.port = options.port;
+        this._proxyServer = null;
+        this._wsServer = null;
         // 插件处理
         this._middlewares = [];
         this._frontends = [];
@@ -33,8 +38,13 @@ class Server extends EventEmitter {
             middleware && this._middlewares.push(middleware);
         });
 
-        this._setupHttps();
-        this._start();
+        this.options.proxy = this.options.proxy || process.env.PROXY || false;
+        // 统一ca地址
+
+        this.distPath = path.join(__dirname, '../dist');
+    }
+    getDistPath() {
+        return this.distPath;
     }
     _addRouters() {
         const router = (this.router = new Router());
@@ -52,42 +62,54 @@ class Server extends EventEmitter {
     isSSL() {
         return !!this.options.https;
     }
-    _setupHttps() {
-        if (this.options.https) {
-            for (const property of ['ca', 'pfx', 'key', 'cert']) {
-                const value = this.options.https[property];
-                const isBuffer = value instanceof Buffer;
-
-                if (value && !isBuffer) {
-                    let stats = null;
-
-                    try {
-                        stats = fs.lstatSync(fs.realpathSync(value)).isFile();
-                    } catch (error) {
-                        // ignore error
-                    }
-
-                    // It is file
-                    this.options.https[property] = stats ? fs.readFileSync(path.resolve(value)) : value;
-                }
-            }
-
-            let fakeCert;
-
-            if (!this.options.https.key || !this.options.https.cert) {
-                fakeCert = getCertificate();
-            }
-
-            this.options.https.key = this.options.https.key || fakeCert;
-            this.options.https.cert = this.options.https.cert || fakeCert;
-        }
-    }
     _start() {
         if (this.app) {
             // 保证执行一次
             return;
         }
         this._createServer();
+    }
+    async _setupHttps() {
+        if (!this.options.https) {
+            return;
+        }
+        const httpsOptions = this.options.https;
+        const readFile = item => {
+            if (Buffer.isBuffer(item) || (typeof item === 'object' && item !== null && !Array.isArray(item))) {
+                return item;
+            }
+
+            if (item) {
+                let stats = null;
+
+                try {
+                    stats = fs.lstatSync(fs.realpathSync(item)).isFile();
+                } catch (error) {
+                    // Ignore
+                }
+
+                return stats ? fs.readFileSync(item) : item;
+            }
+        };
+        for (const property of ['ca', 'cert', 'crl', 'key', 'pfx']) {
+            if (typeof httpsOptions[property] === 'undefined') {
+                // eslint-disable-next-line no-continue
+                continue;
+            }
+            const value = httpsOptions[property];
+            httpsOptions[property] = Array.isArray(value) ? value.map(item => readFile(item)) : readFile(value);
+        }
+
+        let fakeCert;
+
+        if (!httpsOptions.key || !httpsOptions.cert) {
+            const dir = findCacheDir('ssl');
+            fakeCert = await CA.getServerCA(dir);
+        }
+
+        httpsOptions.key = httpsOptions.key || fakeCert;
+        httpsOptions.cert = httpsOptions.cert || fakeCert;
+        this.options.https = httpsOptions;
     }
     async _wrapContext(ctx, next) {
         ctx.getWebSocketServer = () => {
@@ -99,9 +121,9 @@ class Server extends EventEmitter {
         this.app = new Koa();
         this.app.use(this._wrapContext.bind(this));
         this._addRouters();
-
-        if (this.options.https) {
-            this._server = https.createServer(this.options.https, this.app.callback());
+        const options = this.options;
+        if (options.https) {
+            this._server = https.createServer(options.https, this.app.callback());
         } else {
             this._server = http.createServer(this.app.callback());
         }
@@ -111,6 +133,25 @@ class Server extends EventEmitter {
         });
         killable(this._server);
     }
+    _createProxyServer() {
+        if (this._proxyServer) {
+            return;
+        }
+
+        let proxy = this.options.proxy;
+
+        if (proxy) {
+            proxy = typeof proxy === 'boolean' ? {} : proxy;
+            const proxyServer = (this._proxyServer = new ProxyServer(proxy, this));
+            this._proxyServer.listen();
+            setTimeout(() => {
+                CDPMessager(this.getWsUrl(), proxyServer);
+            }, 1e3);
+        }
+    }
+    getProxyServer() {
+        return this._proxyServer;
+    }
     _createWebSocketServer() {
         if (this._wsServer) {
             return;
@@ -119,22 +160,39 @@ class Server extends EventEmitter {
         this._wsServer = wss;
         wss.init(this._server);
     }
-    listen(port = 8899, hostname = '0.0.0.0', fn) {
+    async listen(port = 8001, hostname = '0.0.0.0', fn) {
         this.hostname = hostname;
         this.port = port;
+        await this._setupHttps();
+        this._start();
 
         return this._server.listen(port, hostname, err => {
             this._createWebSocketServer();
-
+            this._createProxyServer();
             if (typeof fn === 'function') {
                 fn.call(this._server, err);
             }
         });
     }
+    getHostname() {
+        return this.hostname;
+    }
+    getPort() {
+        return this.port;
+    }
     getUrl(pathname = '/', query = '') {
         return url.format({
             hostname: this.getAddress(),
-            protocol: this.options.https ? 'https://' : 'http:',
+            protocol: this.options.https ? 'https:' : 'http:',
+            port: this.port,
+            pathname: pathname,
+            query: query
+        });
+    }
+    getWsUrl(pathname = '/', query = '') {
+        return url.format({
+            hostname: this.getAddress(),
+            protocol: this.options.https ? 'wss:' : 'ws:',
             port: this.port,
             pathname: pathname,
             query: query
@@ -148,23 +206,20 @@ class Server extends EventEmitter {
             this._realHost = this.hostname;
             return this._realHost;
         }
-        const ifaces = os.networkInterfaces();
-        const keys = Object.keys(ifaces);
-        for (let i = 0; i < keys.length; i++) {
-            const dev = ifaces[keys[i]];
-            for (let j = 0; j < dev.length; j++) {
-                const details = dev[j];
-                if (details.family === 'IPv4' && details.address !== '0.0.0.0' && details.address !== '127.0.0.1') {
-                    this._realHost = details.address;
-                    return this._realHost;
-                }
-            }
+        this._realHost = inernalIPSync();
+        if (this._realHost) {
+            return this._realHost;
         }
         return this.hostname;
+    }
+    getChannelManager() {
+        return this._wsServer && this._wsServer.getChannelManager();
     }
     close() {
         this._wsServer.destory();
         this._server.kill();
+        this._proxyServer && this._proxyServer.close();
+        CDPMessager && CDPMessager.close();
     }
 }
 
