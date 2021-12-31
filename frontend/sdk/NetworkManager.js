@@ -124,9 +124,18 @@ export class NetworkManager extends SDKModel {
         if (!manager) {
             return {error: 'No network manager for request', content: null, encoded: false};
         }
-        const response = await manager._networkAgent.invoke_getResponseBody({requestId: request.requestId()});
+        // todo
+        let info = {requestId: request.requestId()};
+        
+        info.requestTrueContentUrl = request._url;
+        info.requestTrueContentFlag = true;
+        info.loadedRequestTrueContent = true;
+        let response = request.originalCode;
+        if (!request.trueReceived) {
+            response = await manager._networkAgent.invoke_getResponseBody(info);
+        }
         const error = response[Protocol.Error] || null;
-        return {error: error, content: error ? null : response.body, encoded: response.base64Encoded};
+        return {error: error, content: error ? null : response, encoded: response.base64Encoded};
     }
 
     /**
@@ -536,6 +545,9 @@ export class NetworkDispatcher {
                 initiator
             );
         }
+        networkRequest.setTrueReceived();
+        window.__devtools_controller__ || (window.__devtools_controller__ = {});
+        window.__devtools_controller__.documentUrl = window.__devtools_controller__.documentUrl || networkRequest._documentURL;
         networkRequest.hasNetworkData = true;
         this._updateNetworkRequestWithRequest(networkRequest, request);
         networkRequest.setIssueTime(time, wallTime);
@@ -589,7 +601,13 @@ export class NetworkDispatcher {
 
         networkRequest.responseReceivedTime = time;
         networkRequest.setResourceType(Common.resourceTypes[resourceType]);
-
+         // 仅一个frame
+        window.__devtools_controller__ || (window.__devtools_controller__ = {});
+        window.__devtools_controller__.responseMap = window.__devtools_controller__.responseMap || {};
+        window.__devtools_controller__.responseMap[networkRequest._url] = {
+            scriptSource: response.originalCode
+        };
+        networkRequest.setOriginalCode(response.originalCode);
         // net::ParsedCookie::kMaxCookieSize = 4096 (net/cookies/parsed_cookie.h)
         if ('set-cookie' in lowercaseHeaders && lowercaseHeaders['set-cookie'].length > 4096) {
             const values = lowercaseHeaders['set-cookie'].split('\n');

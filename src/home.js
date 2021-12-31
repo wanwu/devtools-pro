@@ -31,7 +31,7 @@ const PORT = process.env.NODE_ENV === 'production' ? location.port : 8899;
  * @returns
  */
 function normalizeData(data) {
-    if (!data || !data.id) {
+    if (!data || !data.id || !data.url) {
         return null;
     }
 
@@ -71,10 +71,11 @@ function normalizeData(data) {
             location.hostname,
             PORT,
             data.id,
-            'devtools/network.html'
+            'devtools/network.html',
+            data.url
         );
     } else {
-        data.devtoolsurl = createFrontendUrl(location.protocol, location.hostname, PORT, data.id);
+        data.devtoolsurl = createFrontendUrl(location.protocol, location.hostname, PORT, data.id, undefined, data.url);
     }
     return data;
 }
@@ -124,7 +125,7 @@ const handlers = {
                     app.data.set('foxy', d);
                     return false;
                 }
-                return !!d.hidden;
+                return !d.hidden;
             });
             app.data.set('backends', data);
             return;

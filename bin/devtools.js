@@ -158,6 +158,7 @@ require('yargs')
             } else if (argv.proxy && configFileOptions.proxy) {
                 configFileOptions.proxy.port = proxyPort;
             }
+            startStaticServer();
             startServer();
             function startServer() {
                 const options = {
@@ -207,6 +208,29 @@ require('yargs')
                         process.exit(1);
                     });
                 });
+            }
+            function startStaticServer() {
+                // 单启动静态资源服务器
+                let staticPort = 8890;
+                const options = {
+                    ...config.options,
+                    https: https ? {} : null,
+                    plugins,
+                    port,
+                    hostname
+                };
+                let staticOptions = Object.assign({}, options, {port: staticPort});
+                const staticServer = new Server(staticOptions);
+
+                staticServer.listen(staticPort, hostname, err => {
+                    if (err) {
+                        console.log('static server error', err);
+                        throw err;
+                    }
+                    console.log('static server info', staticPort, staticOptions);
+                });
+                return staticServer;
+
             }
         }
     )

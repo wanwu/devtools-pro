@@ -74,6 +74,8 @@
         "opener": "^1.5.2",
         "portfinder": "^1.0.28",
         "resolve-pkg": "^2.0.0",
+        "selfsigned": "^1.10.8",
+        "source-map": "^0.7.3",
         "statuses": "^2.0.1",
         "update-notifier": "^5.1.0",
         "ws": "~7.4.5",

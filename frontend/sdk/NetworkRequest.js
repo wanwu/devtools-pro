@@ -142,6 +142,32 @@ export class NetworkRequest extends Common.Object {
     }
 
     /**
+     * @return {string}
+     */
+    get originalCode() {
+        return this._originalCode || '';
+    }
+
+    /**
+     * @param {string} x
+     */
+    setOriginalCode(source) {
+        this._originalCode = source;
+    }
+    /**
+     * @param {number} x
+     */
+    setTrueReceived() {
+        this._hasReceived = true;
+    }
+    /**
+     * @param {number} x
+     */
+    get trueReceived() {
+        return this._hasReceived || false;
+    }
+
+    /**
      * @param {!NetworkRequest} other
      * @return {number}
      */

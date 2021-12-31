@@ -5,6 +5,7 @@ import chobitsu from '@ksky521/chobitsu';
 import getFavicon from './utils/getFavicon';
 import getSessionId from './utils/getSessionId';
 import createRuntime from './runtime';
+import {debuggerHandler, sendBackendChannelInfo} from './debugger';
 
 // 初始化runtime
 const runtime = createRuntime(chobitsu);
@@ -35,7 +36,7 @@ function sendRegisterMessage() {
     const favicon = getFavicon();
     const title = document.title || 'Untitled';
     const {userAgent, platform} = navigator;
-    wss.send({
+    sendBackendChannelInfo({
         event: 'updateBackendInfo',
         payload: {
             id: sid,
@@ -46,3 +47,6 @@ function sendRegisterMessage() {
         }
     });
 }
+
+// 断点调试
+debuggerHandler(backendWSURL);
